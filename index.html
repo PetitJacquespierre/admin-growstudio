@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Grow Studio Admin SaaS</title>
+    <link rel="icon" type="image/png" href="img/og-image.png">
+    
+    <!-- Meta Tags para Compartir (OpenGraph / WhatsApp) -->
+    <meta property="og:title" content="Grow Studio | Panel de Control SaaS">
+    <meta property="og:description" content="Gestión centralizada de Menús Digitales.">
+    <meta property="og:image" content="https://admin-growstudio.vercel.app/img/og-image.png">
+    <meta property="og:url" content="https://admin-growstudio.vercel.app/">
+    <meta property="og:type" content="website">
+
+    <link href="https://fonts.googleapis.com/css2?family=Segoe+UI:wght@400;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+    <!-- PANTALLA DE LOGIN -->
+    <div id="login-screen" class="screen">
+        <div class="login-card">
+            <img src="img/growlogo.png" alt="Grow Studio" width="250" style="margin-bottom: 20px;">
+            <h2>Acceso Restringido</h2>
+            <form id="login-form">
+                <div class="input-group">
+                    <label>Correo Electrónico</label>
+                    <input type="email" id="email" required placeholder="admin@growstudio.com">
+                </div>
+                <div class="input-group">
+                    <label>Contraseña</label>
+                    <input type="password" id="password" required placeholder="••••••••">
+                </div>
+                <button type="submit" class="btn-primary" style="width: 100%;">Iniciar Sesión</button>
+                <div style="text-align: center; margin-top: 15px;">
+                    <button type="button" id="btn-forgot-password" style="background: none; border: none; color: var(--brand-cyan); cursor: pointer; font-size: 14px; text-decoration: underline;">¿Olvidaste tu contraseña?</button>
+                </div>
+            </form>
+            <p id="login-error" class="error-msg" style="display: none;"></p>
+        </div>
+    </div>
+
+    <!-- PANTALLA PRINCIPAL (DASHBOARD) -->
+    <div id="dashboard-screen" class="screen" style="display: none; flex-direction: row;">
+        
+        <!-- SIDEBAR IZQUIERDO -->
+        <aside class="sidebar">
+            <div class="sidebar-logo">
+                <img src="img/growlogo.png" alt="Grow Studio" width="180">
+            </div>
+            
+            <div class="sidebar-menu">
+                <p class="menu-label">MAIN MENU</p>
+                <button id="btn-new-client" class="menu-btn active">+ Nuevo Cliente</button>
+            </div>
+
+            <div class="sidebar-menu" style="flex: 1; overflow-y: auto;">
+                <p class="menu-label">CLIENTES</p>
+                <ul id="clients-ul" class="menu-list">
+                    <!-- Dinámico -->
+                </ul>
+            </div>
+
+            <div class="sidebar-footer">
+                <p style="font-size: 12px; color: #6b7280; text-align: center;">Usuario activo:</p>
+                <p id="user-email" style="font-size: 12px; text-align: center; margin-bottom: 15px;"></p>
+                <button id="btn-logout" class="btn-primary" style="width: 100%; border:none; padding: 10px;">Cerrar Sesión</button>
+            </div>
+        </aside>
+
+        <!-- CONTENIDO PRINCIPAL -->
+        <main class="main-content">
+            
+            <!-- PANTALLA DE BIENVENIDA (Mostrada por defecto) -->
+            <section id="welcome-screen" style="display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%; text-align: center; padding: 40px;">
+                <img src="img/og-image.png" alt="Grow Studio SaaS" style="width: 250px; border-radius: 20px; box-shadow: 0 0 30px rgba(0, 210, 255, 0.2); margin-bottom: 30px; animation: floatOrb 6s infinite alternate;">
+                <h1 style="font-size: 2.5rem; margin-bottom: 10px; background: linear-gradient(90deg, var(--brand-cyan), var(--brand-orange)); -webkit-background-clip: text; color: transparent;">Bienvenido al Modo Dios</h1>
+                <p style="font-size: 1.1rem; color: #a1a1aa; max-width: 500px;">Selecciona un cliente en el menú lateral izquierdo para gestionar su menú, configurar su WhatsApp, o crea un nuevo cliente desde cero con Inteligencia Artificial.</p>
+            </section>
+
+            <!-- GESTOR DE CLIENTES (Oculto inicialmente) -->
+            <section class="client-manager" id="client-manager" style="display: none;">
+                
+                <header class="top-bar" style="display: flex; justify-content: space-between; align-items: center;">
+                    <h2 id="manager-title" style="display: flex; align-items: center; gap: 10px;">Selecciona un Cliente <a id="client-link" href="#" target="_blank" style="display:none; color: var(--primary); text-decoration: none;" title="Ver Tienda en Vivo"><i class="fa-solid fa-arrow-up-right-from-square" style="font-size: 18px;"></i> 🔗</a></h2>
+                    <button id="btn-delete-client" class="btn-secondary btn-small" style="background-color: #ef4444; border:none; display:none;">🗑️ Eliminar Cliente</button>
+                </header>
+
+                <!-- Tarjetas de Métricas / Controles -->
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <h3>Estado SaaS</h3>
+                        <select id="client-status" class="modern-select">
+                            <option value="ACTIVO">✅ Activo (Al día)</option>
+                            <option value="SUSPENDIDO">❌ Suspendido</option>
+                        </select>
+                    </div>
+                    
+                    <div class="stat-card">
+                        <h3>Horario Tienda</h3>
+                        <select id="store-status" class="modern-select">
+                            <option value="AUTO">🕒 Automático</option>
+                            <option value="ABIERTO">🟢 Forzar Abierto</option>
+                            <option value="CERRADO">🔴 Forzar Cerrado</option>
+                        </select>
+                    </div>
+
+                    <div class="stat-card">
+                        <h3>WhatsApp Pedidos</h3>
+                        <div style="display: flex; gap: 5px;">
+                            <input type="text" id="client-whatsapp" class="modern-select" placeholder="58412..." style="font-size: 14px;">
+                            <button id="btn-save-whatsapp" class="btn-primary btn-small">💾</button>
+                        </div>
+                    </div>
+                    
+                    <div class="stat-card">
+                        <h3>Link de la Tienda</h3>
+                        <div style="display: flex; gap: 5px;">
+                            <input type="text" id="client-url" class="modern-select" placeholder="laflaca.vercel.app" style="font-size: 14px;">
+                            <button id="btn-save-url" class="btn-primary btn-small">💾</button>
+                        </div>
+                    </div>
+                    
+                    <div class="stat-card stat-highlight">
+                        <h3>Acciones Rápidas</h3>
+                        <div style="display: flex; gap: 10px; margin-top: 10px;">
+                            <button id="btn-add-product" class="btn-primary btn-small">+ Añadir</button>
+                            <button id="btn-import-bulk" class="btn-secondary btn-small" style="border: 1px solid var(--primary); color: var(--primary);">✨ IA Bulk</button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="products-section">
+                    <h3 style="margin-top: 0;">Menú de Productos</h3>
+                    <div class="table-container">
+                        <table id="products-table">
+                            <thead>
+                                <tr>
+                                    <th>Imagen</th>
+                                    <th>Nombre</th>
+                                    <th>Categoría</th>
+                                    <th>Precio ($)</th>
+                                    <th>Activo</th>
+                                    <th>Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody id="products-tbody">
+                                <!-- Dinámico -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- SECCIÓN DE PROMOS (BANNERS) -->
+                <div class="products-section" style="margin-top: 30px;">
+                    <h3 style="margin-top: 0;">Imágenes de Promociones (Banners)</h3>
+                    <p style="font-size: 12px; color: #9ca3af; margin-top: -10px; margin-bottom: 15px;">Aparecerán arriba del menú de este cliente.</p>
+                    <div class="table-container">
+                        <table id="promos-table">
+                            <thead>
+                                <tr>
+                                    <th>Archivo Local</th>
+                                    <th>Activo</th>
+                                    <th>Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody id="promos-tbody">
+                                <!-- Dinámico -->
+                            </tbody>
+                        </table>
+                        <button id="btn-add-promo" class="btn-primary btn-small" style="margin-top: 15px;">+ Añadir Promo</button>
+                    </div>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <!-- MODAL DE IMPORTACIÓN CON IA -->
+    <div id="import-modal" class="screen" style="display: none; position: fixed; top: 0; left: 0; width: 100%; background: rgba(0,0,0,0.8); z-index: 1000; justify-content: center; align-items: center;">
+        <div class="login-card" style="max-width: 600px; width: 90%; text-align: left;">
+            <h2 style="text-align: center; margin-top:0;">✨ Importar con Inteligencia Artificial</h2>
+            
+            <div class="input-group">
+                <label>Tu API Key de Gemini (se guarda en tu navegador)</label>
+                <input type="password" id="gemini-api-key" placeholder="AIzaSy...">
+            </div>
+
+            <div class="input-group">
+                <label>Pega el texto crudo del menú (WhatsApp, Word, etc.)</label>
+                <textarea id="import-raw-text" rows="8" style="width: 100%; background: var(--bg-dark); color: #fff; border: 1px solid var(--border); padding: 10px; border-radius: 6px; box-sizing: border-box;" placeholder='Ejemplo:&#10;Hamburguesa sencilla 5$&#10;Perro caliente con papas 3.50$&#10;Coca Cola 1.50$'></textarea>
+            </div>
+            
+            <p id="ai-loading-text" style="display:none; color: var(--primary); text-align: center; font-weight: bold;">🧠 La IA está leyendo el menú y extrayendo los productos... (esto toma unos segundos)</p>
+
+            <div style="display: flex; gap: 10px; margin-top: 15px;">
+                <button id="btn-confirm-import" class="btn-primary">Generar y Subir</button>
+                <button id="btn-cancel-import" class="btn-secondary">Cancelar</button>
+            </div>
+        </div>
+    </div>
+
+    <script type="module" src="js/app.js"></script>
+</body>
+</html>
