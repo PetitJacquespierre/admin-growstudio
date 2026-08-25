@@ -4,12 +4,17 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Grow Studio Admin SaaS</title>
-    <link rel="icon" type="image/png" href="img/og-image.png">
+    
+    <!-- PWA / Instalación en Móvil -->
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#00d2ff">
+    <link rel="apple-touch-icon" href="img/growisotipo.png">
+    <link rel="icon" type="image/png" href="img/growisotipo.png">
     
     <!-- Meta Tags para Compartir (OpenGraph / WhatsApp) -->
     <meta property="og:title" content="Grow Studio | Panel de Control SaaS">
     <meta property="og:description" content="Gestión centralizada de Menús Digitales.">
-    <meta property="og:image" content="https://admin-growstudio.vercel.app/img/og-image.png">
+    <meta property="og:image" content="https://admin-growstudio.vercel.app/img/growisotipo.png">
     <meta property="og:url" content="https://admin-growstudio.vercel.app/">
     <meta property="og:type" content="website">
 
@@ -73,7 +78,7 @@
             
             <!-- PANTALLA DE BIENVENIDA (Mostrada por defecto) -->
             <section id="welcome-screen" style="display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%; text-align: center; padding: 40px;">
-                <img src="img/og-image.png" alt="Grow Studio SaaS" style="width: 250px; border-radius: 20px; box-shadow: 0 0 30px rgba(0, 210, 255, 0.2); margin-bottom: 30px; animation: floatOrb 6s infinite alternate;">
+                <img src="img/growisotipo.png" alt="Grow Studio SaaS" style="width: 250px; margin-bottom: 30px; animation: floatOrb 6s infinite alternate;">
                 <h1 style="font-size: 2.5rem; margin-bottom: 10px; background: linear-gradient(90deg, var(--brand-cyan), var(--brand-orange)); -webkit-background-clip: text; color: transparent;">Bienvenido al Modo Dios</h1>
                 <p style="font-size: 1.1rem; color: #a1a1aa; max-width: 500px;">Selecciona un cliente en el menú lateral izquierdo para gestionar su menú, configurar su WhatsApp, o crea un nuevo cliente desde cero con Inteligencia Artificial.</p>
             </section>
