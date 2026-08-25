@@ -1,6 +1,6 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
 import { getAuth, signInWithEmailAndPassword, onAuthStateChanged, signOut, sendPasswordResetEmail } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
-import { getFirestore, collection, doc, getDocs, setDoc, getDoc, updateDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+import { getFirestore, collection, addDoc, getDocs, doc, deleteDoc, updateDoc, onSnapshot, getDoc, query, orderBy, setDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
 // Configuración de Firebase (Generada automáticamente)
 const firebaseConfig = {
@@ -52,6 +52,7 @@ onAuthStateChanged(auth, (user) => {
         dashboardScreen.style.display = 'flex';
         userEmailDisplay.innerText = user.email;
         loadClients();
+        if (window.correrRobotCobrador) window.correrRobotCobrador();
     } else {
         // No logueado
         loginScreen.style.display = 'flex';
@@ -159,6 +160,10 @@ async function openClientManager(id, data, liElement) {
     document.getElementById('welcome-screen').style.display = 'none';
     clientManager.style.display = 'block';
     
+    if (document.getElementById('payments-screen')) {
+        document.getElementById('payments-screen').style.display = 'none';
+    }
+
     // Titulo y Link
     const titleText = document.createTextNode(`Menú de: ${data.businessName || id} `);
     managerTitle.innerHTML = '';
@@ -170,8 +175,14 @@ async function openClientManager(id, data, liElement) {
         managerTitle.appendChild(clientLink);
     } else {
         clientLink.style.display = 'none';
-        managerTitle.appendChild(clientLink); // mantener en dom
     }
+
+    if (document.getElementById('client-mensualidad')) {
+        document.getElementById('client-mensualidad').value = data.mensualidad || 0;
+        document.getElementById('client-deuda').value = data.deuda || 0;
+        document.getElementById('client-corte').value = data.diaCorte || 1;
+    }
+    managerTitle.appendChild(clientLink); // mantener en dom
 
     clientStatus.value = data.estado || "ACTIVO";
     storeStatus.value = data.tiendaAbierta || "AUTO";
@@ -593,5 +604,145 @@ window.deleteProduct = async (index) => {
         renderProducts(productosActuales);
     } catch (e) {
         alert("Error al eliminar.");
+    }
+};
+
+// ==========================================
+// MÓDULO DE PAGOS Y FACTURACIÓN (ROBOT COBRADOR)
+// ==========================================
+const btnViewPayments = document.getElementById('btn-view-payments');
+const paymentsScreen = document.getElementById('payments-screen');
+const paymentsTbody = document.getElementById('payments-tbody');
+
+// Botón sidebar para ver pagos
+btnViewPayments.addEventListener('click', () => {
+    clientManager.style.display = 'none';
+    welcomeScreen.style.display = 'none';
+    paymentsScreen.style.display = 'flex';
+    
+    document.querySelectorAll('.menu-list li').forEach(li => li.classList.remove('active'));
+    document.querySelectorAll('.menu-btn').forEach(btn => btn.classList.remove('active'));
+    btnViewPayments.classList.add('active');
+    
+    cargarPagos();
+});
+
+async function cargarPagos() {
+    paymentsTbody.innerHTML = '<tr><td colspan="7" style="text-align:center;">Cargando pagos...</td></tr>';
+    try {
+        const q = query(collection(db, "pagos"), orderBy("fecha", "desc"));
+        const snapshot = await getDocs(q);
+        paymentsTbody.innerHTML = '';
+        
+        if (snapshot.empty) {
+            paymentsTbody.innerHTML = '<tr><td colspan="7" style="text-align:center;">No hay pagos registrados.</td></tr>';
+            return;
+        }
+
+        snapshot.forEach(docSnap => {
+            const p = docSnap.data();
+            const tr = document.createElement('tr');
+            
+            let btnAccion = '';
+            let badgeClass = 'por-revisar';
+            if (p.estado === "POR REVISAR") {
+                btnAccion = `<button class="btn-primary btn-small" onclick="window.aprobarPago('${docSnap.id}', '${p.cedula}', ${p.monto})">✅ Aprobar</button>`;
+            } else if (p.estado === "APROBADO") {
+                badgeClass = 'aprobado';
+                btnAccion = '<span style="color: gray; font-size: 12px;">Procesado</span>';
+            }
+            
+            tr.innerHTML = `
+                <td>${p.fechaLocal || 'Reciente'}</td>
+                <td>${p.cedula}</td>
+                <td>${p.plan || 'N/A'}</td>
+                <td>$${p.monto}</td>
+                <td>${p.referencia}</td>
+                <td><span class="badge ${badgeClass}">${p.estado}</span></td>
+                <td>${btnAccion}</td>
+            `;
+            paymentsTbody.appendChild(tr);
+        });
+    } catch (error) {
+        console.error("Error al cargar pagos:", error);
+        paymentsTbody.innerHTML = '<tr><td colspan="7" style="color:red; text-align:center;">Error al cargar pagos</td></tr>';
+    }
+}
+
+// Hacer global para el onclick inline
+window.aprobarPago = async function(pagoId, cedulaPago, montoPagado) {
+    if (!confirm("¿Confirmas que recibiste $" + montoPagado + " y deseas descontarlo de la deuda del cliente " + cedulaPago + "?")) return;
+    
+    try {
+        // Marcar pago como APROBADO
+        await updateDoc(doc(db, "pagos", pagoId), {
+            estado: "APROBADO"
+        });
+        
+        alert("Pago aprobado. Ahora puedes ir al perfil del cliente y restar manualmente la deuda.");
+        cargarPagos();
+    } catch (error) {
+        alert("Error: " + error.message);
+    }
+};
+
+// ==========================================
+// LÓGICA DE FACTURACIÓN EN EL PERFIL DEL CLIENTE
+// ==========================================
+const clientMensualidad = document.getElementById('client-mensualidad');
+const clientDeuda = document.getElementById('client-deuda');
+const clientCorte = document.getElementById('client-corte');
+const btnSaveBilling = document.getElementById('btn-save-billing');
+
+if (btnSaveBilling) {
+    btnSaveBilling.addEventListener('click', async () => {
+        if (!currentClientId) return;
+        try {
+            await updateDoc(doc(db, "clientes", currentClientId), {
+                mensualidad: parseFloat(clientMensualidad.value) || 0,
+                deuda: parseFloat(clientDeuda.value) || 0,
+                diaCorte: parseInt(clientCorte.value) || 1
+            });
+            alert("Datos de facturación actualizados");
+        } catch (error) {
+            alert("Error: " + error.message);
+        }
+    });
+}
+
+// Robot Cobrador (Llamado en auth)
+window.correrRobotCobrador = async function() {
+    console.log("Corriendo Robot Cobrador...");
+    try {
+        const snap = await getDocs(collection(db, "clientes"));
+        const hoy = new Date();
+        const diaHoy = hoy.getDate();
+        const mesActual = hoy.getFullYear() + "-" + (hoy.getMonth() + 1);
+        
+        snap.forEach(async (docSnap) => {
+            const data = docSnap.data();
+            const mensualidad = parseFloat(data.mensualidad) || 0;
+            let deuda = parseFloat(data.deuda) || 0;
+            const diaCorte = parseInt(data.diaCorte) || null;
+            const lastBilledMonth = data.lastBilledMonth || "";
+            let estado = data.estado || "ACTIVO";
+            
+            if (mensualidad > 0 && diaCorte && lastBilledMonth !== mesActual) {
+                if (diaHoy >= diaCorte) {
+                    deuda += mensualidad;
+                    console.log(`Facturando a ${docSnap.id}. Nueva deuda: ${deuda}`);
+                    if (deuda >= (mensualidad * 1.5)) {
+                        estado = "SUSPENDIDO";
+                    }
+                    await updateDoc(doc(db, "clientes", docSnap.id), {
+                        deuda: deuda,
+                        lastBilledMonth: mesActual,
+                        estado: estado
+                    });
+                }
+            }
+        });
+    } catch (e) {
+        console.error("Error en Robot Cobrador:", e);
     }
 };

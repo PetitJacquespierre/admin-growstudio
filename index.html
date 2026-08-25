@@ -51,25 +51,20 @@
         <!-- SIDEBAR IZQUIERDO -->
         <aside class="sidebar">
             <div class="sidebar-logo">
-                <img src="img/growlogo.png" alt="Grow Studio" width="180">
+                <img src="img/growlogo.png" alt="Grow Studio" width="180" style="cursor: pointer;" onclick="document.getElementById('client-manager').style.display='none'; document.getElementById('payments-screen').style.display='none'; document.getElementById('welcome-screen').style.display='flex'; document.querySelectorAll('.menu-btn, .menu-list li').forEach(el => el.classList.remove('active'));">
             </div>
             
             <div class="sidebar-menu">
                 <p class="menu-label">MAIN MENU</p>
                 <button id="btn-new-client" class="menu-btn active">+ Nuevo Cliente</button>
+                <button id="btn-view-payments" class="menu-btn">💰 Pagos Recibidos</button>
             </div>
 
-            <div class="sidebar-menu" style="flex: 1; overflow-y: auto;">
+            <div class="sidebar-menu" style="flex: 1; overflow-y: auto; margin-top: 40px;">
                 <p class="menu-label">CLIENTES</p>
                 <ul id="clients-ul" class="menu-list">
                     <!-- Dinámico -->
                 </ul>
-            </div>
-
-            <div class="sidebar-footer">
-                <p style="font-size: 12px; color: #6b7280; text-align: center;">Usuario activo:</p>
-                <p id="user-email" style="font-size: 12px; text-align: center; margin-bottom: 15px;"></p>
-                <button id="btn-logout" class="btn-primary" style="width: 100%; border:none; padding: 10px;">Cerrar Sesión</button>
             </div>
         </aside>
 
@@ -80,7 +75,38 @@
             <section id="welcome-screen" style="display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%; text-align: center; padding: 40px;">
                 <img src="img/growisotipo.png" alt="Grow Studio SaaS" style="width: 250px; margin-bottom: 30px; animation: floatOrb 6s infinite alternate;">
                 <h1 style="font-size: 2.5rem; margin-bottom: 10px; background: linear-gradient(90deg, var(--brand-cyan), var(--brand-orange)); -webkit-background-clip: text; color: transparent;">Bienvenido al Modo Dios</h1>
-                <p style="font-size: 1.1rem; color: #a1a1aa; max-width: 500px;">Selecciona un cliente en el menú lateral izquierdo para gestionar su menú, configurar su WhatsApp, o crea un nuevo cliente desde cero con Inteligencia Artificial.</p>
+                <p style="font-size: 1.1rem; color: #a1a1aa; max-width: 500px; margin-bottom: 30px;">Selecciona un cliente en el menú lateral izquierdo para gestionar su menú, configurar su WhatsApp, o crea un nuevo cliente desde cero con Inteligencia Artificial.</p>
+                
+                <div style="background: rgba(255,255,255,0.05); padding: 20px; border-radius: 15px; border: 1px solid rgba(255,255,255,0.1); display: flex; flex-direction: column; align-items: center; min-width: 250px;">
+                    <p style="font-size: 12px; color: #6b7280; text-align: center;">Usuario activo:</p>
+                    <p id="user-email" style="font-size: 14px; font-weight: bold; text-align: center; margin-bottom: 15px; color: var(--brand-cyan);"></p>
+                    <button id="btn-logout" class="btn-primary" style="width: 100%; border:none; padding: 10px;">Cerrar Sesión</button>
+                </div>
+            </section>
+
+            <!-- PANTALLA DE PAGOS -->
+            <section id="payments-screen" style="display: none; padding: 20px; height: 100%; display: flex; flex-direction: column;">
+                <header class="top-bar" style="margin-bottom: 20px;">
+                    <h2>Pagos Recibidos</h2>
+                </header>
+                <div class="table-container" style="flex: 1;">
+                    <table id="payments-table">
+                        <thead>
+                            <tr>
+                                <th>Fecha</th>
+                                <th>Cédula</th>
+                                <th>Plan</th>
+                                <th>Monto</th>
+                                <th>Referencia</th>
+                                <th>Estado</th>
+                                <th>Acción</th>
+                            </tr>
+                        </thead>
+                        <tbody id="payments-tbody">
+                            <!-- Dinámico -->
+                        </tbody>
+                    </table>
+                </div>
             </section>
 
             <!-- GESTOR DE CLIENTES (Oculto inicialmente) -->
@@ -125,11 +151,30 @@
                             <button id="btn-save-url" class="btn-primary btn-small">💾</button>
                         </div>
                     </div>
-                    
+
                     <div class="stat-card stat-highlight">
+                        <h3 style="color: var(--brand-orange);">Facturación</h3>
+                        <div style="display: flex; flex-direction: column; gap: 8px; margin-top: 5px;">
+                            <div style="display: flex; justify-content: space-between; align-items: center;">
+                                <label style="font-size: 12px; color: #a1a1aa;">Mensualidad ($)</label>
+                                <input type="number" id="client-mensualidad" class="modern-select" style="width: 70px; padding: 4px;" value="0">
+                            </div>
+                            <div style="display: flex; justify-content: space-between; align-items: center;">
+                                <label style="font-size: 12px; color: #a1a1aa;">Deuda Actual ($)</label>
+                                <input type="number" id="client-deuda" class="modern-select" style="width: 70px; padding: 4px;" value="0">
+                            </div>
+                            <div style="display: flex; justify-content: space-between; align-items: center;">
+                                <label style="font-size: 12px; color: #a1a1aa;">Día de Corte</label>
+                                <input type="number" id="client-corte" class="modern-select" style="width: 70px; padding: 4px;" min="1" max="31" value="1">
+                            </div>
+                            <button id="btn-save-billing" class="btn-secondary btn-small" style="width: 100%; border: 1px solid var(--brand-orange); color: var(--brand-orange);">Guardar Facturación</button>
+                        </div>
+                    </div>
+                    
+                    <div class="stat-card stat-highlight" style="display: flex; flex-direction: column; justify-content: center;">
                         <h3>Acciones Rápidas</h3>
                         <div style="display: flex; gap: 10px; margin-top: 10px;">
-                            <button id="btn-add-product" class="btn-primary btn-small">+ Añadir</button>
+                            <button id="btn-add-product" class="btn-primary btn-small">+ Añadir Producto</button>
                             <button id="btn-import-bulk" class="btn-secondary btn-small" style="border: 1px solid var(--primary); color: var(--primary);">✨ IA Bulk</button>
                         </div>
                     </div>
