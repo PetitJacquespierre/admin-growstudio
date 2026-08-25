@@ -190,6 +190,13 @@ async function openClientManager(id, data, liElement) {
     clientUrl.value = data.url || "";
     btnDeleteClient.style.display = 'block';
     
+    // New fields
+    const colorHex = data.colorPrimario || "#F97316";
+    document.getElementById('client-color-picker').value = colorHex;
+    document.getElementById('client-color-hex').value = colorHex;
+    document.getElementById('client-status-abierto').checked = data.recibirPedidos !== false;
+    document.getElementById('client-visitas').innerText = data.visitas || 0;
+    
     document.querySelectorAll('#clients-ul li').forEach(li => li.classList.remove('active'));
     document.getElementById('btn-new-client').classList.remove('active');
     if (liElement) liElement.classList.add('active');
@@ -301,11 +308,21 @@ function renderProducts(productos) {
     productos.forEach((p, index) => {
         const tr = document.createElement('tr');
         
-        let imgHtml = '';
+        let imgSrc = '';
         if (p.imagen && (p.imagen.startsWith('http://') || p.imagen.startsWith('https://'))) {
-            imgHtml = `<img src="${p.imagen}" width="50" height="50" alt="img" style="border-radius:4px; object-fit:cover;">`;
+            imgSrc = p.imagen;
+        } else if (p.imagen && currentClientData && currentClientData.url) {
+            let baseUrl = currentClientData.url.trim();
+            if (!baseUrl.startsWith('http')) baseUrl = 'https://' + baseUrl;
+            baseUrl = baseUrl.replace(/\/$/, '');
+            imgSrc = baseUrl + '/img/' + p.imagen;
+        }
+
+        let imgHtml = '';
+        if (imgSrc) {
+            imgHtml = `<img src="${imgSrc}" class="zoomable-img" width="50" height="50" alt="img" style="border-radius:4px; object-fit:cover;" onerror="this.outerHTML='<div style=\\'width:50px;height:50px;background:var(--bg-dark);font-size:10px;color:gray;display:flex;align-items:center;text-align:center;border-radius:4px;\\'>🖼️<br>${p.imagen}</div>'">`;
         } else {
-            imgHtml = `<div style="width: 50px; height: 50px; background: var(--bg-dark); border: 1px dashed var(--border); display: flex; align-items: center; justify-content: center; font-size: 10px; text-align: center; color: gray; border-radius: 4px; overflow: hidden;" title="img/${p.imagen}">📁<br>${p.imagen}</div>`;
+            imgHtml = `<div style="width: 50px; height: 50px; background: var(--bg-dark); border: 1px dashed var(--border); display: flex; align-items: center; justify-content: center; font-size: 10px; text-align: center; color: gray; border-radius: 4px; overflow: hidden;" title="img/${p.imagen}">🖼️?<br>${p.imagen}</div>`;
         }
         
         const isChecked = p.activo === 'SI' ? 'checked' : '';
@@ -322,7 +339,8 @@ function renderProducts(productos) {
                 </label>
             </td>
             <td>
-                <button class="btn-secondary btn-small" onclick="deleteProduct(${index})">Eliminar</button>
+                <button class="btn-primary btn-small" onclick="window.editProduct(${index})" style="margin-right: 5px;">✏️</button>
+                <button class="btn-secondary btn-small" onclick="window.deleteProduct(${index})">🗑️</button>
             </td>
         `;
         productsTbody.appendChild(tr);
@@ -371,14 +389,30 @@ function renderPromos(promos) {
     }
 
     promos.forEach((p, index) => {
+        let imgSrc = '';
+        if (p.imagen && (p.imagen.startsWith('http://') || p.imagen.startsWith('https://'))) {
+            imgSrc = p.imagen;
+        } else if (p.imagen && currentClientData && currentClientData.url) {
+            let baseUrl = currentClientData.url.trim();
+            if (!baseUrl.startsWith('http')) baseUrl = 'https://' + baseUrl;
+            baseUrl = baseUrl.replace(/\/$/, '');
+            imgSrc = baseUrl + '/img/' + p.imagen;
+        }
+
+        let imgHtml = '';
+        if (imgSrc) {
+            imgHtml = `<img src="${imgSrc}" class="zoomable-img" width="50" height="50" alt="img" style="border-radius:4px; object-fit:cover;" onerror="this.outerHTML='<div style=\\'width:50px;height:50px;background:var(--bg-dark);font-size:10px;color:gray;display:flex;align-items:center;text-align:center;border-radius:4px;\\'>🖼️<br>${p.imagen}</div>'">`;
+        } else {
+            imgHtml = `<div style="width: 50px; height: 50px; background: var(--bg-dark); border: 1px dashed var(--border); display: flex; align-items: center; justify-content: center; font-size: 10px; color: gray; border-radius: 4px; overflow: hidden;" title="${p.imagen}">🖼️<br>Banner</div>`;
+        }
+
         const tr = document.createElement('tr');
-        
         const isChecked = p.activo === 'SI' ? 'checked' : '';
         
         tr.innerHTML = `
             <td>
                 <div style="display: flex; align-items: center; gap: 10px;">
-                    <div style="width: 40px; height: 30px; background: var(--bg-dark); border: 1px dashed var(--border); display: flex; align-items: center; justify-content: center; font-size: 10px; color: gray; border-radius: 4px;">📁</div>
+                    ${imgHtml}
                     <strong>${p.imagen}</strong>
                 </div>
             </td>
@@ -589,6 +623,62 @@ btnConfirmImport.addEventListener('click', async () => {
     }
 });
 
+window.editProduct = async (index) => {
+    if (!currentClientId) return;
+    const p = currentClientData.productos[index];
+    
+    document.getElementById('edit-product-index').value = index;
+    document.getElementById('edit-product-nombre').value = p.titulo || p.nombre || '';
+    document.getElementById('edit-product-precio').value = parseFloat(p.precio) || 0;
+    document.getElementById('edit-product-categoria').value = p.categoria || '';
+    document.getElementById('edit-product-descripcion').value = p.descripcion || '';
+    document.getElementById('edit-product-imagen').value = p.imagen || '';
+    
+    document.getElementById('edit-product-modal').style.display = 'flex';
+};
+
+document.getElementById('btn-cancel-edit-product').addEventListener('click', () => {
+    document.getElementById('edit-product-modal').style.display = 'none';
+});
+
+document.getElementById('btn-save-edit-product').addEventListener('click', async () => {
+    if (!currentClientId) return;
+    const index = parseInt(document.getElementById('edit-product-index').value);
+    const p = currentClientData.productos[index];
+    
+    const nombre = document.getElementById('edit-product-nombre').value.trim();
+    const precio = parseFloat(document.getElementById('edit-product-precio').value) || 0;
+    const categoria = document.getElementById('edit-product-categoria').value.trim();
+    const descripcion = document.getElementById('edit-product-descripcion').value.trim();
+    const imagen = document.getElementById('edit-product-imagen').value.trim();
+    
+    if (!nombre) {
+        alert("El nombre es obligatorio");
+        return;
+    }
+    
+    currentClientData.productos[index] = {
+        ...p,
+        titulo: nombre,
+        nombre: nombre,
+        precio: precio,
+        categoria: categoria,
+        descripcion: descripcion,
+        imagen: imagen
+    };
+    
+    try {
+        const { doc, updateDoc } = await import("https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js");
+        await updateDoc(doc(db, "clientes", currentClientId), {
+            productos: currentClientData.productos
+        });
+        renderProducts(currentClientData.productos);
+        document.getElementById('edit-product-modal').style.display = 'none';
+    } catch (e) {
+        alert("Error al actualizar producto.");
+    }
+});
+
 // Exponer la función delete al window para el onclick del HTML
 window.deleteProduct = async (index) => {
     if (!currentClientId || !confirm("¿Eliminar producto?")) return;
@@ -703,6 +793,11 @@ if (btnSaveBilling) {
                 deuda: parseFloat(clientDeuda.value) || 0,
                 diaCorte: parseInt(clientCorte.value) || 1
             });
+            if (currentClientData) {
+                currentClientData.mensualidad = parseFloat(clientMensualidad.value) || 0;
+                currentClientData.deuda = parseFloat(clientDeuda.value) || 0;
+                currentClientData.diaCorte = parseInt(clientCorte.value) || 1;
+            }
             alert("Datos de facturación actualizados");
         } catch (error) {
             alert("Error: " + error.message);
@@ -746,3 +841,102 @@ window.correrRobotCobrador = async function() {
         console.error("Error en Robot Cobrador:", e);
     }
 };
+
+// ==========================================
+// NUEVAS FUNCIONALIDADES: COLOR, QR Y CONFIG
+// ==========================================
+
+// Color Picker Sync
+const colorPicker = document.getElementById('client-color-picker');
+const colorHex = document.getElementById('client-color-hex');
+if (colorPicker && colorHex) {
+    colorPicker.addEventListener('input', (e) => {
+        colorHex.value = e.target.value.toUpperCase();
+    });
+    colorHex.addEventListener('input', (e) => {
+        colorPicker.value = e.target.value;
+    });
+}
+
+// Guardar Config Web
+const btnSaveConfig = document.getElementById('btn-save-config');
+if (btnSaveConfig) {
+    btnSaveConfig.addEventListener('click', async () => {
+        if (!currentClientId) return;
+        
+        const newColor = colorHex.value.trim();
+        const recibirPedidos = document.getElementById('client-status-abierto').checked;
+        
+        try {
+            const { doc, updateDoc } = await import("https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js");
+            await updateDoc(doc(db, "clientes", currentClientId), {
+                colorPrimario: newColor,
+                recibirPedidos: recibirPedidos
+            });
+            currentClientData.colorPrimario = newColor;
+            currentClientData.recibirPedidos = recibirPedidos;
+            alert("Ajustes Web guardados correctamente.");
+        } catch (e) {
+            alert("Error al guardar Ajustes Web: " + e.message);
+        }
+    });
+}
+
+// Generador de QR
+const btnGenerateQr = document.getElementById('btn-generate-qr');
+const qrModal = document.getElementById('qr-modal');
+const btnCloseQr = document.getElementById('btn-close-qr');
+const btnDownloadQr = document.getElementById('btn-download-qr');
+const qrContainer = document.getElementById('qr-code-container');
+const qrUrlText = document.getElementById('qr-url-text');
+let currentQrcode = null;
+
+if (btnGenerateQr) {
+    btnGenerateQr.addEventListener('click', () => {
+        if (!currentClientData || !currentClientData.url) {
+            alert("El cliente no tiene un Link de la Tienda configurado.");
+            return;
+        }
+        
+        qrModal.style.display = 'flex';
+        qrContainer.innerHTML = ''; // Limpiar anterior
+        
+        let urlToEncode = currentClientData.url;
+        if (!urlToEncode.startsWith('http')) urlToEncode = 'https://' + urlToEncode;
+        qrUrlText.innerText = urlToEncode;
+        
+        // Timeout ligero para asegurar renderizado del DOM
+        setTimeout(() => {
+            currentQrcode = new QRCode(qrContainer, {
+                text: urlToEncode,
+                width: 250,
+                height: 250,
+                colorDark : "#000000",
+                colorLight : "#ffffff",
+                correctLevel : QRCode.CorrectLevel.H
+            });
+        }, 100);
+    });
+}
+
+if (btnCloseQr) {
+    btnCloseQr.addEventListener('click', () => {
+        qrModal.style.display = 'none';
+    });
+}
+
+if (btnDownloadQr) {
+    btnDownloadQr.addEventListener('click', () => {
+        const img = qrContainer.querySelector('img');
+        if (!img || !img.src) {
+            alert("Aún no se ha generado el QR.");
+            return;
+        }
+        const a = document.createElement('a');
+        a.href = img.src;
+        a.download = `QR_Menu_${currentClientId}.png`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+    });
+}

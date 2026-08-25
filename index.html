@@ -55,16 +55,22 @@
             </div>
             
             <div class="sidebar-menu">
-                <p class="menu-label">MAIN MENU</p>
+                <p class="menu-label">MENÚ</p>
                 <button id="btn-new-client" class="menu-btn active">+ Nuevo Cliente</button>
                 <button id="btn-view-payments" class="menu-btn">💰 Pagos Recibidos</button>
             </div>
 
             <div class="sidebar-menu" style="flex: 1; overflow-y: auto; margin-top: 40px;">
-                <p class="menu-label">CLIENTES</p>
+                <p class="menu-label" style="font-weight: bold; color: white;">CLIENTES</p>
                 <ul id="clients-ul" class="menu-list">
                     <!-- Dinámico -->
                 </ul>
+            </div>
+            
+            <div style="background: rgba(255,255,255,0.05); padding: 15px; border-radius: 10px; border: 1px solid rgba(255,255,255,0.1); margin-top: 20px; text-align: center;">
+                <p style="font-size: 11px; color: #6b7280;">Usuario activo:</p>
+                <p id="user-email" style="font-size: 12px; font-weight: bold; margin-bottom: 10px; color: var(--brand-cyan); word-break: break-all;"></p>
+                <button id="btn-logout" class="btn-primary" style="width: 100%; border:none; padding: 8px; font-size: 12px;">Cerrar Sesión</button>
             </div>
         </aside>
 
@@ -76,16 +82,10 @@
                 <img src="img/growisotipo.png" alt="Grow Studio SaaS" style="width: 250px; margin-bottom: 30px; animation: floatOrb 6s infinite alternate;">
                 <h1 style="font-size: 2.5rem; margin-bottom: 10px; background: linear-gradient(90deg, var(--brand-cyan), var(--brand-orange)); -webkit-background-clip: text; color: transparent;">Bienvenido al Modo Dios</h1>
                 <p style="font-size: 1.1rem; color: #a1a1aa; max-width: 500px; margin-bottom: 30px;">Selecciona un cliente en el menú lateral izquierdo para gestionar su menú, configurar su WhatsApp, o crea un nuevo cliente desde cero con Inteligencia Artificial.</p>
-                
-                <div style="background: rgba(255,255,255,0.05); padding: 20px; border-radius: 15px; border: 1px solid rgba(255,255,255,0.1); display: flex; flex-direction: column; align-items: center; min-width: 250px;">
-                    <p style="font-size: 12px; color: #6b7280; text-align: center;">Usuario activo:</p>
-                    <p id="user-email" style="font-size: 14px; font-weight: bold; text-align: center; margin-bottom: 15px; color: var(--brand-cyan);"></p>
-                    <button id="btn-logout" class="btn-primary" style="width: 100%; border:none; padding: 10px;">Cerrar Sesión</button>
-                </div>
             </section>
 
             <!-- PANTALLA DE PAGOS -->
-            <section id="payments-screen" style="display: none; padding: 20px; height: 100%; display: flex; flex-direction: column;">
+            <section id="payments-screen" style="display: none; padding: 20px; height: 100%; flex-direction: column;">
                 <header class="top-bar" style="margin-bottom: 20px;">
                     <h2>Pagos Recibidos</h2>
                 </header>
@@ -173,9 +173,29 @@
                     
                     <div class="stat-card stat-highlight" style="display: flex; flex-direction: column; justify-content: center;">
                         <h3>Acciones Rápidas</h3>
-                        <div style="display: flex; gap: 10px; margin-top: 10px;">
-                            <button id="btn-add-product" class="btn-primary btn-small">+ Añadir Producto</button>
-                            <button id="btn-import-bulk" class="btn-secondary btn-small" style="border: 1px solid var(--primary); color: var(--primary);">✨ IA Bulk</button>
+                        <div style="display: flex; flex-direction: column; gap: 10px; margin-top: 10px;">
+                            <div style="display: flex; gap: 10px;">
+                                <button id="btn-add-product" class="btn-primary btn-small" style="flex:1;">+ Producto</button>
+                                <button id="btn-import-bulk" class="btn-secondary btn-small" style="flex:1; border: 1px solid var(--primary); color: var(--primary);">✨ IA Bulk</button>
+                            </div>
+                            <button id="btn-generate-qr" class="btn-secondary btn-small" style="width: 100%;">🔲 Generar QR Menú</button>
+                        </div>
+                    </div>
+                    
+                    <div class="stat-card">
+                        <h3>Color de Marca</h3>
+                        <div style="display: flex; gap: 5px; align-items: center;">
+                            <input type="color" id="client-color-picker" style="height: 36px; width: 40px; border: none; padding: 0; cursor: pointer; background: transparent;">
+                            <input type="text" id="client-color-hex" class="modern-select" placeholder="#F97316" style="font-size: 14px; flex: 1;">
+                            <button id="btn-save-color" class="btn-primary btn-small">💾</button>
+                        </div>
+                    </div>
+
+                    <div class="stat-card" style="background: rgba(16, 185, 129, 0.1); border: 1px solid rgba(16, 185, 129, 0.3);">
+                        <h3 style="color: #10b981;">Estadísticas</h3>
+                        <div style="text-align: center; margin-top: 10px;">
+                            <span style="font-size: 11px; color: gray; text-transform: uppercase;">Visitas Totales</span>
+                            <h2 id="client-visitas" style="font-size: 2rem; margin: 0; color: #10b981;">0</h2>
                         </div>
                     </div>
                 </div>
@@ -249,6 +269,49 @@
         </div>
     </div>
 
+    <script type="module" src="js/app.js"></script>
+    <!-- MODAL EDITAR PRODUCTO -->
+    <div id="edit-product-modal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 1000; justify-content: center; align-items: center;">
+        <div style="background: var(--bg-card); padding: 25px; border-radius: 12px; border: 1px solid var(--border); width: 90%; max-width: 400px;">
+            <h3 style="margin-bottom: 15px; color: white;">✏️ Editar Producto</h3>
+            <input type="hidden" id="edit-product-index">
+            
+            <label style="font-size: 12px; color: gray;">Nombre</label>
+            <input type="text" id="edit-product-nombre" class="input-modern" style="margin-bottom: 15px; width: 100%; box-sizing: border-box;">
+            
+            <label style="font-size: 12px; color: gray;">Precio ($)</label>
+            <input type="number" step="0.01" id="edit-product-precio" class="input-modern" style="margin-bottom: 15px; width: 100%; box-sizing: border-box;">
+            
+            <label style="font-size: 12px; color: gray;">Categoría</label>
+            <input type="text" id="edit-product-categoria" class="input-modern" style="margin-bottom: 15px; width: 100%; box-sizing: border-box;">
+            
+            <label style="font-size: 12px; color: gray;">Descripción</label>
+            <input type="text" id="edit-product-descripcion" class="input-modern" style="margin-bottom: 15px; width: 100%; box-sizing: border-box;">
+            
+            <label style="font-size: 12px; color: gray;">Imagen (URL o archivo)</label>
+            <input type="text" id="edit-product-imagen" class="input-modern" style="margin-bottom: 20px; width: 100%; box-sizing: border-box;">
+            
+            <div style="display: flex; gap: 10px;">
+                <button id="btn-cancel-edit-product" class="btn-secondary" style="flex: 1;">Cancelar</button>
+                <button id="btn-save-edit-product" class="btn-primary" style="flex: 1;">Guardar Cambios</button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- MODAL QR -->
+    <div id="qr-modal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 1000; justify-content: center; align-items: center;">
+        <div style="background: var(--bg-card); padding: 25px; border-radius: 12px; border: 1px solid var(--border); width: 90%; max-width: 350px; text-align: center;">
+            <h3 style="margin-bottom: 15px; color: white;">Código QR del Menú</h3>
+            <div id="qr-code-container" style="background: white; padding: 20px; border-radius: 8px; display: inline-block; margin-bottom: 15px;"></div>
+            <p id="qr-url-text" style="color: var(--brand-orange); font-size: 12px; margin-bottom: 20px; word-break: break-all;"></p>
+            <div style="display: flex; gap: 10px;">
+                <button id="btn-close-qr" class="btn-secondary" style="flex: 1;">Cerrar</button>
+                <button id="btn-download-qr" class="btn-primary" style="flex: 1;">📥 Descargar</button>
+            </div>
+        </div>
+    </div>
+    
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
     <script type="module" src="js/app.js"></script>
 </body>
 </html>
