@@ -33,9 +33,25 @@
                     <input type="email" id="email" required placeholder="admin@growstudio.com">
                 </div>
                 <div class="input-group">
-                    <label>Contraseña</label>
-                    <input type="password" id="password" required placeholder="••••••••">
+                <label for="password">Contraseña</label>
+                <div style="position: relative; display: flex; align-items: center;">
+                    <input type="password" id="password" placeholder="••••••••" style="width: 100%; padding-right: 40px; box-sizing: border-box;" required>
+                    <button type="button" id="toggle-pass" style="position: absolute; right: 10px; background: none; border: none; color: gray; cursor: pointer; font-size: 16px;">👁️</button>
                 </div>
+            </div>
+            
+            <script>
+                document.getElementById('toggle-pass').addEventListener('click', function() {
+                    const passInput = document.getElementById('password');
+                    if (passInput.type === 'password') {
+                        passInput.type = 'text';
+                        this.textContent = '🙈';
+                    } else {
+                        passInput.type = 'password';
+                        this.textContent = '👁️';
+                    }
+                });
+            </script>
                 <button type="submit" class="btn-primary" style="width: 100%;">Iniciar Sesión</button>
                 <div style="text-align: center; margin-top: 15px;">
                     <button type="button" id="btn-forgot-password" style="background: none; border: none; color: var(--brand-cyan); cursor: pointer; font-size: 14px; text-decoration: underline;">¿Olvidaste tu contraseña?</button>
