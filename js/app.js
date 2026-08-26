@@ -1,64 +1,1028 @@
-// =========================================
-// CÓDIGO ESPECÍFICO DEL CLIENTE
-// =========================================
-// Nota: Toda la lógica principal (Carrito, PWA, BCV, Kill Switch) 
-// ahora vive en el Cerebro Central (Grow Studio Core).
-//
-// Usa este archivo ÚNICAMENTE si este cliente en particular 
-// necesita una función personalizada que los demás no tienen.
+﻿import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+import { getAuth, signInWithEmailAndPassword, onAuthStateChanged, signOut, sendPasswordResetEmail } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+import { getFirestore, collection, addDoc, getDocs, doc, deleteDoc, updateDoc, onSnapshot, getDoc, query, orderBy, setDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
-// =========================================
-// OVERRIDE: WHATSAPP CHECKOUT (DEMO VERSION)
-// =========================================
-function sendOrder() {
-    if (typeof cart === 'undefined' || cart.length === 0) {
-        alert("¡Tu carrito está vacío! Agrega algunos productos para probar la demo.");
+// ConfiguraciÃƒÆ’Ã‚Â³n de Firebase (Generada automÃƒÆ’Ã‚Â¡ticamente)
+const firebaseConfig = {
+    projectId: "grow-studio-menus",
+    appId: "1:152582182898:web:cf17e88b6b1f861cdc7d6b",
+    storageBucket: "grow-studio-menus.firebasestorage.app",
+    apiKey: "AIzaSyAv7GDSLS3Kwb-aMAhyQE3YgnPkCNg8cvg",
+    authDomain: "grow-studio-menus.firebaseapp.com",
+    messagingSenderId: "152582182898",
+};
+
+// Inicializar Firebase
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+const db = getFirestore(app);
+
+// Elementos del DOM
+const loginScreen = document.getElementById('login-screen');
+const dashboardScreen = document.getElementById('dashboard-screen');
+const loginForm = document.getElementById('login-form');
+const loginError = document.getElementById('login-error');
+const userEmailDisplay = document.getElementById('user-email');
+const btnLogout = document.getElementById('btn-logout');
+const clientsUl = document.getElementById('clients-ul');
+const btnNewClient = document.getElementById('btn-new-client');
+const clientManager = document.getElementById('client-manager');
+const managerTitle = document.getElementById('manager-title');
+const clientStatus = document.getElementById('client-status');
+const storeStatus = document.getElementById('store-status');
+const clientWhatsapp = document.getElementById('client-whatsapp');
+const btnSaveWhatsapp = document.getElementById('btn-save-whatsapp');
+const clientUrl = document.getElementById('client-url');
+const btnSaveUrl = document.getElementById('btn-save-url');
+const clientLink = document.getElementById('client-link');
+const productsTbody = document.getElementById('products-tbody');
+const btnAddProduct = document.getElementById('btn-add-product');
+const btnDeleteClient = document.getElementById('btn-delete-client');
+
+let currentClientId = null;
+
+// ==========================================
+// AUTENTICACIÃƒÆ’Ã¢â‚¬Å“N
+// ==========================================
+
+onAuthStateChanged(auth, (user) => {
+    if (user) {
+        // Usuario Logueado
+        loginScreen.style.display = 'none';
+        dashboardScreen.style.display = 'flex';
+        userEmailDisplay.innerText = user.email;
+        loadClients();
+        if (window.correrRobotCobrador) window.correrRobotCobrador();
+    } else {
+        // No logueado
+        loginScreen.style.display = 'flex';
+        dashboardScreen.style.display = 'none';
+        currentClientId = null;
+    }
+});
+
+loginForm.addEventListener('submit', (e) => {
+    e.preventDefault();
+    const email = document.getElementById('email').value;
+    const password = document.getElementById('password').value;
+    
+    signInWithEmailAndPassword(auth, email, password)
+        .catch((error) => {
+            loginError.innerText = "Credenciales incorrectas o usuario no existe.";
+            loginError.style.display = 'block';
+        });
+});
+
+btnLogout.addEventListener('click', () => {
+    signOut(auth);
+});
+
+const btnForgotPassword = document.getElementById('btn-forgot-password');
+btnForgotPassword.addEventListener('click', async () => {
+    const email = document.getElementById('email').value.trim();
+    if (!email) {
+        alert("Por favor, ingresa tu correo electrÃƒÆ’Ã‚Â³nico primero en la casilla de arriba para enviarte el link de recuperaciÃƒÆ’Ã‚Â³n.");
+        return;
+    }
+    try {
+        await sendPasswordResetEmail(auth, email);
+        alert("Ãƒâ€šÃ‚Â¡Enlace de recuperaciÃƒÆ’Ã‚Â³n enviado! Revisa tu bandeja de entrada (y la carpeta de SPAM).");
+    } catch (error) {
+        alert("Error al enviar el correo. Verifica que el correo estÃƒÆ’Ã‚Â© bien escrito y exista.");
+    }
+});
+
+// ==========================================
+// GESTIÃƒÆ’Ã¢â‚¬Å“N DE CLIENTES
+// ==========================================
+
+async function loadClients() {
+    clientsUl.innerHTML = '<li style="color:gray">Cargando...</li>';
+    try {
+        const querySnapshot = await getDocs(collection(db, "clientes"));
+        clientsUl.innerHTML = '';
+        
+        if (querySnapshot.empty) {
+            clientsUl.innerHTML = '<li style="color:gray">No hay clientes aÃƒÆ’Ã‚Âºn</li>';
+            return;
+        }
+
+        querySnapshot.forEach((docSnap) => {
+            const data = docSnap.data();
+            const li = document.createElement('li');
+            li.innerHTML = `
+                <span style="font-weight: bold;">ðŸ‘©ðŸ»â€ðŸ’» ${data.nombre || data.businessName || docSnap.id}</span>
+                <div style="font-size: 12px; color: #9ca3af; margin-top: 3px;">
+                    Estado: <span style="color: ${data.estado === 'ACTIVO' ? '#10b981' : '#ef4444'}">${data.estado || 'INACTIVO'}</span> | Deuda: $${data.deuda || 0}
+                </div>
+            `;
+            li.onclick = () => openClientManager(docSnap.id, data, li);
+            clientsUl.appendChild(li);
+        });
+    } catch (error) {
+        console.error("Error cargando clientes:", error);
+        clientsUl.innerHTML = '<li style="color:red">Error de conexiÃƒÆ’Ã‚Â³n</li>';
+    }
+}
+
+btnNewClient.addEventListener('click', async () => {
+    document.querySelectorAll('#clients-ul li').forEach(li => li.classList.remove('active'));
+    btnNewClient.classList.add('active');
+    
+    const id = prompt("Ingresa el ID ÃƒÆ’Ã‚Âºnico del cliente (ej. la_flaca, foodpoint):");
+    if (!id) return;
+    
+    const name = prompt("Nombre comercial del cliente (ej. Pasteles La Flaca):");
+    if (!name) return;
+
+    const whatsapp = prompt("NÃƒÆ’Ã‚Âºmero de WhatsApp del cliente con cÃƒÆ’Ã‚Â³digo de paÃƒÆ’Ã‚Â­s (ej. 584120000000):") || "";
+    const url = prompt("Link de la tienda en Vercel (Opcional, ej: https://laflaca.vercel.app):") || "";
+
+    try {
+        await setDoc(doc(db, "clientes", id), {
+            businessName: name,
+            estado: "ACTIVO",
+            tiendaAbierta: "AUTO",
+            whatsapp: whatsapp,
+            url: url,
+            productos: []
+        });
+        loadClients();
+    } catch (e) {
+        alert("Error creando cliente: " + e.message);
+    }
+});
+
+// ==========================================
+// RENDERIZADO Y CONTROL DE PRODUCTOS Y PROMOS
+// ==========================================
+let currentClientData = null; // Guardar datos para actualizaciones rÃƒÆ’Ã‚Â¡pidas
+
+async function openClientManager(id, data, liElement) {
+    currentClientId = id;
+    currentClientData = data;
+    
+    document.getElementById('welcome-screen').style.display = 'none';
+    clientManager.style.display = 'block';
+    
+    if (document.getElementById('payments-screen')) {
+        document.getElementById('payments-screen').style.display = 'none';
+    }
+
+    // Titulo y Link
+    const titleText = document.createTextNode(`MenÃƒÆ’Ã‚Âº de: ${data.nombre || data.businessName || id} `);
+    managerTitle.innerHTML = '';
+    managerTitle.appendChild(titleText);
+    
+    if (data.url) {
+        clientLink.href = data.url.startsWith('http') ? data.url : `https://${data.url}`;
+        clientLink.style.display = 'inline-block';
+        managerTitle.appendChild(clientLink);
+    } else {
+        clientLink.style.display = 'none';
+    }
+
+    if (document.getElementById('client-mensualidad')) {
+        document.getElementById('client-mensualidad').value = data.mensualidad || 0;
+        document.getElementById('client-deuda').value = data.deuda || 0;
+        document.getElementById('client-corte').value = data.diaCorte || 1;
+    }
+    managerTitle.appendChild(clientLink); // mantener en dom
+
+    clientStatus.value = data.estado || "ACTIVO";
+    storeStatus.value = data.tiendaAbierta || "AUTO";
+    clientWhatsapp.value = data.whatsapp || "";
+    clientUrl.value = data.url || "";
+    btnDeleteClient.style.display = 'block';
+    
+    // New fields
+    const colorHex = data.colorPrimario || "#F97316";
+    document.getElementById('client-color-picker').value = colorHex;
+    document.getElementById('client-color-hex').value = colorHex;
+    document.getElementById('client-status-abierto').checked = data.recibirPedidos !== false;
+    document.getElementById('client-visitas').innerText = data.visitas || 0;
+    
+    document.querySelectorAll('#clients-ul li').forEach(li => li.classList.remove('active'));
+    document.getElementById('btn-new-client').classList.remove('active');
+    if (liElement) liElement.classList.add('active');
+    
+    // Si no tiene promos creadas por defecto, creamos promo1 y promo2 apagadas visualmente
+    if (!data.promos || data.promos.length === 0) {
+        data.promos = [
+            { imagen: 'promo1.jpg', activo: 'NO' },
+            { imagen: 'promo2.jpg', activo: 'NO' }
+        ];
+    }
+    
+    renderProducts(data.productos || []);
+    renderPromos(data.promos);
+}
+
+// Eliminar Cliente
+btnDeleteClient.addEventListener('click', async () => {
+    if (!currentClientId) return;
+    const confirmacion = confirm(`Ãƒâ€šÃ‚Â¿EstÃƒÆ’Ã‚Â¡s SEGURO de que quieres borrar a ${currentClientId} por completo? Esto eliminarÃƒÆ’Ã‚Â¡ todo su menÃƒÆ’Ã‚Âº y configuraciÃƒÆ’Ã‚Â³n.`);
+    if (confirmacion) {
+        try {
+            const { deleteDoc, doc } = await import("https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js");
+            await deleteDoc(doc(db, "clientes", currentClientId));
+            alert("Cliente eliminado correctamente.");
+            clientManager.style.display = 'none';
+            document.getElementById('welcome-screen').style.display = 'flex';
+            btnDeleteClient.style.display = 'none';
+            currentClientId = null;
+            loadClients();
+        } catch (error) {
+            alert("Error al eliminar cliente: " + error.message);
+        }
+    }
+});
+
+// Cambiar estado (Kill Switch)
+clientStatus.addEventListener('change', async (e) => {
+    if (!currentClientId) return;
+    try {
+        const { doc, updateDoc } = await import("https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js");
+        await updateDoc(doc(db, "clientes", currentClientId), {
+            estado: e.target.value
+        });
+    } catch (error) {
+        alert("Error al actualizar estado.");
+    }
+});
+
+// Cambiar Horario (Abierto/Cerrado/Auto)
+storeStatus.addEventListener('change', async (e) => {
+    if (!currentClientId) return;
+    try {
+        const { doc, updateDoc } = await import("https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js");
+        await updateDoc(doc(db, "clientes", currentClientId), {
+            tiendaAbierta: e.target.value
+        });
+    } catch (error) {
+        alert("Error al actualizar horario.");
+    }
+});
+
+// Cambiar WhatsApp
+btnSaveWhatsapp.addEventListener('click', async () => {
+    if (!currentClientId) return;
+    try {
+        const { doc, updateDoc } = await import("https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js");
+        await updateDoc(doc(db, "clientes", currentClientId), {
+            whatsapp: clientWhatsapp.value.trim()
+        });
+        alert("NÃƒÆ’Ã‚Âºmero de WhatsApp guardado en la nube.");
+    } catch (error) {
+        alert("Error al guardar WhatsApp.");
+    }
+});
+
+// Cambiar URL
+btnSaveUrl.addEventListener('click', async () => {
+    if (!currentClientId) return;
+    try {
+        const { doc, updateDoc } = await import("https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js");
+        const newUrl = clientUrl.value.trim();
+        await updateDoc(doc(db, "clientes", currentClientId), {
+            url: newUrl
+        });
+        
+        // Update the link UI immediately
+        if (newUrl) {
+            clientLink.href = newUrl.startsWith('http') ? newUrl : `https://${newUrl}`;
+            clientLink.style.display = 'inline-block';
+        } else {
+            clientLink.style.display = 'none';
+        }
+        
+        alert("URL guardada en la nube. Ãƒâ€šÃ‚Â¡Ya puedes hacer clic en el link ÃƒÂ°Ã…Â¸Ã¢â‚¬ÂÃ¢â‚¬â€ junto al tÃƒÆ’Ã‚Â­tulo!");
+    } catch (error) {
+        alert("Error al guardar URL.");
+    }
+});
+
+// Productos
+function renderProducts(productos) {
+    productsTbody.innerHTML = '';
+    if (productos.length === 0) {
+        productsTbody.innerHTML = '<tr><td colspan="6" style="text-align:center; color:gray">No hay productos.</td></tr>';
         return;
     }
 
-    const nameInput = document.getElementById('customer-name');
-    const addressInput = document.getElementById('customer-address');
-    const notesInput = document.getElementById('customer-notes');
-    const referralInput = document.getElementById('referral-code');
-    
-    const name = nameInput ? nameInput.value.trim() : '';
-    const address = addressInput ? addressInput.value.trim() : '';
-    const notes = notesInput ? notesInput.value.trim() : '';
-    const referral = referralInput ? referralInput.value.trim() : '';
-    
-    const deliverySelect = document.getElementById('delivery-zone');
-    const deliveryName = deliverySelect ? deliverySelect.options[deliverySelect.selectedIndex].text : 'Delivery';
-    const deliveryCost = deliverySelect ? parseFloat(deliverySelect.value) : 0;
+    productos.forEach((p, index) => {
+        const tr = document.createElement('tr');
+        
+        let imgSrc = '';
+        if (p.imagen && (p.imagen.startsWith('http://') || p.imagen.startsWith('https://'))) {
+            imgSrc = p.imagen;
+        } else if (p.imagen && currentClientData && currentClientData.url) {
+            let baseUrl = currentClientData.url.trim();
+            if (!baseUrl.startsWith('http')) baseUrl = 'https://' + baseUrl;
+            baseUrl = baseUrl.replace(/\/$/, '');
+            imgSrc = baseUrl + '/img/' + p.imagen;
+        }
 
-    let subtotal = 0;
-    
-    let text = `==========================\r\n`;
-    text += `*NUEVO LEAD / PRUEBA DE DEMO*\r\n`;
-    text += `==========================\r\n\r\n`;
-    
-    text += `*DATOS DEL CLIENTE*\r\n`;
-    text += `- Cliente: ${name || 'Cliente Demo'}\r\n`;
-    if (address) text += `- Dirección: ${address}\r\n`;
-    text += `- Zona: ${deliveryName}\r\n`;
-    if (notes) text += `- Notas: ${notes}\r\n`;
-    if (referral) text += `- Código de Referido: *${referral}*\r\n`;
-    
-    text += `\r\n*PRODUCTOS DE PRUEBA*\r\n`;
-
-    cart.forEach(item => {
-        const itemTotal = item.precio * item.qty;
-        subtotal += itemTotal;
-        text += `• ${item.qty}x ${item.nombre} ($${itemTotal.toFixed(2)})\r\n`;
+        let imgHtml = '';
+        if (imgSrc) {
+            imgHtml = `<img src="${imgSrc}" class="zoomable-img" width="50" height="50" alt="img" style="border-radius:4px; object-fit:cover;" onerror="this.outerHTML='<div style=\\'width:50px;height:50px;background:var(--bg-dark);font-size:10px;color:gray;display:flex;align-items:center;text-align:center;border-radius:4px;\\'>ÃƒÂ°Ã…Â¸Ã¢â‚¬â€œÃ‚Â¼ÃƒÂ¯Ã‚Â¸Ã‚Â<br>${p.imagen}</div>'">`;
+        } else {
+            imgHtml = `<div style="width: 50px; height: 50px; background: var(--bg-dark); border: 1px dashed var(--border); display: flex; align-items: center; justify-content: center; font-size: 10px; text-align: center; color: gray; border-radius: 4px; overflow: hidden;" title="img/${p.imagen}">ÃƒÂ°Ã…Â¸Ã¢â‚¬â€œÃ‚Â¼ÃƒÂ¯Ã‚Â¸Ã‚Â?<br>${p.imagen}</div>`;
+        }
+        
+        const isChecked = p.activo === 'SI' ? 'checked' : '';
+        
+        tr.innerHTML = `
+            <td>${imgHtml}</td>
+            <td><strong>${p.nombre}</strong><br><small style="color:gray">${p.descripcion}</small></td>
+            <td>${p.categoria}</td>
+            <td>$${parseFloat(p.precio).toFixed(2)}</td>
+            <td>
+                <label class="switch">
+                    <input type="checkbox" ${isChecked} onchange="toggleProduct(${index})">
+                    <span class="slider round"></span>
+                </label>
+            </td>
+            <td>
+                <button class="btn-primary btn-small" onclick="window.editProduct(${index})" style="margin-right: 5px;">ÃƒÂ¢Ã…â€œÃ‚ÂÃƒÂ¯Ã‚Â¸Ã‚Â</button>
+                <button class="btn-secondary btn-small" onclick="window.deleteProduct(${index})">ÃƒÂ°Ã…Â¸Ã¢â‚¬â€Ã¢â‚¬ËœÃƒÂ¯Ã‚Â¸Ã‚Â</button>
+            </td>
+        `;
+        productsTbody.appendChild(tr);
     });
-
-    const totalUsd = subtotal + deliveryCost;
-
-    text += `\r\n*TOTAL A PAGAR: $${totalUsd.toFixed(2)}*\r\n\r\n`;
-    text += `🔥 Hola! Estoy probando la Demo. Me interesa un menú digital interactivo como este para mi negocio. INFO DEMO`;
-
-    const encodedText = encodeURIComponent(text);
-    const whatsappNum = clientConfig && clientConfig.whatsapp ? clientConfig.whatsapp : "584127732710";
-    const whatsappUrl = `https://wa.me/${whatsappNum}?text=${encodedText}`;
-    
-    window.open(whatsappUrl, '_blank');
 }
+
+window.toggleProduct = async function(index) {
+    const p = currentClientData.productos[index];
+    p.activo = p.activo === 'SI' ? 'NO' : 'SI';
+    try {
+        const { doc, updateDoc } = await import("https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js");
+        await updateDoc(doc(db, "clientes", currentClientId), {
+            productos: currentClientData.productos
+        });
+    } catch (e) {
+        alert("Error al cambiar estado.");
+        // Revert UI on failure
+        p.activo = p.activo === 'SI' ? 'NO' : 'SI'; 
+        renderProducts(currentClientData.productos);
+    }
+};
+
+window.deleteProduct = async function(index) {
+    if(!confirm("Ãƒâ€šÃ‚Â¿Eliminar este producto?")) return;
+    currentClientData.productos.splice(index, 1);
+    try {
+        const { doc, updateDoc } = await import("https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js");
+        await updateDoc(doc(db, "clientes", currentClientId), {
+            productos: currentClientData.productos
+        });
+        renderProducts(currentClientData.productos);
+    } catch (e) {
+        alert("Error.");
+    }
+};
+
+// Promociones
+const promosTbody = document.getElementById('promos-tbody');
+const btnAddPromo = document.getElementById('btn-add-promo');
+
+function renderPromos(promos) {
+    promosTbody.innerHTML = '';
+    if (promos.length === 0) {
+        promosTbody.innerHTML = '<tr><td colspan="3" style="text-align:center; color:gray">No hay promos.</td></tr>';
+        return;
+    }
+
+    promos.forEach((p, index) => {
+        let imgSrc = '';
+        if (p.imagen && (p.imagen.startsWith('http://') || p.imagen.startsWith('https://'))) {
+            imgSrc = p.imagen;
+        } else if (p.imagen && currentClientData && currentClientData.url) {
+            let baseUrl = currentClientData.url.trim();
+            if (!baseUrl.startsWith('http')) baseUrl = 'https://' + baseUrl;
+            baseUrl = baseUrl.replace(/\/$/, '');
+            imgSrc = baseUrl + '/img/' + p.imagen;
+        }
+
+        let imgHtml = '';
+        if (imgSrc) {
+            imgHtml = `<img src="${imgSrc}" class="zoomable-img" width="50" height="50" alt="img" style="border-radius:4px; object-fit:cover;" onerror="this.outerHTML='<div style=\\'width:50px;height:50px;background:var(--bg-dark);font-size:10px;color:gray;display:flex;align-items:center;text-align:center;border-radius:4px;\\'>ÃƒÂ°Ã…Â¸Ã¢â‚¬â€œÃ‚Â¼ÃƒÂ¯Ã‚Â¸Ã‚Â<br>${p.imagen}</div>'">`;
+        } else {
+            imgHtml = `<div style="width: 50px; height: 50px; background: var(--bg-dark); border: 1px dashed var(--border); display: flex; align-items: center; justify-content: center; font-size: 10px; color: gray; border-radius: 4px; overflow: hidden;" title="${p.imagen}">ÃƒÂ°Ã…Â¸Ã¢â‚¬â€œÃ‚Â¼ÃƒÂ¯Ã‚Â¸Ã‚Â<br>Banner</div>`;
+        }
+
+        const tr = document.createElement('tr');
+        const isChecked = p.activo === 'SI' ? 'checked' : '';
+        
+        tr.innerHTML = `
+            <td>
+                <div style="display: flex; align-items: center; gap: 10px;">
+                    ${imgHtml}
+                    <strong>${p.imagen}</strong>
+                </div>
+            </td>
+            <td>
+                <label class="switch">
+                    <input type="checkbox" ${isChecked} onchange="togglePromo(${index})">
+                    <span class="slider round"></span>
+                </label>
+            </td>
+            <td>
+                <button class="btn-secondary btn-small" onclick="deletePromo(${index})">ÃƒÂ°Ã…Â¸Ã¢â‚¬â€Ã¢â‚¬ËœÃƒÂ¯Ã‚Â¸Ã‚Â</button>
+            </td>
+        `;
+        promosTbody.appendChild(tr);
+    });
+}
+
+window.togglePromo = async function(index) {
+    const p = currentClientData.promos[index];
+    p.activo = p.activo === 'SI' ? 'NO' : 'SI';
+    try {
+        const { doc, updateDoc } = await import("https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js");
+        await updateDoc(doc(db, "clientes", currentClientId), {
+            promos: currentClientData.promos
+        });
+    } catch (e) {
+        alert("Error al cambiar promo.");
+        p.activo = p.activo === 'SI' ? 'NO' : 'SI'; 
+        renderPromos(currentClientData.promos);
+    }
+};
+
+window.deletePromo = async function(index) {
+    if(!confirm("Ãƒâ€šÃ‚Â¿Eliminar esta promo de la lista?")) return;
+    currentClientData.promos.splice(index, 1);
+    try {
+        const { doc, updateDoc } = await import("https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js");
+        await updateDoc(doc(db, "clientes", currentClientId), {
+            promos: currentClientData.promos
+        });
+        renderPromos(currentClientData.promos);
+    } catch (e) {
+        alert("Error.");
+    }
+};
+
+btnAddPromo.addEventListener('click', async () => {
+    const filename = prompt("Nombre del archivo de imagen (ej. promo3.jpg):");
+    if(!filename) return;
+    
+    currentClientData.promos.push({ imagen: filename, activo: 'SI' });
+    
+    try {
+        const { doc, updateDoc } = await import("https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js");
+        await updateDoc(doc(db, "clientes", currentClientId), {
+            promos: currentClientData.promos
+        });
+        renderPromos(currentClientData.promos);
+    } catch (e) {
+        alert("Error.");
+    }
+});
+
+const btnImportBulk = document.getElementById('btn-import-bulk');
+const importModal = document.getElementById('import-modal');
+const btnConfirmImport = document.getElementById('btn-confirm-import');
+const btnCancelImport = document.getElementById('btn-cancel-import');
+const importRawText = document.getElementById('import-raw-text');
+const geminiApiKey = document.getElementById('gemini-api-key');
+const aiLoadingText = document.getElementById('ai-loading-text');
+
+// AÃƒÆ’Ã‚Â±adir Producto MÃƒÆ’Ã‚Â­nimo Viable (usando prompts por rapidez de la primera versiÃƒÆ’Ã‚Â³n)
+btnAddProduct.addEventListener('click', async () => {
+    if (!currentClientId) return;
+    
+    const nombre = prompt("Nombre del producto:");
+    if (!nombre) return;
+    const precio = prompt("Precio en dÃƒÆ’Ã‚Â³lares (ej. 5.50):");
+    const categoria = prompt("CategorÃƒÆ’Ã‚Â­a (ej. Promociones, Hamburguesas):");
+    const imagen = prompt("URL de la imagen:");
+    const descripcion = prompt("DescripciÃƒÆ’Ã‚Â³n corta:");
+    const extras = prompt("Nombres de los extras separados por coma (opcional):");
+
+    const nuevoProducto = {
+        nombre: nombre,
+        precio: parseFloat(precio) || 0,
+        categoria: categoria || "General",
+        imagen: imagen || "https://placehold.co/400",
+        descripcion: descripcion || "",
+        extras: extras || ""
+    };
+
+    try {
+        const docRef = doc(db, "clientes", currentClientId);
+        const docSnap = await getDoc(docRef);
+        const data = docSnap.data();
+        const productosActuales = data.productos || [];
+        productosActuales.push(nuevoProducto);
+        
+        await updateDoc(docRef, { productos: productosActuales });
+        renderProducts(productosActuales);
+    } catch (e) {
+        alert("Error al guardar producto.");
+    }
+});
+
+// LÃƒÆ’Ã‚Â³gica para el botÃƒÆ’Ã‚Â³n Importar con IA
+btnImportBulk.addEventListener('click', () => {
+    importRawText.value = ''; // Limpiar el ÃƒÆ’Ã‚Â¡rea de texto
+    // Cargar API key guardada
+    const savedKey = localStorage.getItem('gemini_api_key');
+    if (savedKey) geminiApiKey.value = savedKey;
+    importModal.style.display = 'flex';
+});
+
+btnCancelImport.addEventListener('click', () => {
+    importModal.style.display = 'none';
+});
+
+btnConfirmImport.addEventListener('click', async () => {
+    if (!currentClientId) return;
+    
+    const rawText = importRawText.value.trim();
+    const apiKey = geminiApiKey.value.trim();
+    
+    if (!rawText || !apiKey) {
+        alert("Por favor, ingresa el texto del menÃƒÆ’Ã‚Âº y tu API Key de Gemini.");
+        return;
+    }
+    
+    // Guardar la llave para el futuro
+    localStorage.setItem('gemini_api_key', apiKey);
+    
+    try {
+        btnConfirmImport.disabled = true;
+        btnCancelImport.disabled = true;
+        aiLoadingText.style.display = 'block';
+        
+        // Llamada a la API de Gemini (REST) usando el modelo mÃƒÆ’Ã‚Â¡s reciente (3.6-flash)
+        const promptText = `
+        Tengo este menÃƒÆ’Ã‚Âº crudo de un restaurante. Extrae todos los productos y devuÃƒÆ’Ã‚Â©lvelos estrictamente como un arreglo de objetos JSON con esta estructura exacta, basÃƒÆ’Ã‚Â¡ndote en un esquema de Excel, sin texto extra:
+        [
+          {
+            "id": "generar un ID numÃƒÆ’Ã‚Â©rico ÃƒÆ’Ã‚Âºnico",
+            "categoria": "string (usa tu mejor juicio, ej: Hamburguesas, Bebidas)",
+            "nombre": "string",
+            "descripcion": "string (ingredientes)",
+            "precio": number (solo el nÃƒÆ’Ã‚Âºmero, ej: 5.50),
+            "imagen": "string (nombre archivo, ej: hamburguesa.jpg o url)",
+            "activo": "SI"
+          }
+        ]
+        
+        MenÃƒÆ’Ã‚Âº crudo a procesar:
+        ${rawText}
+        `;
+        
+        const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-3.6-flash:generateContent?key=${apiKey}`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                contents: [{ parts: [{ text: promptText }] }]
+            })
+        });
+        
+        const result = await response.json();
+        
+        if (result.error) {
+            throw new Error(result.error.message);
+        }
+        
+        let aiResponseText = result.candidates[0].content.parts[0].text;
+        
+        // Limpiar el texto en caso de que Gemini haya devuelto markdown
+        aiResponseText = aiResponseText.replace(/```json/g, '').replace(/```/g, '').trim();
+        
+        const jsonData = JSON.parse(aiResponseText);
+        
+        if (!Array.isArray(jsonData)) {
+            throw new Error("La IA no devolviÃƒÆ’Ã‚Â³ una lista vÃƒÆ’Ã‚Â¡lida.");
+        }
+        
+        // Formatear precios por seguridad
+        const cleanData = jsonData.map(p => ({
+            ...p,
+            precio: parseFloat(p.precio) || 0
+        }));
+        
+        const docRef = doc(db, "clientes", currentClientId);
+        const docSnap = await getDoc(docRef);
+        const data = docSnap.data();
+        let productosActuales = data.productos || [];
+        
+        // Agregar los nuevos productos a los existentes
+        productosActuales = productosActuales.concat(cleanData);
+        
+        await updateDoc(docRef, { productos: productosActuales });
+        renderProducts(productosActuales);
+        
+        importModal.style.display = 'none';
+        alert(`Ãƒâ€šÃ‚Â¡Inteligencia Artificial Exitosamente aplicada! Se importaron ${cleanData.length} productos automÃƒÆ’Ã‚Â¡ticamente.`);
+    } catch (e) {
+        alert("Error de la IA o de red: " + e.message);
+    } finally {
+        btnConfirmImport.disabled = false;
+        btnCancelImport.disabled = false;
+        aiLoadingText.style.display = 'none';
+    }
+});
+
+window.editProduct = async (index) => {
+    if (!currentClientId) return;
+    const p = currentClientData.productos[index];
+    
+    document.getElementById('edit-product-index').value = index;
+    document.getElementById('edit-product-nombre').value = p.titulo || p.nombre || '';
+    document.getElementById('edit-product-precio').value = parseFloat(p.precio) || 0;
+    document.getElementById('edit-product-categoria').value = p.categoria || '';
+    document.getElementById('edit-product-descripcion').value = p.descripcion || '';
+    document.getElementById('edit-product-imagen').value = p.imagen || '';
+    
+    document.getElementById('edit-product-modal').style.display = 'flex';
+};
+
+document.getElementById('btn-cancel-edit-product').addEventListener('click', () => {
+    document.getElementById('edit-product-modal').style.display = 'none';
+});
+
+document.getElementById('btn-save-edit-product').addEventListener('click', async () => {
+    if (!currentClientId) return;
+    const index = parseInt(document.getElementById('edit-product-index').value);
+    const p = currentClientData.productos[index];
+    
+    const nombre = document.getElementById('edit-product-nombre').value.trim();
+    const precio = parseFloat(document.getElementById('edit-product-precio').value) || 0;
+    const categoria = document.getElementById('edit-product-categoria').value.trim();
+    const descripcion = document.getElementById('edit-product-descripcion').value.trim();
+    const imagen = document.getElementById('edit-product-imagen').value.trim();
+    
+    if (!nombre) {
+        alert("El nombre es obligatorio");
+        return;
+    }
+    
+    currentClientData.productos[index] = {
+        ...p,
+        titulo: nombre,
+        nombre: nombre,
+        precio: precio,
+        categoria: categoria,
+        descripcion: descripcion,
+        imagen: imagen
+    };
+    
+    try {
+        const { doc, updateDoc } = await import("https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js");
+        await updateDoc(doc(db, "clientes", currentClientId), {
+            productos: currentClientData.productos
+        });
+        renderProducts(currentClientData.productos);
+        document.getElementById('edit-product-modal').style.display = 'none';
+    } catch (e) {
+        alert("Error al actualizar producto.");
+    }
+});
+
+// Exponer la funciÃƒÆ’Ã‚Â³n delete al window para el onclick del HTML
+window.deleteProduct = async (index) => {
+    if (!currentClientId || !confirm("Ãƒâ€šÃ‚Â¿Eliminar producto?")) return;
+    
+    try {
+        const docRef = doc(db, "clientes", currentClientId);
+        const docSnap = await getDoc(docRef);
+        const data = docSnap.data();
+        let productosActuales = data.productos || [];
+        productosActuales.splice(index, 1); // Remover el item
+        
+        await updateDoc(docRef, { productos: productosActuales });
+        renderProducts(productosActuales);
+    } catch (e) {
+        alert("Error al eliminar.");
+    }
+};
+
+// ==========================================
+// MÃƒÆ’Ã¢â‚¬Å“DULO DE PAGOS Y FACTURACIÃƒÆ’Ã¢â‚¬Å“N (ROBOT COBRADOR)
+// ==========================================
+const btnViewPayments = document.getElementById('btn-view-payments');
+const paymentsScreen = document.getElementById('payments-screen');
+const paymentsTbody = document.getElementById('payments-tbody');
+
+// BotÃƒÆ’Ã‚Â³n sidebar para ver pagos
+btnViewPayments.addEventListener('click', () => {
+    clientManager.style.display = 'none';
+    welcomeScreen.style.display = 'none';
+    paymentsScreen.style.display = 'flex';
+    
+    document.querySelectorAll('.menu-list li').forEach(li => li.classList.remove('active'));
+    document.querySelectorAll('.menu-btn').forEach(btn => btn.classList.remove('active'));
+    btnViewPayments.classList.add('active');
+    
+    cargarPagos();
+});
+
+async function cargarPagos() {
+    paymentsTbody.innerHTML = '<tr><td colspan="7" style="text-align:center;">Cargando pagos...</td></tr>';
+    try {
+        const q = query(collection(db, "pagos"), orderBy("fecha", "desc"));
+        const snapshot = await getDocs(q);
+        paymentsTbody.innerHTML = '';
+        
+        if (snapshot.empty) {
+            paymentsTbody.innerHTML = '<tr><td colspan="7" style="text-align:center;">No hay pagos registrados.</td></tr>';
+            return;
+        }
+
+        snapshot.forEach(docSnap => {
+            const p = docSnap.data();
+            const tr = document.createElement('tr');
+            
+            let btnAccion = '';
+            let badgeClass = 'por-revisar';
+            if (p.estado === "POR REVISAR") {
+                btnAccion = `<button class="btn-primary btn-small" onclick="window.aprobarPago('${docSnap.id}', '${p.cedula}', ${p.monto}, '${p.fechaLocal || 'Hoy'}', '${p.referencia || '-'}')">Ã¢Å“â€¦ Aprobar</button>`;
+            } else if (p.estado === "APROBADO") {
+                badgeClass = 'aprobado';
+                btnAccion = `<button class="btn-secondary btn-small" style="color:var(--brand-orange); border: 1px solid var(--brand-orange);" onclick="window.generarReciboPDF('${p.cedula}', ${p.monto}, '${p.fechaLocal || 'Hoy'}', '${p.referencia || '-'}')">Ã°Å¸â€œÂ¥ PDF</button>`;
+            }
+            
+            tr.innerHTML = `
+                <td>${p.fechaLocal || 'Reciente'}</td>
+                <td>${p.cedula}</td>
+                <td>${p.plan || 'N/A'}</td>
+                <td>$${p.monto}</td>
+                <td>${p.referencia}</td>
+                <td><span class="badge ${badgeClass}">${p.estado}</span></td>
+                <td>${btnAccion}</td>
+            `;
+            paymentsTbody.appendChild(tr);
+        });
+    } catch (error) {
+        console.error("Error al cargar pagos:", error);
+        paymentsTbody.innerHTML = '<tr><td colspan="7" style="color:red; text-align:center;">Error al cargar pagos</td></tr>';
+    }
+}
+
+// Hacer global para el onclick inline
+window.aprobarPago = async function(pagoId, cedulaPago, montoPagado, fechaPago, referenciaPago) {
+    if (!confirm("Â¿Confirmas que recibiste $" + montoPagado + " y deseas descontarlo de la deuda del cliente " + cedulaPago + "?")) return;
+    
+    try {
+        const { doc, updateDoc, getDocs, query, collection, where } = await import("https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js");
+        
+        await updateDoc(doc(db, "pagos", pagoId), {
+            estado: "APROBADO"
+        });
+
+        // Buscar al cliente por la cÃ©dula
+        const q = query(collection(db, "clientes"), where("cedula", "==", cedulaPago));
+        const clientSnap = await getDocs(q);
+        
+        if (!clientSnap.empty) {
+            clientSnap.forEach(async (cDoc) => {
+                let deudaActual = cDoc.data().deuda || 0;
+                let nuevaDeuda = deudaActual - montoPagado;
+                if (nuevaDeuda < 0) nuevaDeuda = 0;
+                
+                await updateDoc(doc(db, "clientes", cDoc.id), {
+                    deuda: nuevaDeuda,
+                    estado: "ACTIVO"
+                });
+            });
+        }
+        
+        alert("Pago aprobado y deuda descontada automÃ¡ticamente.");
+        
+        // Generar PDF
+        if (window.generarReciboPDF) {
+            window.generarReciboPDF(cedulaPago, montoPagado, fechaPago, referenciaPago);
+        }
+        
+        cargarPagos();
+    } catch (error) {
+        alert("Error al aprobar el pago: " + error.message);
+    }
+};
+
+// ==========================================
+// LÃƒÆ’Ã¢â‚¬Å“GICA DE FACTURACIÃƒÆ’Ã¢â‚¬Å“N EN EL PERFIL DEL CLIENTE
+// ==========================================
+const clientMensualidad = document.getElementById('client-mensualidad');
+const clientDeuda = document.getElementById('client-deuda');
+const clientCorte = document.getElementById('client-corte');
+const btnSaveBilling = document.getElementById('btn-save-billing');
+
+if (btnSaveBilling) {
+    btnSaveBilling.addEventListener('click', async () => {
+        if (!currentClientId) return;
+        try {
+            await updateDoc(doc(db, "clientes", currentClientId), {
+                mensualidad: parseFloat(clientMensualidad.value) || 0,
+                deuda: parseFloat(clientDeuda.value) || 0,
+                diaCorte: parseInt(clientCorte.value) || 1
+            });
+            if (currentClientData) {
+                currentClientData.mensualidad = parseFloat(clientMensualidad.value) || 0;
+                currentClientData.deuda = parseFloat(clientDeuda.value) || 0;
+                currentClientData.diaCorte = parseInt(clientCorte.value) || 1;
+            }
+            alert("Datos de facturaciÃƒÆ’Ã‚Â³n actualizados");
+        } catch (error) {
+            alert("Error: " + error.message);
+        }
+    });
+}
+
+// Robot Cobrador (Llamado en auth)
+window.correrRobotCobrador = async function() {
+    console.log("Corriendo Robot Cobrador...");
+    try {
+        const snap = await getDocs(collection(db, "clientes"));
+        const hoy = new Date();
+        const diaHoy = hoy.getDate();
+        const mesActual = hoy.getFullYear() + "-" + (hoy.getMonth() + 1);
+        
+        snap.forEach(async (docSnap) => {
+            const data = docSnap.data();
+            const mensualidad = parseFloat(data.mensualidad) || 0;
+            let deuda = parseFloat(data.deuda) || 0;
+            const diaCorte = parseInt(data.diaCorte) || null;
+            const lastBilledMonth = data.lastBilledMonth || "";
+            let estado = data.estado || "ACTIVO";
+            
+            if (mensualidad > 0 && diaCorte && lastBilledMonth !== mesActual) {
+                if (diaHoy >= diaCorte) {
+                    deuda += mensualidad;
+                    console.log(`Facturando a ${docSnap.id}. Nueva deuda: ${deuda}`);
+                    if (deuda >= (mensualidad * 1.5)) {
+                        estado = "SUSPENDIDO";
+                    }
+                    await updateDoc(doc(db, "clientes", docSnap.id), {
+                        deuda: deuda,
+                        lastBilledMonth: mesActual,
+                        estado: estado
+                    });
+                }
+            }
+        });
+    } catch (e) {
+        console.error("Error en Robot Cobrador:", e);
+    }
+};
+
+// ==========================================
+// NUEVAS FUNCIONALIDADES: COLOR, QR Y CONFIG
+// ==========================================
+
+// Color Picker Sync
+const colorPicker = document.getElementById('client-color-picker');
+const colorHex = document.getElementById('client-color-hex');
+if (colorPicker && colorHex) {
+    colorPicker.addEventListener('input', (e) => {
+        colorHex.value = e.target.value.toUpperCase();
+    });
+    colorHex.addEventListener('input', (e) => {
+        colorPicker.value = e.target.value;
+    });
+}
+
+// Guardar Config Web
+const btnSaveConfig = document.getElementById('btn-save-config');
+if (btnSaveConfig) {
+    btnSaveConfig.addEventListener('click', async () => {
+        if (!currentClientId) return;
+        
+        const newColor = colorHex.value.trim();
+        const recibirPedidos = document.getElementById('client-status-abierto').checked;
+        
+        try {
+            const { doc, updateDoc } = await import("https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js");
+            await updateDoc(doc(db, "clientes", currentClientId), {
+                colorPrimario: newColor,
+                recibirPedidos: recibirPedidos
+            });
+            currentClientData.colorPrimario = newColor;
+            currentClientData.recibirPedidos = recibirPedidos;
+            alert("Ajustes Web guardados correctamente.");
+        } catch (e) {
+            alert("Error al guardar Ajustes Web: " + e.message);
+        }
+    });
+}
+
+// Generador de QR
+const btnGenerateQr = document.getElementById('btn-generate-qr');
+const qrModal = document.getElementById('qr-modal');
+const btnCloseQr = document.getElementById('btn-close-qr');
+const btnDownloadQr = document.getElementById('btn-download-qr');
+const qrContainer = document.getElementById('qr-code-container');
+const qrUrlText = document.getElementById('qr-url-text');
+let currentQrcode = null;
+
+if (btnGenerateQr) {
+    btnGenerateQr.addEventListener('click', () => {
+        if (!currentClientData || !currentClientData.url) {
+            alert("El cliente no tiene un Link de la Tienda configurado.");
+            return;
+        }
+        
+        qrModal.style.display = 'flex';
+        qrContainer.innerHTML = ''; // Limpiar anterior
+        
+        let urlToEncode = currentClientData.url;
+        if (!urlToEncode.startsWith('http')) urlToEncode = 'https://' + urlToEncode;
+        qrUrlText.innerText = urlToEncode;
+        
+        // Timeout ligero para asegurar renderizado del DOM
+        setTimeout(() => {
+            currentQrcode = new QRCode(qrContainer, {
+                text: urlToEncode,
+                width: 250,
+                height: 250,
+                colorDark : "#000000",
+                colorLight : "#ffffff",
+                correctLevel : QRCode.CorrectLevel.H
+            });
+        }, 100);
+    });
+}
+
+if (btnCloseQr) {
+    btnCloseQr.addEventListener('click', () => {
+        qrModal.style.display = 'none';
+    });
+}
+
+if (btnDownloadQr) {
+    btnDownloadQr.addEventListener('click', () => {
+        const img = qrContainer.querySelector('img');
+        if (!img || !img.src) {
+            alert("AÃƒÆ’Ã‚Âºn no se ha generado el QR.");
+            return;
+        }
+        const a = document.createElement('a');
+        a.href = img.src;
+        a.download = `QR_Menu_${currentClientId}.png`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+    });
+}
+
+// ==========================================
+// GENERADOR DE RECIBOS PDF
+// ==========================================
+window.generarReciboPDF = (clienteId, monto, fecha, referencia) => {
+    try {
+        const { jsPDF } = window.jspdf;
+        const doc = new jsPDF();
+        
+        // Configurar color y estilo general
+        doc.setFillColor(18, 18, 18); // Fondo oscuro
+        doc.rect(0, 0, 210, 297, 'F');
+        
+        // Encabezado
+        doc.setTextColor(249, 115, 22); // brand-orange
+        doc.setFont("helvetica", "bold");
+        doc.setFontSize(22);
+        doc.text("GROW STUDIO", 105, 30, { align: "center" });
+        
+        doc.setTextColor(255, 255, 255);
+        doc.setFontSize(14);
+        doc.text("Recibo de Pago", 105, 40, { align: "center" });
+        
+        // LÃƒÂ­nea separadora
+        doc.setDrawColor(50, 50, 50);
+        doc.line(20, 50, 190, 50);
+        
+        // Datos del recibo
+        doc.setFont("helvetica", "normal");
+        doc.setFontSize(12);
+        doc.text(`Fecha: ${fecha}`, 20, 70);
+        doc.text(`Cliente / Cedula: ${clienteId.toUpperCase()}`, 20, 80);
+        doc.text(`Referencia Bancaria: ${referencia}`, 20, 90);
+        
+        // Caja de monto
+        doc.setFillColor(255, 255, 255);
+        doc.roundedRect(20, 110, 170, 30, 3, 3, 'F');
+        doc.setTextColor(0, 0, 0);
+        doc.setFont("helvetica", "bold");
+        doc.setFontSize(16);
+        doc.text(`Monto Pagado: $${monto} USD`, 105, 129, { align: "center" });
+        
+        // Pie de pÃƒÂ¡gina
+        doc.setTextColor(150, 150, 150);
+        doc.setFont("helvetica", "normal");
+        doc.setFontSize(10);
+        doc.text("Ã‚Â¡Gracias por confiar en Grow Studio!", 105, 270, { align: "center" });
+        doc.text("growstudioweb.vercel.app", 105, 278, { align: "center" });
+        
+        // Guardar
+        doc.save(`Recibo_GrowStudio_${clienteId}_${referencia}.pdf`);
+    } catch(e) {
+        alert("Error generando PDF: " + e.message);
+    }
+};
+
+
