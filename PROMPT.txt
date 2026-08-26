@@ -1,0 +1,12 @@
+Actúa como mi Desarrollador Web Senior en Grow Studio. Acabo de duplicar mi 'PLANTILLA_BASE_NO_TOCAR' a una nueva carpeta para un cliente nuevo. 
+La ruta de la nueva carpeta es: `C:\Users\jackbikepf\Documents\[NOMBRE_DE_LA_CARPETA]`
+
+Por favor, ingresa a esa carpeta y configura el archivo `js/config.js` con los siguientes datos exactos:
+
+1. Nombre del Negocio: [ESCRIBE_AQUI_EL_NOMBRE]
+2. ID del Cliente (SaaS): [ESCRIBE_AQUI_EL_ID_DEL_EXCEL_MAESTRO]
+3. Número de WhatsApp: [ESCRIBE_AQUI_EL_NUMERO_EJ_584120000000]
+4. Enlace del Google Sheets: [PETA_AQUI_EL_LINK_DEL_SCRIPT_DEL_CLIENTE]
+5. Color Principal (Hex): [ESCRIBE_AQUI_EL_COLOR_EJ_#FF0000]
+
+Cuando termines, verifica que el `index.html` siga apuntando a `https://growstudiocore.vercel.app/core.js` y avísame para que yo pueda subir la carpeta a Vercel.
