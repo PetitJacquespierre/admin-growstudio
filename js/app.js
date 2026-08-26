@@ -1,4 +1,4 @@
-﻿import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
 import { getAuth, signInWithEmailAndPassword, onAuthStateChanged, signOut, sendPasswordResetEmail } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
 import { getFirestore, collection, addDoc, getDocs, doc, deleteDoc, updateDoc, onSnapshot, getDoc, query, orderBy, setDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
@@ -1019,53 +1019,3 @@ window.generarReciboPDF = (clienteId, monto, fecha, referencia) => {
         alert("Error generando PDF: " + e.message);
     }
 };
-
-
-window.generarReciboPDF = (clienteId, monto, fecha, referencia) => {
-    const { jsPDF } = window.jspdf;
-    const doc = new jsPDF();
-    
-    // Configurar color y estilo general
-    doc.setFillColor(18, 18, 18); // Fondo oscuro
-    doc.rect(0, 0, 210, 297, 'F');
-    
-    // Encabezado
-    doc.setTextColor(249, 115, 22); // brand-orange
-    doc.setFont("helvetica", "bold");
-    doc.setFontSize(22);
-    doc.text("GROW STUDIO", 105, 30, { align: "center" });
-    
-    doc.setTextColor(255, 255, 255);
-    doc.setFontSize(14);
-    doc.text("Recibo de Pago de Mensualidad", 105, 40, { align: "center" });
-    
-    // LÃ­nea separadora
-    doc.setDrawColor(50, 50, 50);
-    doc.line(20, 50, 190, 50);
-    
-    // Datos del recibo
-    doc.setFont("helvetica", "normal");
-    doc.setFontSize(12);
-    doc.text(Fecha: \, 20, 70);
-    doc.text(Cliente / Tienda: \, 20, 80);
-    doc.text(Referencia Bancaria: \, 20, 90);
-    
-    // Caja de monto
-    doc.setFillColor(255, 255, 255);
-    doc.roundedRect(20, 110, 170, 30, 3, 3, 'F');
-    doc.setTextColor(0, 0, 0);
-    doc.setFont("helvetica", "bold");
-    doc.setFontSize(16);
-    doc.text(Monto Pagado: $\ USD, 105, 129, { align: "center" });
-    
-    // Pie de pÃ¡gina
-    doc.setTextColor(150, 150, 150);
-    doc.setFont("helvetica", "normal");
-    doc.setFontSize(10);
-    doc.text("Â¡Gracias por confiar en Grow Studio!", 105, 270, { align: "center" });
-    doc.text("growstudioweb.vercel.app", 105, 278, { align: "center" });
-    
-    // Guardar
-    doc.save(Recibo_GrowStudio_\_\.pdf);
-};
-
