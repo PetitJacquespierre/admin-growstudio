@@ -170,7 +170,7 @@ async function openClientManager(id, data, liElement) {
     }
 
     // Titulo y Link
-    const titleText = document.createTextNode(`MenÃƒÆ’Ã‚Âº de: ${data.nombre || data.businessName || id} `);
+    const titleText = document.createTextNode(`MenÃƒÆ’Ã‚Âº de: ${data.nombre || data.nombre || data.businessName || id} `);
     managerTitle.innerHTML = '';
     managerTitle.appendChild(titleText);
     
