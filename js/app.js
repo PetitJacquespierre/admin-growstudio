@@ -1,8 +1,8 @@
-import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+﻿import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
 import { getAuth, signInWithEmailAndPassword, onAuthStateChanged, signOut, sendPasswordResetEmail } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
 import { getFirestore, collection, addDoc, getDocs, doc, deleteDoc, updateDoc, onSnapshot, getDoc, query, orderBy, setDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
-// Configuración de Firebase (Generada automáticamente)
+// ConfiguraciÃƒÂ³n de Firebase (Generada automÃƒÂ¡ticamente)
 const firebaseConfig = {
     projectId: "grow-studio-menus",
     appId: "1:152582182898:web:cf17e88b6b1f861cdc7d6b",
@@ -42,7 +42,7 @@ const btnDeleteClient = document.getElementById('btn-delete-client');
 let currentClientId = null;
 
 // ==========================================
-// AUTENTICACIÓN
+// AUTENTICACIÃƒâ€œN
 // ==========================================
 
 onAuthStateChanged(auth, (user) => {
@@ -81,19 +81,19 @@ const btnForgotPassword = document.getElementById('btn-forgot-password');
 btnForgotPassword.addEventListener('click', async () => {
     const email = document.getElementById('email').value.trim();
     if (!email) {
-        alert("Por favor, ingresa tu correo electrónico primero en la casilla de arriba para enviarte el link de recuperación.");
+        alert("Por favor, ingresa tu correo electrÃƒÂ³nico primero en la casilla de arriba para enviarte el link de recuperaciÃƒÂ³n.");
         return;
     }
     try {
         await sendPasswordResetEmail(auth, email);
-        alert("¡Enlace de recuperación enviado! Revisa tu bandeja de entrada (y la carpeta de SPAM).");
+        alert("Ã‚Â¡Enlace de recuperaciÃƒÂ³n enviado! Revisa tu bandeja de entrada (y la carpeta de SPAM).");
     } catch (error) {
-        alert("Error al enviar el correo. Verifica que el correo esté bien escrito y exista.");
+        alert("Error al enviar el correo. Verifica que el correo estÃƒÂ© bien escrito y exista.");
     }
 });
 
 // ==========================================
-// GESTIÓN DE CLIENTES
+// GESTIÃƒâ€œN DE CLIENTES
 // ==========================================
 
 async function loadClients() {
@@ -103,20 +103,20 @@ async function loadClients() {
         clientsUl.innerHTML = '';
         
         if (querySnapshot.empty) {
-            clientsUl.innerHTML = '<li style="color:gray">No hay clientes aún</li>';
+            clientsUl.innerHTML = '<li style="color:gray">No hay clientes aÃƒÂºn</li>';
             return;
         }
 
         querySnapshot.forEach((doc) => {
             const data = doc.data();
             const li = document.createElement('li');
-            li.innerHTML = `👤 ${data.businessName || doc.id}`;
+            li.innerHTML = `Ã°Å¸â€˜Â¤ ${data.businessName || doc.id}`;
             li.onclick = () => openClientManager(doc.id, data, li);
             clientsUl.appendChild(li);
         });
     } catch (error) {
         console.error("Error cargando clientes:", error);
-        clientsUl.innerHTML = '<li style="color:red">Error de conexión</li>';
+        clientsUl.innerHTML = '<li style="color:red">Error de conexiÃƒÂ³n</li>';
     }
 }
 
@@ -124,13 +124,13 @@ btnNewClient.addEventListener('click', async () => {
     document.querySelectorAll('#clients-ul li').forEach(li => li.classList.remove('active'));
     btnNewClient.classList.add('active');
     
-    const id = prompt("Ingresa el ID único del cliente (ej. la_flaca, foodpoint):");
+    const id = prompt("Ingresa el ID ÃƒÂºnico del cliente (ej. la_flaca, foodpoint):");
     if (!id) return;
     
     const name = prompt("Nombre comercial del cliente (ej. Pasteles La Flaca):");
     if (!name) return;
 
-    const whatsapp = prompt("Número de WhatsApp del cliente con código de país (ej. 584120000000):") || "";
+    const whatsapp = prompt("NÃƒÂºmero de WhatsApp del cliente con cÃƒÂ³digo de paÃƒÂ­s (ej. 584120000000):") || "";
     const url = prompt("Link de la tienda en Vercel (Opcional, ej: https://laflaca.vercel.app):") || "";
 
     try {
@@ -151,7 +151,7 @@ btnNewClient.addEventListener('click', async () => {
 // ==========================================
 // RENDERIZADO Y CONTROL DE PRODUCTOS Y PROMOS
 // ==========================================
-let currentClientData = null; // Guardar datos para actualizaciones rápidas
+let currentClientData = null; // Guardar datos para actualizaciones rÃƒÂ¡pidas
 
 async function openClientManager(id, data, liElement) {
     currentClientId = id;
@@ -165,7 +165,7 @@ async function openClientManager(id, data, liElement) {
     }
 
     // Titulo y Link
-    const titleText = document.createTextNode(`Menú de: ${data.businessName || id} `);
+    const titleText = document.createTextNode(`MenÃƒÂº de: ${data.businessName || id} `);
     managerTitle.innerHTML = '';
     managerTitle.appendChild(titleText);
     
@@ -216,7 +216,7 @@ async function openClientManager(id, data, liElement) {
 // Eliminar Cliente
 btnDeleteClient.addEventListener('click', async () => {
     if (!currentClientId) return;
-    const confirmacion = confirm(`¿Estás SEGURO de que quieres borrar a ${currentClientId} por completo? Esto eliminará todo su menú y configuración.`);
+    const confirmacion = confirm(`Ã‚Â¿EstÃƒÂ¡s SEGURO de que quieres borrar a ${currentClientId} por completo? Esto eliminarÃƒÂ¡ todo su menÃƒÂº y configuraciÃƒÂ³n.`);
     if (confirmacion) {
         try {
             const { deleteDoc, doc } = await import("https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js");
@@ -267,7 +267,7 @@ btnSaveWhatsapp.addEventListener('click', async () => {
         await updateDoc(doc(db, "clientes", currentClientId), {
             whatsapp: clientWhatsapp.value.trim()
         });
-        alert("Número de WhatsApp guardado en la nube.");
+        alert("NÃƒÂºmero de WhatsApp guardado en la nube.");
     } catch (error) {
         alert("Error al guardar WhatsApp.");
     }
@@ -291,7 +291,7 @@ btnSaveUrl.addEventListener('click', async () => {
             clientLink.style.display = 'none';
         }
         
-        alert("URL guardada en la nube. ¡Ya puedes hacer clic en el link 🔗 junto al título!");
+        alert("URL guardada en la nube. Ã‚Â¡Ya puedes hacer clic en el link Ã°Å¸â€â€” junto al tÃƒÂ­tulo!");
     } catch (error) {
         alert("Error al guardar URL.");
     }
@@ -320,9 +320,9 @@ function renderProducts(productos) {
 
         let imgHtml = '';
         if (imgSrc) {
-            imgHtml = `<img src="${imgSrc}" class="zoomable-img" width="50" height="50" alt="img" style="border-radius:4px; object-fit:cover;" onerror="this.outerHTML='<div style=\\'width:50px;height:50px;background:var(--bg-dark);font-size:10px;color:gray;display:flex;align-items:center;text-align:center;border-radius:4px;\\'>🖼️<br>${p.imagen}</div>'">`;
+            imgHtml = `<img src="${imgSrc}" class="zoomable-img" width="50" height="50" alt="img" style="border-radius:4px; object-fit:cover;" onerror="this.outerHTML='<div style=\\'width:50px;height:50px;background:var(--bg-dark);font-size:10px;color:gray;display:flex;align-items:center;text-align:center;border-radius:4px;\\'>Ã°Å¸â€“Â¼Ã¯Â¸Â<br>${p.imagen}</div>'">`;
         } else {
-            imgHtml = `<div style="width: 50px; height: 50px; background: var(--bg-dark); border: 1px dashed var(--border); display: flex; align-items: center; justify-content: center; font-size: 10px; text-align: center; color: gray; border-radius: 4px; overflow: hidden;" title="img/${p.imagen}">🖼️?<br>${p.imagen}</div>`;
+            imgHtml = `<div style="width: 50px; height: 50px; background: var(--bg-dark); border: 1px dashed var(--border); display: flex; align-items: center; justify-content: center; font-size: 10px; text-align: center; color: gray; border-radius: 4px; overflow: hidden;" title="img/${p.imagen}">Ã°Å¸â€“Â¼Ã¯Â¸Â?<br>${p.imagen}</div>`;
         }
         
         const isChecked = p.activo === 'SI' ? 'checked' : '';
@@ -339,8 +339,8 @@ function renderProducts(productos) {
                 </label>
             </td>
             <td>
-                <button class="btn-primary btn-small" onclick="window.editProduct(${index})" style="margin-right: 5px;">✏️</button>
-                <button class="btn-secondary btn-small" onclick="window.deleteProduct(${index})">🗑️</button>
+                <button class="btn-primary btn-small" onclick="window.editProduct(${index})" style="margin-right: 5px;">Ã¢Å“ÂÃ¯Â¸Â</button>
+                <button class="btn-secondary btn-small" onclick="window.deleteProduct(${index})">Ã°Å¸â€”â€˜Ã¯Â¸Â</button>
             </td>
         `;
         productsTbody.appendChild(tr);
@@ -364,7 +364,7 @@ window.toggleProduct = async function(index) {
 };
 
 window.deleteProduct = async function(index) {
-    if(!confirm("¿Eliminar este producto?")) return;
+    if(!confirm("Ã‚Â¿Eliminar este producto?")) return;
     currentClientData.productos.splice(index, 1);
     try {
         const { doc, updateDoc } = await import("https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js");
@@ -401,9 +401,9 @@ function renderPromos(promos) {
 
         let imgHtml = '';
         if (imgSrc) {
-            imgHtml = `<img src="${imgSrc}" class="zoomable-img" width="50" height="50" alt="img" style="border-radius:4px; object-fit:cover;" onerror="this.outerHTML='<div style=\\'width:50px;height:50px;background:var(--bg-dark);font-size:10px;color:gray;display:flex;align-items:center;text-align:center;border-radius:4px;\\'>🖼️<br>${p.imagen}</div>'">`;
+            imgHtml = `<img src="${imgSrc}" class="zoomable-img" width="50" height="50" alt="img" style="border-radius:4px; object-fit:cover;" onerror="this.outerHTML='<div style=\\'width:50px;height:50px;background:var(--bg-dark);font-size:10px;color:gray;display:flex;align-items:center;text-align:center;border-radius:4px;\\'>Ã°Å¸â€“Â¼Ã¯Â¸Â<br>${p.imagen}</div>'">`;
         } else {
-            imgHtml = `<div style="width: 50px; height: 50px; background: var(--bg-dark); border: 1px dashed var(--border); display: flex; align-items: center; justify-content: center; font-size: 10px; color: gray; border-radius: 4px; overflow: hidden;" title="${p.imagen}">🖼️<br>Banner</div>`;
+            imgHtml = `<div style="width: 50px; height: 50px; background: var(--bg-dark); border: 1px dashed var(--border); display: flex; align-items: center; justify-content: center; font-size: 10px; color: gray; border-radius: 4px; overflow: hidden;" title="${p.imagen}">Ã°Å¸â€“Â¼Ã¯Â¸Â<br>Banner</div>`;
         }
 
         const tr = document.createElement('tr');
@@ -423,7 +423,7 @@ function renderPromos(promos) {
                 </label>
             </td>
             <td>
-                <button class="btn-secondary btn-small" onclick="deletePromo(${index})">🗑️</button>
+                <button class="btn-secondary btn-small" onclick="deletePromo(${index})">Ã°Å¸â€”â€˜Ã¯Â¸Â</button>
             </td>
         `;
         promosTbody.appendChild(tr);
@@ -446,7 +446,7 @@ window.togglePromo = async function(index) {
 };
 
 window.deletePromo = async function(index) {
-    if(!confirm("¿Eliminar esta promo de la lista?")) return;
+    if(!confirm("Ã‚Â¿Eliminar esta promo de la lista?")) return;
     currentClientData.promos.splice(index, 1);
     try {
         const { doc, updateDoc } = await import("https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js");
@@ -484,16 +484,16 @@ const importRawText = document.getElementById('import-raw-text');
 const geminiApiKey = document.getElementById('gemini-api-key');
 const aiLoadingText = document.getElementById('ai-loading-text');
 
-// Añadir Producto Mínimo Viable (usando prompts por rapidez de la primera versión)
+// AÃƒÂ±adir Producto MÃƒÂ­nimo Viable (usando prompts por rapidez de la primera versiÃƒÂ³n)
 btnAddProduct.addEventListener('click', async () => {
     if (!currentClientId) return;
     
     const nombre = prompt("Nombre del producto:");
     if (!nombre) return;
-    const precio = prompt("Precio en dólares (ej. 5.50):");
-    const categoria = prompt("Categoría (ej. Promociones, Hamburguesas):");
+    const precio = prompt("Precio en dÃƒÂ³lares (ej. 5.50):");
+    const categoria = prompt("CategorÃƒÂ­a (ej. Promociones, Hamburguesas):");
     const imagen = prompt("URL de la imagen:");
-    const descripcion = prompt("Descripción corta:");
+    const descripcion = prompt("DescripciÃƒÂ³n corta:");
     const extras = prompt("Nombres de los extras separados por coma (opcional):");
 
     const nuevoProducto = {
@@ -519,9 +519,9 @@ btnAddProduct.addEventListener('click', async () => {
     }
 });
 
-// Lógica para el botón Importar con IA
+// LÃƒÂ³gica para el botÃƒÂ³n Importar con IA
 btnImportBulk.addEventListener('click', () => {
-    importRawText.value = ''; // Limpiar el área de texto
+    importRawText.value = ''; // Limpiar el ÃƒÂ¡rea de texto
     // Cargar API key guardada
     const savedKey = localStorage.getItem('gemini_api_key');
     if (savedKey) geminiApiKey.value = savedKey;
@@ -539,7 +539,7 @@ btnConfirmImport.addEventListener('click', async () => {
     const apiKey = geminiApiKey.value.trim();
     
     if (!rawText || !apiKey) {
-        alert("Por favor, ingresa el texto del menú y tu API Key de Gemini.");
+        alert("Por favor, ingresa el texto del menÃƒÂº y tu API Key de Gemini.");
         return;
     }
     
@@ -551,22 +551,22 @@ btnConfirmImport.addEventListener('click', async () => {
         btnCancelImport.disabled = true;
         aiLoadingText.style.display = 'block';
         
-        // Llamada a la API de Gemini (REST) usando el modelo más reciente (3.6-flash)
+        // Llamada a la API de Gemini (REST) usando el modelo mÃƒÂ¡s reciente (3.6-flash)
         const promptText = `
-        Tengo este menú crudo de un restaurante. Extrae todos los productos y devuélvelos estrictamente como un arreglo de objetos JSON con esta estructura exacta, basándote en un esquema de Excel, sin texto extra:
+        Tengo este menÃƒÂº crudo de un restaurante. Extrae todos los productos y devuÃƒÂ©lvelos estrictamente como un arreglo de objetos JSON con esta estructura exacta, basÃƒÂ¡ndote en un esquema de Excel, sin texto extra:
         [
           {
-            "id": "generar un ID numérico único",
+            "id": "generar un ID numÃƒÂ©rico ÃƒÂºnico",
             "categoria": "string (usa tu mejor juicio, ej: Hamburguesas, Bebidas)",
             "nombre": "string",
             "descripcion": "string (ingredientes)",
-            "precio": number (solo el número, ej: 5.50),
+            "precio": number (solo el nÃƒÂºmero, ej: 5.50),
             "imagen": "string (nombre archivo, ej: hamburguesa.jpg o url)",
             "activo": "SI"
           }
         ]
         
-        Menú crudo a procesar:
+        MenÃƒÂº crudo a procesar:
         ${rawText}
         `;
         
@@ -592,7 +592,7 @@ btnConfirmImport.addEventListener('click', async () => {
         const jsonData = JSON.parse(aiResponseText);
         
         if (!Array.isArray(jsonData)) {
-            throw new Error("La IA no devolvió una lista válida.");
+            throw new Error("La IA no devolviÃƒÂ³ una lista vÃƒÂ¡lida.");
         }
         
         // Formatear precios por seguridad
@@ -613,7 +613,7 @@ btnConfirmImport.addEventListener('click', async () => {
         renderProducts(productosActuales);
         
         importModal.style.display = 'none';
-        alert(`¡Inteligencia Artificial Exitosamente aplicada! Se importaron ${cleanData.length} productos automáticamente.`);
+        alert(`Ã‚Â¡Inteligencia Artificial Exitosamente aplicada! Se importaron ${cleanData.length} productos automÃƒÂ¡ticamente.`);
     } catch (e) {
         alert("Error de la IA o de red: " + e.message);
     } finally {
@@ -679,9 +679,9 @@ document.getElementById('btn-save-edit-product').addEventListener('click', async
     }
 });
 
-// Exponer la función delete al window para el onclick del HTML
+// Exponer la funciÃƒÂ³n delete al window para el onclick del HTML
 window.deleteProduct = async (index) => {
-    if (!currentClientId || !confirm("¿Eliminar producto?")) return;
+    if (!currentClientId || !confirm("Ã‚Â¿Eliminar producto?")) return;
     
     try {
         const docRef = doc(db, "clientes", currentClientId);
@@ -698,13 +698,13 @@ window.deleteProduct = async (index) => {
 };
 
 // ==========================================
-// MÓDULO DE PAGOS Y FACTURACIÓN (ROBOT COBRADOR)
+// MÃƒâ€œDULO DE PAGOS Y FACTURACIÃƒâ€œN (ROBOT COBRADOR)
 // ==========================================
 const btnViewPayments = document.getElementById('btn-view-payments');
 const paymentsScreen = document.getElementById('payments-screen');
 const paymentsTbody = document.getElementById('payments-tbody');
 
-// Botón sidebar para ver pagos
+// BotÃƒÂ³n sidebar para ver pagos
 btnViewPayments.addEventListener('click', () => {
     clientManager.style.display = 'none';
     welcomeScreen.style.display = 'none';
@@ -736,10 +736,10 @@ async function cargarPagos() {
             let btnAccion = '';
             let badgeClass = 'por-revisar';
             if (p.estado === "POR REVISAR") {
-                btnAccion = `<button class="btn-primary btn-small" onclick="window.aprobarPago('${docSnap.id}', '${p.cedula}', ${p.monto})">✅ Aprobar</button>`;
+                btnAccion = `<button class="btn-primary btn-small" onclick="window.aprobarPago('${docSnap.id}', '${p.cedula}', ${p.monto}, '${p.fechaLocal || 'Hoy'}', '${p.referencia || '-'}')">âœ… Aprobar</button>`;
             } else if (p.estado === "APROBADO") {
                 badgeClass = 'aprobado';
-                btnAccion = '<span style="color: gray; font-size: 12px;">Procesado</span>';
+                btnAccion = `<button class="btn-secondary btn-small" style="color:var(--brand-orange); border: 1px solid var(--brand-orange);" onclick="window.generarReciboPDF('${p.cedula}', ${p.monto}, '${p.fechaLocal || 'Hoy'}', '${p.referencia || '-'}')">ðŸ“¥ PDF</button>`;
             }
             
             tr.innerHTML = `
@@ -760,24 +760,48 @@ async function cargarPagos() {
 }
 
 // Hacer global para el onclick inline
-window.aprobarPago = async function(pagoId, cedulaPago, montoPagado) {
+window.aprobarPago = async function(pagoId, cedulaPago, montoPagado, fechaPago, referenciaPago) {
     if (!confirm("¿Confirmas que recibiste $" + montoPagado + " y deseas descontarlo de la deuda del cliente " + cedulaPago + "?")) return;
     
     try {
-        // Marcar pago como APROBADO
+        const { doc, updateDoc, getDocs, query, collection, where } = await import("https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js");
+        
         await updateDoc(doc(db, "pagos", pagoId), {
             estado: "APROBADO"
         });
+
+        // Buscar al cliente por la cédula
+        const q = query(collection(db, "clientes"), where("cedula", "==", cedulaPago));
+        const clientSnap = await getDocs(q);
         
-        alert("Pago aprobado. Ahora puedes ir al perfil del cliente y restar manualmente la deuda.");
+        if (!clientSnap.empty) {
+            clientSnap.forEach(async (cDoc) => {
+                let deudaActual = cDoc.data().deuda || 0;
+                let nuevaDeuda = deudaActual - montoPagado;
+                if (nuevaDeuda < 0) nuevaDeuda = 0;
+                
+                await updateDoc(doc(db, "clientes", cDoc.id), {
+                    deuda: nuevaDeuda,
+                    estado: "ACTIVO"
+                });
+            });
+        }
+        
+        alert("Pago aprobado y deuda descontada automáticamente.");
+        
+        // Generar PDF
+        if (window.generarReciboPDF) {
+            window.generarReciboPDF(cedulaPago, montoPagado, fechaPago, referenciaPago);
+        }
+        
         cargarPagos();
     } catch (error) {
-        alert("Error: " + error.message);
+        alert("Error al aprobar el pago: " + error.message);
     }
 };
 
 // ==========================================
-// LÓGICA DE FACTURACIÓN EN EL PERFIL DEL CLIENTE
+// LÃƒâ€œGICA DE FACTURACIÃƒâ€œN EN EL PERFIL DEL CLIENTE
 // ==========================================
 const clientMensualidad = document.getElementById('client-mensualidad');
 const clientDeuda = document.getElementById('client-deuda');
@@ -798,7 +822,7 @@ if (btnSaveBilling) {
                 currentClientData.deuda = parseFloat(clientDeuda.value) || 0;
                 currentClientData.diaCorte = parseInt(clientCorte.value) || 1;
             }
-            alert("Datos de facturación actualizados");
+            alert("Datos de facturaciÃƒÂ³n actualizados");
         } catch (error) {
             alert("Error: " + error.message);
         }
@@ -929,7 +953,7 @@ if (btnDownloadQr) {
     btnDownloadQr.addEventListener('click', () => {
         const img = qrContainer.querySelector('img');
         if (!img || !img.src) {
-            alert("Aún no se ha generado el QR.");
+            alert("AÃƒÂºn no se ha generado el QR.");
             return;
         }
         const a = document.createElement('a');
@@ -940,3 +964,108 @@ if (btnDownloadQr) {
         document.body.removeChild(a);
     });
 }
+
+// ==========================================
+// GENERADOR DE RECIBOS PDF
+// ==========================================
+window.generarReciboPDF = (clienteId, monto, fecha, referencia) => {
+    try {
+        const { jsPDF } = window.jspdf;
+        const doc = new jsPDF();
+        
+        // Configurar color y estilo general
+        doc.setFillColor(18, 18, 18); // Fondo oscuro
+        doc.rect(0, 0, 210, 297, 'F');
+        
+        // Encabezado
+        doc.setTextColor(249, 115, 22); // brand-orange
+        doc.setFont("helvetica", "bold");
+        doc.setFontSize(22);
+        doc.text("GROW STUDIO", 105, 30, { align: "center" });
+        
+        doc.setTextColor(255, 255, 255);
+        doc.setFontSize(14);
+        doc.text("Recibo de Pago", 105, 40, { align: "center" });
+        
+        // LÃ­nea separadora
+        doc.setDrawColor(50, 50, 50);
+        doc.line(20, 50, 190, 50);
+        
+        // Datos del recibo
+        doc.setFont("helvetica", "normal");
+        doc.setFontSize(12);
+        doc.text(`Fecha: ${fecha}`, 20, 70);
+        doc.text(`Cliente / Cedula: ${clienteId.toUpperCase()}`, 20, 80);
+        doc.text(`Referencia Bancaria: ${referencia}`, 20, 90);
+        
+        // Caja de monto
+        doc.setFillColor(255, 255, 255);
+        doc.roundedRect(20, 110, 170, 30, 3, 3, 'F');
+        doc.setTextColor(0, 0, 0);
+        doc.setFont("helvetica", "bold");
+        doc.setFontSize(16);
+        doc.text(`Monto Pagado: $${monto} USD`, 105, 129, { align: "center" });
+        
+        // Pie de pÃ¡gina
+        doc.setTextColor(150, 150, 150);
+        doc.setFont("helvetica", "normal");
+        doc.setFontSize(10);
+        doc.text("Â¡Gracias por confiar en Grow Studio!", 105, 270, { align: "center" });
+        doc.text("growstudioweb.vercel.app", 105, 278, { align: "center" });
+        
+        // Guardar
+        doc.save(`Recibo_GrowStudio_${clienteId}_${referencia}.pdf`);
+    } catch(e) {
+        alert("Error generando PDF: " + e.message);
+    }
+};
+
+
+window.generarReciboPDF = (clienteId, monto, fecha, referencia) => {
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF();
+    
+    // Configurar color y estilo general
+    doc.setFillColor(18, 18, 18); // Fondo oscuro
+    doc.rect(0, 0, 210, 297, 'F');
+    
+    // Encabezado
+    doc.setTextColor(249, 115, 22); // brand-orange
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(22);
+    doc.text("GROW STUDIO", 105, 30, { align: "center" });
+    
+    doc.setTextColor(255, 255, 255);
+    doc.setFontSize(14);
+    doc.text("Recibo de Pago de Mensualidad", 105, 40, { align: "center" });
+    
+    // LÃ­nea separadora
+    doc.setDrawColor(50, 50, 50);
+    doc.line(20, 50, 190, 50);
+    
+    // Datos del recibo
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(12);
+    doc.text(Fecha: \, 20, 70);
+    doc.text(Cliente / Tienda: \, 20, 80);
+    doc.text(Referencia Bancaria: \, 20, 90);
+    
+    // Caja de monto
+    doc.setFillColor(255, 255, 255);
+    doc.roundedRect(20, 110, 170, 30, 3, 3, 'F');
+    doc.setTextColor(0, 0, 0);
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(16);
+    doc.text(Monto Pagado: $\ USD, 105, 129, { align: "center" });
+    
+    // Pie de pÃ¡gina
+    doc.setTextColor(150, 150, 150);
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(10);
+    doc.text("Â¡Gracias por confiar en Grow Studio!", 105, 270, { align: "center" });
+    doc.text("growstudioweb.vercel.app", 105, 278, { align: "center" });
+    
+    // Guardar
+    doc.save(Recibo_GrowStudio_\_\.pdf);
+};
+
