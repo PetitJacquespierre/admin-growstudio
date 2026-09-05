@@ -808,9 +808,9 @@ window.aprobarPago = async function(pagoId, cedulaPago, montoPagado, fechaPago, 
 // ==========================================
 // LÃƒÆ’Ã¢â‚¬Å“GICA DE FACTURACIÃƒÆ’Ã¢â‚¬Å“N EN EL PERFIL DEL CLIENTE
 // ==========================================
-const clientMensualidad = document.getElementById('client-mensualidad');
+const clientPlan = document.getElementById('client-plan');
 const clientDeuda = document.getElementById('client-deuda');
-const clientCorte = document.getElementById('client-corte');
+const clientVencimiento = document.getElementById('client-vencimiento');
 const btnSaveBilling = document.getElementById('btn-save-billing');
 
 if (btnSaveBilling) {
@@ -818,14 +818,14 @@ if (btnSaveBilling) {
         if (!currentClientId) return;
         try {
             await updateDoc(doc(db, "clientes", currentClientId), {
-                mensualidad: parseFloat(clientMensualidad.value) || 0,
+                plan: clientPlan.value,
                 deuda: parseFloat(clientDeuda.value) || 0,
-                diaCorte: parseInt(clientCorte.value) || 1
+                fechaVencimiento: clientVencimiento.value
             });
             if (currentClientData) {
-                currentClientData.mensualidad = parseFloat(clientMensualidad.value) || 0;
+                currentClientData.plan = clientPlan.value;
                 currentClientData.deuda = parseFloat(clientDeuda.value) || 0;
-                currentClientData.diaCorte = parseInt(clientCorte.value) || 1;
+                currentClientData.fechaVencimiento = clientVencimiento.value;
             }
             alert("Datos de facturaciÃƒÆ’Ã‚Â³n actualizados");
         } catch (error) {
@@ -1026,3 +1026,19 @@ window.generarReciboPDF = (clienteId, monto, fecha, referencia) => {
 };
 
 
+
+
+window.enviarCobroWhatsApp = function() {
+    if (!currentClientData || !currentClientData.whatsapp) {
+        alert("El cliente no tiene un WhatsApp registrado.");
+        return;
+    }
+    const tel = currentClientData.whatsapp.replace(/\D/g, '');
+    const planStr = currentClientData.plan === 'ANUAL' ? 'Anual' : (currentClientData.plan === 'MENSUAL' ? 'Mensual' : 'de Prueba');
+    const msg = encodeURIComponent(`Hola 👋 Te escribimos de Grow Studio. Te recordamos que tu Plan ${planStr} para tu Menú Digital está próximo a vencer (o acaba de vencer). Para evitar interrupciones en tu servicio y seguir recibiendo pedidos sin comisiones, puedes realizar el pago aquí:
+
+[TUS DATOS DE PAGO AQUI]
+
+¡Cualquier duda estamos a la orden!`);
+    window.open(`https://wa.me/${tel}?text=${msg}`, '_blank');
+};
