@@ -787,10 +787,6 @@ window.correrRobotCobrador = async function() {
         console.error("Error en Robot Automático:", e);
     }
 };
-    } catch (e) {
-        console.error("Error en Robot Cobrador:", e);
-    }
-};
 
 // ==========================================
 // NUEVAS FUNCIONALIDADES: COLOR, QR Y CONFIG
