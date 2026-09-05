@@ -1,5 +1,5 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
-import { getAuth, signInWithEmailAndPassword, onAuthStateChanged, signOut, sendPasswordResetEmail } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+import { getAuth, signInWithEmailAndPassword, onAuthStateChanged, signOut, sendPasswordResetEmail, setPersistence, browserLocalPersistence, browserSessionPersistence } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
 import { getFirestore, collection, addDoc, getDocs, doc, deleteDoc, updateDoc, onSnapshot, getDoc, query, orderBy, setDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
 // ConfiguraciÃƒÆ’Ã‚Â³n de Firebase (Generada automÃƒÆ’Ã‚Â¡ticamente)
@@ -61,16 +61,19 @@ onAuthStateChanged(auth, (user) => {
     }
 });
 
-loginForm.addEventListener('submit', (e) => {
+loginForm.addEventListener('submit', async (e) => {
     e.preventDefault();
     const email = document.getElementById('email').value;
     const password = document.getElementById('password').value;
+    const rememberMe = document.getElementById('remember-me').checked;
     
-    signInWithEmailAndPassword(auth, email, password)
-        .catch((error) => {
-            loginError.innerText = "Credenciales incorrectas o usuario no existe.";
-            loginError.style.display = 'block';
-        });
+    try {
+        await setPersistence(auth, rememberMe ? browserLocalPersistence : browserSessionPersistence);
+        await signInWithEmailAndPassword(auth, email, password);
+    } catch (error) {
+        loginError.innerText = "Credenciales incorrectas o usuario no existe.";
+        loginError.style.display = 'block';
+    }
 });
 
 btnLogout.addEventListener('click', () => {
