@@ -67,12 +67,23 @@ loginForm.addEventListener('submit', async (e) => {
     const password = document.getElementById('password').value;
     const rememberMe = document.getElementById('remember-me').checked;
     
+    // Cambiamos el texto del botón temporalmente
+    const btnSubmit = e.target.querySelector('button[type="submit"]');
+    const originalText = btnSubmit.innerText;
+    btnSubmit.innerText = "Cargando...";
+    btnSubmit.disabled = true;
+
     try {
         await setPersistence(auth, rememberMe ? browserLocalPersistence : browserSessionPersistence);
         await signInWithEmailAndPassword(auth, email, password);
     } catch (error) {
-        loginError.innerText = "Credenciales incorrectas o usuario no existe.";
+        console.error("Firebase Login Error:", error);
+        alert("Error al iniciar sesión: " + error.message);
+        loginError.innerText = "Error: " + error.message;
         loginError.style.display = 'block';
+    } finally {
+        btnSubmit.innerText = originalText;
+        btnSubmit.disabled = false;
     }
 });
 
