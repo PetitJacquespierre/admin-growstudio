@@ -40,6 +40,7 @@ const btnAddProduct = document.getElementById('btn-add-product');
 const btnDeleteClient = document.getElementById('btn-delete-client');
 
 let currentClientId = null;
+let clientsData = {};
 
 // ==========================================
 // AUTENTICACIÃƒÆ’Ã¢â‚¬Å“N
@@ -63,6 +64,7 @@ onAuthStateChanged(auth, (user) => {
 
 loginForm.addEventListener('submit', async (e) => {
     e.preventDefault();
+    alert("Iniciando proceso de login...");
     const email = document.getElementById('email').value;
     const password = document.getElementById('password').value;
     const rememberMe = document.getElementById('remember-me').checked;
@@ -514,7 +516,7 @@ btnAddProduct.addEventListener('click', async () => {
 });
 
 // LÃƒÆ’Ã‚Â³gica para el botÃƒÆ’Ã‚Â³n Importar con IA
-btnImportBulk.addEventListener('click', () => {
+if(btnImportBulk) btnImportBulk.addEventListener('click', () => {
     importRawText.value = ''; // Limpiar el ÃƒÆ’Ã‚Â¡rea de texto
     // Cargar API key guardada
     const savedKey = localStorage.getItem('gemini_api_key');
@@ -522,11 +524,11 @@ btnImportBulk.addEventListener('click', () => {
     importModal.style.display = 'flex';
 });
 
-btnCancelImport.addEventListener('click', () => {
+if(btnCancelImport) btnCancelImport.addEventListener('click', () => {
     importModal.style.display = 'none';
 });
 
-btnConfirmImport.addEventListener('click', async () => {
+if(btnConfirmImport) btnConfirmImport.addEventListener('click', async () => {
     if (!currentClientId) return;
     
     const rawText = importRawText.value.trim();
@@ -627,7 +629,7 @@ const paymentsScreen = document.getElementById('payments-screen');
 const paymentsTbody = document.getElementById('payments-tbody');
 
 // BotÃƒÆ’Ã‚Â³n sidebar para ver pagos
-btnViewPayments.addEventListener('click', () => {
+if(btnViewPayments) btnViewPayments.addEventListener('click', () => {
     clientManager.style.display = 'none';
     welcomeScreen.style.display = 'none';
     paymentsScreen.style.display = 'flex';
@@ -754,25 +756,7 @@ if (btnSaveBilling) {
 // ==========================================
 // REPORTES Y ESTADÍSTICAS
 // ==========================================
-window.generarReporteWhatsapp = function() {
-    if (!currentClientData) return;
-    
-    const telefono = currentClientData.whatsapp || currentClientData.telefono || "";
-    const visitas = currentClientData.visitas || 0;
-    const nombre = currentClientData.nombre || currentClientData.businessName || "Cliente";
-    
-    if (!telefono) {
-        alert("El cliente no tiene un número de WhatsApp registrado.");
-        return;
-    }
-    
-    let tlf = telefono.replace(/\D/g, ''); // Quitar espacios y símbolos
-    
-    const mensaje = ¡Hola ! 📊 Aquí tienes tu reporte mensual de Grow Studio.\n\nEste mes tu Menú Digital ha recibido * visitas*.\n\n¡Tus clientes están amando tu menú digital! Gracias por confiar en nosotros. 🚀;
-    const url = `https://web.whatsapp.com/send?phone=${tlf}&text=${encodeURIComponent(mensaje)}`;
-    
-    window.open(url, '_blank');
-};
+
 
 // Robot Cobrador (Llamado en auth)
 window.correrRobotCobrador = async function() {
