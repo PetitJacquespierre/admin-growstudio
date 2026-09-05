@@ -1,4 +1,4 @@
-﻿import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
 import { getAuth, signInWithEmailAndPassword, onAuthStateChanged, signOut, sendPasswordResetEmail } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
 import { getFirestore, collection, addDoc, getDocs, doc, deleteDoc, updateDoc, onSnapshot, getDoc, query, orderBy, setDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
@@ -111,7 +111,7 @@ async function loadClients() {
             const data = docSnap.data();
             const li = document.createElement('li');
             li.innerHTML = `
-                <span style="font-weight: bold;">ðŸ‘©ðŸ»â€ðŸ’» ${data.nombre || data.businessName || docSnap.id}</span>
+                <span style="font-weight: bold;">👩🏼‍💻 ${data.nombre || data.businessName || docSnap.id}</span>
                 <div style="font-size: 12px; color: #9ca3af; margin-top: 3px;">
                     Estado: <span style="color: ${data.estado === 'ACTIVO' ? '#10b981' : '#ef4444'}">${data.estado || 'INACTIVO'}</span> | Deuda: $${data.deuda || 0}
                 </div>
@@ -170,7 +170,7 @@ async function openClientManager(id, data, liElement) {
     }
 
     // Titulo y Link
-    const titleText = document.createTextNode(`MenÃƒÆ’Ã‚Âº de: ${data.nombre || data.nombre || data.businessName || id} `);
+    const titleText = document.createTextNode(`Menú de: ${data.nombre || data.nombre || data.businessName || id} `);
     managerTitle.innerHTML = '';
     managerTitle.appendChild(titleText);
     
@@ -808,10 +808,10 @@ window.aprobarPago = async function(pagoId, cedulaPago, montoPagado, fechaPago, 
 // ==========================================
 // LÃƒÆ’Ã¢â‚¬Å“GICA DE FACTURACIÃƒÆ’Ã¢â‚¬Å“N EN EL PERFIL DEL CLIENTE
 // ==========================================
-const clientPlan = document.getElementById('client-plan');
-const clientDeuda = document.getElementById('client-deuda');
-const clientVencimiento = document.getElementById('client-vencimiento');
-const btnSaveBilling = document.getElementById('btn-save-billing');
+    const inputPlan = document.getElementById('client-plan');
+    const inputDeuda = document.getElementById('client-deuda');
+    const inputVencimiento = document.getElementById('client-vencimiento');
+    const btnSaveBilling = document.getElementById('btn-save-billing');
 
 if (btnSaveBilling) {
     btnSaveBilling.addEventListener('click', async () => {
