@@ -303,152 +303,127 @@ btnSaveUrl.addEventListener('click', async () => {
 });
 
 // Productos
+window.actualizarProducto = async function(index, campo, valor) {
+    if (!currentClientId) return;
+    currentClientData.productos[index][campo] = valor;
+    try {
+        const { doc, updateDoc } = await import("https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js");
+        await updateDoc(doc(db, "clientes", currentClientId), { productos: currentClientData.productos });
+        if (campo === 'imagen') renderProducts(currentClientData.productos); // Re-render solo si cambia la imagen para actualizar preview
+    } catch(e) { console.error(e); alert("Error guardando"); }
+};
+
+window.agregarProductoRapido = async function() {
+    if (!currentClientId) return;
+    const nombre = document.getElementById('new-prod-nombre').value;
+    if (!nombre) return;
+    const prod = {
+        nombre: nombre,
+        imagen: document.getElementById('new-prod-imagen').value || 'hamburguesa.png',
+        categoria: document.getElementById('new-prod-categoria').value || 'General',
+        precio: parseFloat(document.getElementById('new-prod-precio').value) || 0,
+        descripcion: "",
+        activo: "SI"
+    };
+    if(!currentClientData.productos) currentClientData.productos = [];
+    currentClientData.productos.push(prod);
+    try {
+        const { doc, updateDoc } = await import("https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js");
+        await updateDoc(doc(db, "clientes", currentClientId), { productos: currentClientData.productos });
+        renderProducts(currentClientData.productos);
+    } catch(e) { console.error(e); }
+};
+
 function renderProducts(productos) {
     productsTbody.innerHTML = '';
-    if (productos.length === 0) {
-        productsTbody.innerHTML = '<tr><td colspan="6" style="text-align:center; color:gray">No hay productos.</td></tr>';
-        return;
-    }
+    
+    // Fila para agregar rápido (Excel style)
+    const newTr = document.createElement('tr');
+    newTr.style.background = "rgba(16, 185, 129, 0.1)"; // Fondo verdecito
+    newTr.innerHTML = `
+        <td><input type="text" id="new-prod-imagen" class="modern-select" placeholder="ej. pizza.jpg" style="width:100px; padding:4px;"></td>
+        <td><input type="text" id="new-prod-nombre" class="modern-select" placeholder="Nuevo Producto..." style="width:120px; padding:4px;"></td>
+        <td><input type="text" id="new-prod-categoria" class="modern-select" placeholder="Categoría" style="width:80px; padding:4px;"></td>
+        <td><input type="number" id="new-prod-precio" class="modern-select" placeholder="0" style="width:60px; padding:4px;"></td>
+        <td>-</td>
+        <td><button class="btn-primary btn-small" onclick="agregarProductoRapido()">+ Add</button></td>
+    `;
+    productsTbody.appendChild(newTr);
+
+    if (productos.length === 0) return;
 
     productos.forEach((p, index) => {
         const tr = document.createElement('tr');
-        
-        let imgSrc = '';
-        if (p.imagen && (p.imagen.startsWith('http://') || p.imagen.startsWith('https://'))) {
-            imgSrc = p.imagen;
-        } else if (p.imagen && currentClientData && currentClientData.url) {
-            let baseUrl = currentClientData.url.trim();
-            if (!baseUrl.startsWith('http')) baseUrl = 'https://' + baseUrl;
-            baseUrl = baseUrl.replace(/\/$/, '');
-            imgSrc = baseUrl + '/img/' + p.imagen;
-        }
-
-        let imgHtml = '';
-        if (imgSrc) {
-            imgHtml = `<img src="${imgSrc}" class="zoomable-img" width="50" height="50" alt="img" style="border-radius:4px; object-fit:cover;" onerror="this.outerHTML='<div style=\\'width:50px;height:50px;background:var(--bg-dark);font-size:10px;color:gray;display:flex;align-items:center;text-align:center;border-radius:4px;\\'>ÃƒÂ°Ã…Â¸Ã¢â‚¬â€œÃ‚Â¼ÃƒÂ¯Ã‚Â¸Ã‚Â<br>${p.imagen}</div>'">`;
-        } else {
-            imgHtml = `<div style="width: 50px; height: 50px; background: var(--bg-dark); border: 1px dashed var(--border); display: flex; align-items: center; justify-content: center; font-size: 10px; text-align: center; color: gray; border-radius: 4px; overflow: hidden;" title="img/${p.imagen}">ÃƒÂ°Ã…Â¸Ã¢â‚¬â€œÃ‚Â¼ÃƒÂ¯Ã‚Â¸Ã‚Â?<br>${p.imagen}</div>`;
-        }
-        
-        const isChecked = p.activo === 'SI' ? 'checked' : '';
+        const isChecked = p.activo === 'SI' ? 'selected' : '';
+        const isNotChecked = p.activo === 'NO' ? 'selected' : '';
         
         tr.innerHTML = `
-            <td>${imgHtml}</td>
-            <td><strong>${p.nombre}</strong><br><small style="color:gray">${p.descripcion}</small></td>
-            <td>${p.categoria}</td>
-            <td>$${parseFloat(p.precio).toFixed(2)}</td>
+            <td><input type="text" class="modern-select" value="${p.imagen || ''}" onchange="actualizarProducto(${index}, 'imagen', this.value)" style="width:100px; padding:4px;"></td>
+            <td><input type="text" class="modern-select" value="${p.nombre || ''}" onchange="actualizarProducto(${index}, 'nombre', this.value)" style="width:120px; padding:4px;"></td>
+            <td><input type="text" class="modern-select" value="${p.categoria || ''}" onchange="actualizarProducto(${index}, 'categoria', this.value)" style="width:80px; padding:4px;"></td>
+            <td><input type="number" class="modern-select" value="${p.precio || 0}" onchange="actualizarProducto(${index}, 'precio', parseFloat(this.value))" style="width:60px; padding:4px;"></td>
             <td>
-                <label class="switch">
-                    <input type="checkbox" ${isChecked} onchange="toggleProduct(${index})">
-                    <span class="slider round"></span>
-                </label>
+                <select class="modern-select" style="padding:4px;" onchange="actualizarProducto(${index}, 'activo', this.value)">
+                    <option value="SI" ${isChecked}>Activo</option>
+                    <option value="NO" ${isNotChecked}>Oculto</option>
+                </select>
             </td>
             <td>
-                <button class="btn-primary btn-small" onclick="window.editProduct(${index})" style="margin-right: 5px;">ÃƒÂ¢Ã…â€œÃ‚ÂÃƒÂ¯Ã‚Â¸Ã‚Â</button>
-                <button class="btn-secondary btn-small" onclick="window.deleteProduct(${index})">ÃƒÂ°Ã…Â¸Ã¢â‚¬â€Ã¢â‚¬ËœÃƒÂ¯Ã‚Â¸Ã‚Â</button>
+                <button class="btn-secondary btn-small" onclick="window.deleteProduct(${index})">❌</button>
             </td>
         `;
         productsTbody.appendChild(tr);
     });
 }
 
-window.toggleProduct = async function(index) {
-    const p = currentClientData.productos[index];
-    p.activo = p.activo === 'SI' ? 'NO' : 'SI';
-    try {
-        const { doc, updateDoc } = await import("https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js");
-        await updateDoc(doc(db, "clientes", currentClientId), {
-            productos: currentClientData.productos
-        });
-    } catch (e) {
-        alert("Error al cambiar estado.");
-        // Revert UI on failure
-        p.activo = p.activo === 'SI' ? 'NO' : 'SI'; 
-        renderProducts(currentClientData.productos);
-    }
-};
-
 window.deleteProduct = async function(index) {
-    if(!confirm("Ãƒâ€šÃ‚Â¿Eliminar este producto?")) return;
+    if(!confirm("¿Eliminar este producto?")) return;
     currentClientData.productos.splice(index, 1);
     try {
         const { doc, updateDoc } = await import("https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js");
-        await updateDoc(doc(db, "clientes", currentClientId), {
-            productos: currentClientData.productos
-        });
+        await updateDoc(doc(db, "clientes", currentClientId), { productos: currentClientData.productos });
         renderProducts(currentClientData.productos);
-    } catch (e) {
-        alert("Error.");
-    }
+    } catch (e) { alert("Error."); }
 };
 
 // Promociones
 const promosTbody = document.getElementById('promos-tbody');
-const btnAddPromo = document.getElementById('btn-add-promo');
+
+window.actualizarPromo = async function(index, campo, valor) {
+    if (!currentClientId) return;
+    currentClientData.promos[index][campo] = valor;
+    try {
+        const { doc, updateDoc } = await import("https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js");
+        await updateDoc(doc(db, "clientes", currentClientId), { promos: currentClientData.promos });
+    } catch(e) { console.error(e); }
+};
 
 function renderPromos(promos) {
     promosTbody.innerHTML = '';
-    if (promos.length === 0) {
-        promosTbody.innerHTML = '<tr><td colspan="3" style="text-align:center; color:gray">No hay promos.</td></tr>';
-        return;
-    }
+    if (!promos || promos.length === 0) return;
 
     promos.forEach((p, index) => {
-        let imgSrc = '';
-        if (p.imagen && (p.imagen.startsWith('http://') || p.imagen.startsWith('https://'))) {
-            imgSrc = p.imagen;
-        } else if (p.imagen && currentClientData && currentClientData.url) {
-            let baseUrl = currentClientData.url.trim();
-            if (!baseUrl.startsWith('http')) baseUrl = 'https://' + baseUrl;
-            baseUrl = baseUrl.replace(/\/$/, '');
-            imgSrc = baseUrl + '/img/' + p.imagen;
-        }
-
-        let imgHtml = '';
-        if (imgSrc) {
-            imgHtml = `<img src="${imgSrc}" class="zoomable-img" width="50" height="50" alt="img" style="border-radius:4px; object-fit:cover;" onerror="this.outerHTML='<div style=\\'width:50px;height:50px;background:var(--bg-dark);font-size:10px;color:gray;display:flex;align-items:center;text-align:center;border-radius:4px;\\'>ÃƒÂ°Ã…Â¸Ã¢â‚¬â€œÃ‚Â¼ÃƒÂ¯Ã‚Â¸Ã‚Â<br>${p.imagen}</div>'">`;
-        } else {
-            imgHtml = `<div style="width: 50px; height: 50px; background: var(--bg-dark); border: 1px dashed var(--border); display: flex; align-items: center; justify-content: center; font-size: 10px; color: gray; border-radius: 4px; overflow: hidden;" title="${p.imagen}">ÃƒÂ°Ã…Â¸Ã¢â‚¬â€œÃ‚Â¼ÃƒÂ¯Ã‚Â¸Ã‚Â<br>Banner</div>`;
-        }
-
         const tr = document.createElement('tr');
-        const isChecked = p.activo === 'SI' ? 'checked' : '';
+        const isChecked = p.activo === 'SI' ? 'selected' : '';
+        const isNotChecked = p.activo === 'NO' ? 'selected' : '';
         
         tr.innerHTML = `
             <td>
-                <div style="display: flex; align-items: center; gap: 10px;">
-                    ${imgHtml}
-                    <strong>${p.imagen}</strong>
-                </div>
+                <input type="text" class="modern-select" value="${p.imagen || ''}" onchange="actualizarPromo(${index}, 'imagen', this.value)" style="width:100%; padding:4px;" placeholder="promo1.jpg">
             </td>
             <td>
-                <label class="switch">
-                    <input type="checkbox" ${isChecked} onchange="togglePromo(${index})">
-                    <span class="slider round"></span>
-                </label>
+                <select class="modern-select" style="padding:4px;" onchange="actualizarPromo(${index}, 'activo', this.value)">
+                    <option value="SI" ${isChecked}>SI (Prendido)</option>
+                    <option value="NO" ${isNotChecked}>NO (Apagado)</option>
+                </select>
             </td>
             <td>
-                <button class="btn-secondary btn-small" onclick="deletePromo(${index})">ÃƒÂ°Ã…Â¸Ã¢â‚¬â€Ã¢â‚¬ËœÃƒÂ¯Ã‚Â¸Ã‚Â</button>
+                <!-- Las promos principales no se borran, solo se apagan -->
             </td>
         `;
         promosTbody.appendChild(tr);
     });
 }
-
-window.togglePromo = async function(index) {
-    const p = currentClientData.promos[index];
-    p.activo = p.activo === 'SI' ? 'NO' : 'SI';
-    try {
-        const { doc, updateDoc } = await import("https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js");
-        await updateDoc(doc(db, "clientes", currentClientId), {
-            promos: currentClientData.promos
-        });
-    } catch (e) {
-        alert("Error al cambiar promo.");
-        p.activo = p.activo === 'SI' ? 'NO' : 'SI'; 
-        renderPromos(currentClientData.promos);
-    }
-};
 
 window.deletePromo = async function(index) {
     if(!confirm("Ãƒâ€šÃ‚Â¿Eliminar esta promo de la lista?")) return;
@@ -628,79 +603,7 @@ btnConfirmImport.addEventListener('click', async () => {
     }
 });
 
-window.editProduct = async (index) => {
-    if (!currentClientId) return;
-    const p = currentClientData.productos[index];
-    
-    document.getElementById('edit-product-index').value = index;
-    document.getElementById('edit-product-nombre').value = p.titulo || p.nombre || '';
-    document.getElementById('edit-product-precio').value = parseFloat(p.precio) || 0;
-    document.getElementById('edit-product-categoria').value = p.categoria || '';
-    document.getElementById('edit-product-descripcion').value = p.descripcion || '';
-    document.getElementById('edit-product-imagen').value = p.imagen || '';
-    
-    document.getElementById('edit-product-modal').style.display = 'flex';
-};
 
-document.getElementById('btn-cancel-edit-product').addEventListener('click', () => {
-    document.getElementById('edit-product-modal').style.display = 'none';
-});
-
-document.getElementById('btn-save-edit-product').addEventListener('click', async () => {
-    if (!currentClientId) return;
-    const index = parseInt(document.getElementById('edit-product-index').value);
-    const p = currentClientData.productos[index];
-    
-    const nombre = document.getElementById('edit-product-nombre').value.trim();
-    const precio = parseFloat(document.getElementById('edit-product-precio').value) || 0;
-    const categoria = document.getElementById('edit-product-categoria').value.trim();
-    const descripcion = document.getElementById('edit-product-descripcion').value.trim();
-    const imagen = document.getElementById('edit-product-imagen').value.trim();
-    
-    if (!nombre) {
-        alert("El nombre es obligatorio");
-        return;
-    }
-    
-    currentClientData.productos[index] = {
-        ...p,
-        titulo: nombre,
-        nombre: nombre,
-        precio: precio,
-        categoria: categoria,
-        descripcion: descripcion,
-        imagen: imagen
-    };
-    
-    try {
-        const { doc, updateDoc } = await import("https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js");
-        await updateDoc(doc(db, "clientes", currentClientId), {
-            productos: currentClientData.productos
-        });
-        renderProducts(currentClientData.productos);
-        document.getElementById('edit-product-modal').style.display = 'none';
-    } catch (e) {
-        alert("Error al actualizar producto.");
-    }
-});
-
-// Exponer la funciÃƒÆ’Ã‚Â³n delete al window para el onclick del HTML
-window.deleteProduct = async (index) => {
-    if (!currentClientId || !confirm("Ãƒâ€šÃ‚Â¿Eliminar producto?")) return;
-    
-    try {
-        const docRef = doc(db, "clientes", currentClientId);
-        const docSnap = await getDoc(docRef);
-        const data = docSnap.data();
-        let productosActuales = data.productos || [];
-        productosActuales.splice(index, 1); // Remover el item
-        
-        await updateDoc(docRef, { productos: productosActuales });
-        renderProducts(productosActuales);
-    } catch (e) {
-        alert("Error al eliminar.");
-    }
-};
 
 // ==========================================
 // MÃƒÆ’Ã¢â‚¬Å“DULO DE PAGOS Y FACTURACIÃƒÆ’Ã¢â‚¬Å“N (ROBOT COBRADOR)
@@ -834,38 +737,58 @@ if (btnSaveBilling) {
     });
 }
 
+// ==========================================
+// REPORTES Y ESTADÍSTICAS
+// ==========================================
+window.generarReporteWhatsapp = function() {
+    if (!currentClientData) return;
+    
+    const telefono = currentClientData.whatsapp || currentClientData.telefono || "";
+    const visitas = currentClientData.visitas || 0;
+    const nombre = currentClientData.nombre || currentClientData.businessName || "Cliente";
+    
+    if (!telefono) {
+        alert("El cliente no tiene un número de WhatsApp registrado.");
+        return;
+    }
+    
+    let tlf = telefono.replace(/\D/g, ''); // Quitar espacios y símbolos
+    
+    const mensaje = ¡Hola ! 📊 Aquí tienes tu reporte mensual de Grow Studio.\n\nEste mes tu Menú Digital ha recibido * visitas*.\n\n¡Tus clientes están amando tu menú digital! Gracias por confiar en nosotros. 🚀;
+    const url = `https://web.whatsapp.com/send?phone=${tlf}&text=${encodeURIComponent(mensaje)}`;
+    
+    window.open(url, '_blank');
+};
+
 // Robot Cobrador (Llamado en auth)
 window.correrRobotCobrador = async function() {
-    console.log("Corriendo Robot Cobrador...");
+    console.log("Corriendo Robot Automático...");
     try {
         const snap = await getDocs(collection(db, "clientes"));
         const hoy = new Date();
-        const diaHoy = hoy.getDate();
-        const mesActual = hoy.getFullYear() + "-" + (hoy.getMonth() + 1);
         
         snap.forEach(async (docSnap) => {
             const data = docSnap.data();
-            const mensualidad = parseFloat(data.mensualidad) || 0;
-            let deuda = parseFloat(data.deuda) || 0;
-            const diaCorte = parseInt(data.diaCorte) || null;
-            const lastBilledMonth = data.lastBilledMonth || "";
-            let estado = data.estado || "ACTIVO";
+            if (!data.fechaVencimiento) return;
             
-            if (mensualidad > 0 && diaCorte && lastBilledMonth !== mesActual) {
-                if (diaHoy >= diaCorte) {
-                    deuda += mensualidad;
-                    console.log(`Facturando a ${docSnap.id}. Nueva deuda: ${deuda}`);
-                    if (deuda >= (mensualidad * 1.5)) {
-                        estado = "SUSPENDIDO";
-                    }
-                    await updateDoc(doc(db, "clientes", docSnap.id), {
-                        deuda: deuda,
-                        lastBilledMonth: mesActual,
-                        estado: estado
-                    });
-                }
+            const fechaV = new Date(data.fechaVencimiento);
+            const diffTime = fechaV - hoy;
+            const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+            
+            let estadoActual = data.estado || "ACTIVO";
+            
+            // Si la fecha de vencimiento ya pasó (diffDays <= 0) y el cliente sigue ACTIVO, lo suspendemos.
+            if (diffDays <= 0 && estadoActual === "ACTIVO") {
+                console.log(`Suspendiendo automáticamente a ${docSnap.id} por falta de pago.`);
+                await updateDoc(doc(db, "clientes", docSnap.id), {
+                    estado: "SUSPENDIDO"
+                });
             }
         });
+    } catch (e) {
+        console.error("Error en Robot Automático:", e);
+    }
+};
     } catch (e) {
         console.error("Error en Robot Cobrador:", e);
     }
