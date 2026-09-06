@@ -2,7 +2,7 @@ import { db, auth, signInWithEmailAndPassword, onAuthStateChanged, signOut, send
 import { DOM, state } from './state.js';
 // RENDERIZADO Y CONTROL DE PRODUCTOS Y PROMOS
 // ==========================================
- // Guardar datos para actualizaciones rÃƒÆ’Ã‚Â¡pidas
+ // Guardar datos para actualizaciones rápidas
 
 window.openClientManager = async function(id, data, liElement) {
     state.currentClientId = id;
@@ -89,7 +89,7 @@ window.openClientManager = async function(id, data, liElement) {
 // Eliminar Cliente
 DOM.btnDeleteClient.addEventListener('click', async () => {
     if (!state.currentClientId) return;
-    const confirmacion = confirm(`Ãƒâ€šÃ‚Â¿EstÃƒÆ’Ã‚Â¡s SEGURO de que quieres borrar a ${state.currentClientId} por completo? Esto eliminarÃƒÆ’Ã‚Â¡ todo su menÃƒÆ’Ã‚Âº y configuraciÃƒÆ’Ã‚Â³n.`);
+    const confirmacion = confirm(`¿Estás SEGURO de que quieres borrar a ${state.currentClientId} por completo? Esto eliminará todo su menú y configuración.`);
     if (confirmacion) {
         try {
             const { deleteDoc, doc } = await import("https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js");
@@ -140,7 +140,7 @@ DOM.btnSaveWhatsapp.addEventListener('click', async () => {
         await updateDoc(doc(db, "clientes", state.currentClientId), {
             whatsapp: DOM.clientWhatsapp.value.trim()
         });
-        alert("NÃƒÆ’Ã‚Âºmero de WhatsApp guardado en la nube.");
+        alert("Número de WhatsApp guardado en la nube.");
     } catch (error) {
         alert("Error al guardar WhatsApp.");
     }
@@ -164,7 +164,7 @@ DOM.btnSaveUrl.addEventListener('click', async () => {
             DOM.clientLink.style.display = 'none';
         }
         
-        alert("URL guardada en la nube. Ãƒâ€šÃ‚Â¡Ya puedes hacer clic en el link ÃƒÂ°Ã…Â¸Ã¢â‚¬ÂÃ¢â‚¬â€ junto al tÃƒÆ’Ã‚Â­tulo!");
+        alert("URL guardada en la nube. ¡Ya puedes hacer clic en el link ÃƒÂ°Ã…Â¸Ã¢â‚¬ÂÃ¢â‚¬â€ junto al título!");
     } catch (error) {
         alert("Error al guardar URL.");
     }
@@ -296,7 +296,7 @@ window.renderPromos = function(promos) {
 }
 
 window.deletePromo = async function(index) {
-    if(!confirm("Ãƒâ€šÃ‚Â¿Eliminar esta promo de la lista?")) return;
+    if(!confirm("¿Eliminar esta promo de la lista?")) return;
     state.currentClientData.promos.splice(index, 1);
     try {
         const { doc, updateDoc } = await import("https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js");
@@ -334,16 +334,16 @@ DOM.btnAddPromo.addEventListener('click', async () => {
 
 
 
-// AÃƒÆ’Ã‚Â±adir Producto MÃƒÆ’Ã‚Â­nimo Viable (usando prompts por rapidez de la primera versiÃƒÆ’Ã‚Â³n)
+// Añadir Producto Mínimo Viable (usando prompts por rapidez de la primera versión)
 DOM.btnAddProduct.addEventListener('click', async () => {
     if (!state.currentClientId) return;
     
     const nombre = prompt("Nombre del producto:");
     if (!nombre) return;
-    const precio = prompt("Precio en dÃƒÆ’Ã‚Â³lares (ej. 5.50):");
-    const categoria = prompt("CategorÃƒÆ’Ã‚Â­a (ej. Promociones, Hamburguesas):");
+    const precio = prompt("Precio en dólares (ej. 5.50):");
+    const categoria = prompt("Categoría (ej. Promociones, Hamburguesas):");
     const imagen = prompt("URL de la imagen:");
-    const descripcion = prompt("DescripciÃƒÆ’Ã‚Â³n corta:");
+    const descripcion = prompt("Descripción corta:");
     const extras = prompt("Nombres de los extras separados por coma (opcional):");
 
     const nuevoProducto = {
@@ -369,9 +369,9 @@ DOM.btnAddProduct.addEventListener('click', async () => {
     }
 });
 
-// LÃƒÆ’Ã‚Â³gica para el botÃƒÆ’Ã‚Â³n Importar con IA
+// Lógica para el botón Importar con IA
 if(DOM.btnImportBulk) DOM.btnImportBulk.addEventListener('click', () => {
-    DOM.importRawText.value = ''; // Limpiar el ÃƒÆ’Ã‚Â¡rea de texto
+    DOM.importRawText.value = ''; // Limpiar el área de texto
     // Cargar API key guardada
     const savedKey = localStorage.getItem('gemini_api_key');
     if (savedKey) DOM.geminiApiKey.value = savedKey;
@@ -389,7 +389,7 @@ if(DOM.btnConfirmImport) DOM.btnConfirmImport.addEventListener('click', async ()
     const apiKey = DOM.geminiApiKey.value.trim();
     
     if (!rawText || !apiKey) {
-        alert("Por favor, ingresa el texto del menÃƒÆ’Ã‚Âº y tu API Key de Gemini.");
+        alert("Por favor, ingresa el texto del menú y tu API Key de Gemini.");
         return;
     }
     
@@ -401,22 +401,22 @@ if(DOM.btnConfirmImport) DOM.btnConfirmImport.addEventListener('click', async ()
         DOM.btnCancelImport.disabled = true;
         DOM.aiLoadingText.style.display = 'block';
         
-        // Llamada a la API de Gemini (REST) usando el modelo mÃƒÆ’Ã‚Â¡s reciente (3.6-flash)
+        // Llamada a la API de Gemini (REST) usando el modelo más reciente (3.6-flash)
         const promptText = `
-        Tengo este menÃƒÆ’Ã‚Âº crudo de un restaurante. Extrae todos los productos y devuÃƒÆ’Ã‚Â©lvelos estrictamente como un arreglo de objetos JSON con esta estructura exacta, basÃƒÆ’Ã‚Â¡ndote en un esquema de Excel, sin texto extra:
+        Tengo este menú crudo de un restaurante. Extrae todos los productos y devuélvelos estrictamente como un arreglo de objetos JSON con esta estructura exacta, basándote en un esquema de Excel, sin texto extra:
         [
           {
-            "id": "generar un ID numÃƒÆ’Ã‚Â©rico ÃƒÆ’Ã‚Âºnico",
+            "id": "generar un ID numérico único",
             "categoria": "string (usa tu mejor juicio, ej: Hamburguesas, Bebidas)",
             "nombre": "string",
             "descripcion": "string (ingredientes)",
-            "precio": number (solo el nÃƒÆ’Ã‚Âºmero, ej: 5.50),
+            "precio": number (solo el número, ej: 5.50),
             "imagen": "string (nombre archivo, ej: hamburguesa.jpg o url)",
             "activo": "SI"
           }
         ]
         
-        MenÃƒÆ’Ã‚Âº crudo a procesar:
+        Menú crudo a procesar:
         ${rawText}
         `;
         
@@ -442,7 +442,7 @@ if(DOM.btnConfirmImport) DOM.btnConfirmImport.addEventListener('click', async ()
         const jsonData = JSON.parse(aiResponseText);
         
         if (!Array.isArray(jsonData)) {
-            throw new Error("La IA no devolviÃƒÆ’Ã‚Â³ una lista vÃƒÆ’Ã‚Â¡lida.");
+            throw new Error("La IA no devolvió una lista válida.");
         }
         
         // Formatear precios por seguridad
@@ -463,7 +463,7 @@ if(DOM.btnConfirmImport) DOM.btnConfirmImport.addEventListener('click', async ()
         window.renderProducts(productosActuales);
         
         DOM.importModal.style.display = 'none';
-        alert(`Ãƒâ€šÃ‚Â¡Inteligencia Artificial Exitosamente aplicada! Se importaron ${cleanData.length} productos automÃƒÆ’Ã‚Â¡ticamente.`);
+        alert(`¡Inteligencia Artificial Exitosamente aplicada! Se importaron ${cleanData.length} productos automáticamente.`);
     } catch (e) {
         alert("Error de la IA o de red: " + e.message);
     } finally {

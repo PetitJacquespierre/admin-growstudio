@@ -86,7 +86,7 @@ if (DOM.btnDownloadQr) {
     DOM.btnDownloadQr.addEventListener('click', () => {
         const img = DOM.qrContainer.querySelector('img');
         if (!img || !img.src) {
-            alert("AÃƒÆ’Ã‚Âºn no se ha generado el QR.");
+            alert("Aún no se ha generado el QR.");
             return;
         }
         const a = document.createElement('a');
@@ -143,7 +143,7 @@ window.generarReciboPDF = (clienteId, monto, fecha, referencia) => {
         doc.setTextColor(150, 150, 150);
         doc.setFont("helvetica", "normal");
         doc.setFontSize(10);
-        doc.text("Ã‚Â¡Gracias por confiar en Grow Studio!", 105, 270, { align: "center" });
+        doc.text("¡Gracias por confiar en Grow Studio!", 105, 270, { align: "center" });
         doc.text("growstudioweb.vercel.app", 105, 278, { align: "center" });
         
         // Guardar

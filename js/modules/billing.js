@@ -1,8 +1,8 @@
 import { db, auth, signInWithEmailAndPassword, onAuthStateChanged, signOut, sendPasswordResetEmail, setPersistence, browserLocalPersistence, browserSessionPersistence, collection, addDoc, getDocs, doc, deleteDoc, updateDoc, onSnapshot, getDoc, query, orderBy, setDoc } from './firebase-init.js';
 import { DOM, state } from './state.js';
-// LÃƒÆ’Ã‚Â³gica para el botÃƒÆ’Ã‚Â³n Importar con IA
+// Lógica para el botón Importar con IA
 if(DOM.btnImportBulk) DOM.btnImportBulk.addEventListener('click', () => {
-    DOM.importRawText.value = ''; // Limpiar el ÃƒÆ’Ã‚Â¡rea de texto
+    DOM.importRawText.value = ''; // Limpiar el área de texto
     // Cargar API key guardada
     const savedKey = localStorage.getItem('gemini_api_key');
     if (savedKey) DOM.geminiApiKey.value = savedKey;
@@ -20,7 +20,7 @@ if(DOM.btnConfirmImport) DOM.btnConfirmImport.addEventListener('click', async ()
     const apiKey = DOM.geminiApiKey.value.trim();
     
     if (!rawText || !apiKey) {
-        alert("Por favor, ingresa el texto del menÃƒÆ’Ã‚Âº y tu API Key de Gemini.");
+        alert("Por favor, ingresa el texto del menú y tu API Key de Gemini.");
         return;
     }
     
@@ -32,22 +32,22 @@ if(DOM.btnConfirmImport) DOM.btnConfirmImport.addEventListener('click', async ()
         DOM.btnCancelImport.disabled = true;
         DOM.aiLoadingText.style.display = 'block';
         
-        // Llamada a la API de Gemini (REST) usando el modelo mÃƒÆ’Ã‚Â¡s reciente (3.6-flash)
+        // Llamada a la API de Gemini (REST) usando el modelo más reciente (3.6-flash)
         const promptText = `
-        Tengo este menÃƒÆ’Ã‚Âº crudo de un restaurante. Extrae todos los productos y devuÃƒÆ’Ã‚Â©lvelos estrictamente como un arreglo de objetos JSON con esta estructura exacta, basÃƒÆ’Ã‚Â¡ndote en un esquema de Excel, sin texto extra:
+        Tengo este menú crudo de un restaurante. Extrae todos los productos y devuélvelos estrictamente como un arreglo de objetos JSON con esta estructura exacta, basándote en un esquema de Excel, sin texto extra:
         [
           {
-            "id": "generar un ID numÃƒÆ’Ã‚Â©rico ÃƒÆ’Ã‚Âºnico",
+            "id": "generar un ID numérico único",
             "categoria": "string (usa tu mejor juicio, ej: Hamburguesas, Bebidas)",
             "nombre": "string",
             "descripcion": "string (ingredientes)",
-            "precio": number (solo el nÃƒÆ’Ã‚Âºmero, ej: 5.50),
+            "precio": number (solo el número, ej: 5.50),
             "imagen": "string (nombre archivo, ej: hamburguesa.jpg o url)",
             "activo": "SI"
           }
         ]
         
-        MenÃƒÆ’Ã‚Âº crudo a procesar:
+        Menú crudo a procesar:
         ${rawText}
         `;
         
@@ -73,7 +73,7 @@ if(DOM.btnConfirmImport) DOM.btnConfirmImport.addEventListener('click', async ()
         const jsonData = JSON.parse(aiResponseText);
         
         if (!Array.isArray(jsonData)) {
-            throw new Error("La IA no devolviÃƒÆ’Ã‚Â³ una lista vÃƒÆ’Ã‚Â¡lida.");
+            throw new Error("La IA no devolvió una lista válida.");
         }
         
         // Formatear precios por seguridad
@@ -94,7 +94,7 @@ if(DOM.btnConfirmImport) DOM.btnConfirmImport.addEventListener('click', async ()
         window.renderProducts(productosActuales);
         
         DOM.importModal.style.display = 'none';
-        alert(`Ãƒâ€šÃ‚Â¡Inteligencia Artificial Exitosamente aplicada! Se importaron ${cleanData.length} productos automÃƒÆ’Ã‚Â¡ticamente.`);
+        alert(`¡Inteligencia Artificial Exitosamente aplicada! Se importaron ${cleanData.length} productos automáticamente.`);
     } catch (e) {
         alert("Error de la IA o de red: " + e.message);
     } finally {
@@ -107,16 +107,16 @@ if(DOM.btnConfirmImport) DOM.btnConfirmImport.addEventListener('click', async ()
 
 
 // ==========================================
-// MÃƒÆ’Ã¢â‚¬Å“DULO DE PAGOS Y FACTURACIÃƒÆ’Ã¢â‚¬Å“N (ROBOT COBRADOR)
+// MÓDULO DE PAGOS Y FACTURACIÓN (ROBOT COBRADOR)
 // ==========================================
 const btnViewPayments = document.getElementById('btn-view-payments');
 const paymentsScreen = document.getElementById('payments-screen');
 const paymentsTbody = document.getElementById('payments-tbody');
 
-// BotÃƒÆ’Ã‚Â³n sidebar para ver pagos
+// Botón sidebar para ver pagos
 if(btnViewPayments) btnViewPayments.addEventListener('click', () => {
     DOM.clientManager.style.display = 'none';
-    welcomeScreen.style.display = 'none';
+    document.getElementById('welcome-screen').style.display = 'none';
     paymentsScreen.style.display = 'flex';
     
     document.querySelectorAll('.menu-list li').forEach(li => li.classList.remove('active'));
@@ -210,7 +210,7 @@ window.aprobarPago = async function(pagoId, cedulaPago, montoPagado, fechaPago, 
 };
 
 // ==========================================
-// LÃƒÆ’Ã¢â‚¬Å“GICA DE FACTURACIÃƒÆ’Ã¢â‚¬Å“N EN EL PERFIL DEL CLIENTE
+// LÓGICA DE FACTURACIÓN EN EL PERFIL DEL CLIENTE
 // ==========================================
     
     

@@ -1,6 +1,6 @@
 import { db, auth, signInWithEmailAndPassword, onAuthStateChanged, signOut, sendPasswordResetEmail, setPersistence, browserLocalPersistence, browserSessionPersistence, collection, addDoc, getDocs, doc, deleteDoc, updateDoc, onSnapshot, getDoc, query, orderBy, setDoc } from './firebase-init.js';
 import { DOM, state } from './state.js';
-// AUTENTICACIÃƒÆ’Ã¢â‚¬Å“N
+// AUTENTICACIÓN
 // ==========================================
 
 onAuthStateChanged(auth, (user) => {
@@ -53,14 +53,14 @@ const btnForgotPassword = document.getElementById('btn-forgot-password');
 btnForgotPassword.addEventListener('click', async () => {
     const email = document.getElementById('email').value.trim();
     if (!email) {
-        alert("Por favor, ingresa tu correo electrÃƒÆ’Ã‚Â³nico primero en la casilla de arriba para enviarte el link de recuperaciÃƒÆ’Ã‚Â³n.");
+        alert("Por favor, ingresa tu correo electrónico primero en la casilla de arriba para enviarte el link de recuperación.");
         return;
     }
     try {
         await sendPasswordResetEmail(auth, email);
-        alert("Ãƒâ€šÃ‚Â¡Enlace de recuperaciÃƒÆ’Ã‚Â³n enviado! Revisa tu bandeja de entrada (y la carpeta de SPAM).");
+        alert("¡Enlace de recuperación enviado! Revisa tu bandeja de entrada (y la carpeta de SPAM).");
     } catch (error) {
-        alert("Error al enviar el correo. Verifica que el correo estÃƒÆ’Ã‚Â© bien escrito y exista.");
+        alert("Error al enviar el correo. Verifica que el correo esté bien escrito y exista.");
     }
 });
 

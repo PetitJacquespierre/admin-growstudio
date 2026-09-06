@@ -1,6 +1,6 @@
 import { db, auth, signInWithEmailAndPassword, onAuthStateChanged, signOut, sendPasswordResetEmail, setPersistence, browserLocalPersistence, browserSessionPersistence, collection, addDoc, getDocs, doc, deleteDoc, updateDoc, onSnapshot, getDoc, query, orderBy, setDoc } from './firebase-init.js';
 import { DOM, state } from './state.js';
-// GESTIÃƒÆ’Ã¢â‚¬Å“N DE CLIENTES
+// GESTIÓN DE CLIENTES
 // ==========================================
 
 window.loadClients = async function() {
@@ -10,7 +10,7 @@ window.loadClients = async function() {
         DOM.clientsUl.innerHTML = '';
         
         if (querySnapshot.empty) {
-            DOM.clientsUl.innerHTML = '<li style="color:gray">No hay clientes aÃƒÆ’Ã‚Âºn</li>';
+            DOM.clientsUl.innerHTML = '<li style="color:gray">No hay clientes aún</li>';
             return;
         }
 
@@ -28,7 +28,7 @@ window.loadClients = async function() {
         });
     } catch (error) {
         console.error("Error cargando clientes:", error);
-        DOM.clientsUl.innerHTML = '<li style="color:red">Error de conexiÃƒÆ’Ã‚Â³n</li>';
+        DOM.clientsUl.innerHTML = '<li style="color:red">Error de conexión</li>';
     }
 }
 
@@ -36,14 +36,14 @@ DOM.btnNewClient.addEventListener('click', async () => {
     document.querySelectorAll('#clients-ul li').forEach(li => li.classList.remove('active'));
     DOM.btnNewClient.classList.add('active');
     
-    const id = prompt("Ingresa el ID ÃƒÆ’Ã‚Âºnico del cliente (ej. la_flaca, foodpoint):");
+    const id = prompt("Ingresa el ID único del cliente (ej. la_flaca, foodpoint):");
     if (!id) return;
     
 
     const name = prompt("Nombre comercial del cliente (ej. Pasteles La Flaca):");
     if (!name) return;
 
-    const whatsapp = prompt("NÃƒÆ’Ã‚Âºmero de WhatsApp del cliente con cÃƒÆ’Ã‚Â³digo de paÃƒÆ’Ã‚Â­s (ej. 584120000000):") || "";
+    const whatsapp = prompt("Número de WhatsApp del cliente con código de país (ej. 584120000000):") || "";
     const url = prompt("Link de la tienda en Vercel (Opcional, ej: https://laflaca.vercel.app):") || "";
 
     try {
