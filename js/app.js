@@ -75,7 +75,7 @@ loginForm.addEventListener('submit', async (e) => {
     btnSubmit.disabled = true;
 
     try {
-        await setPersistence(auth, rememberMe ? browserLocalPersistence : browserSessionPersistence);
+        try { await setPersistence(auth, rememberMe ? browserLocalPersistence : browserSessionPersistence); } catch(e) { console.warn("Persistence error", e); }
         await signInWithEmailAndPassword(auth, email, password);
     } catch (error) {
         console.error("Firebase Login Error:", error);
