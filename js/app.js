@@ -356,10 +356,10 @@ window.agregarProductoRapido = async function() {
     if (!nombre) return;
     const prod = {
         nombre: nombre,
+        descripcion: document.getElementById('new-prod-desc') ? document.getElementById('new-prod-desc').value : "",
         imagen: document.getElementById('new-prod-imagen').value || 'hamburguesa.png',
         categoria: document.getElementById('new-prod-categoria').value || 'General',
         precio: parseFloat(document.getElementById('new-prod-precio').value) || 0,
-        descripcion: "",
         activo: "SI"
     };
     if(!currentClientData.productos) currentClientData.productos = [];
@@ -380,6 +380,7 @@ function renderProducts(productos) {
     newTr.innerHTML = `
         <td><input type="text" id="new-prod-imagen" class="modern-select" placeholder="ej. pizza.jpg" style="width:100px; padding:4px;"></td>
         <td><input type="text" id="new-prod-nombre" class="modern-select" placeholder="Nuevo Producto..." style="width:120px; padding:4px;"></td>
+        <td><input type="text" id="new-prod-desc" class="modern-select" placeholder="Descripción..." style="width:150px; padding:4px;"></td>
         <td><input type="text" id="new-prod-categoria" class="modern-select" placeholder="Categoría" style="width:80px; padding:4px;"></td>
         <td><input type="number" id="new-prod-precio" class="modern-select" placeholder="0" style="width:60px; padding:4px;"></td>
         <td>-</td>
@@ -397,6 +398,7 @@ function renderProducts(productos) {
         tr.innerHTML = `
             <td><input type="text" class="modern-select" value="${p.imagen || ''}" onchange="actualizarProducto(${index}, 'imagen', this.value)" style="width:100px; padding:4px;"></td>
             <td><input type="text" class="modern-select" value="${p.nombre || ''}" onchange="actualizarProducto(${index}, 'nombre', this.value)" style="width:120px; padding:4px;"></td>
+            <td><input type="text" class="modern-select" value="${p.descripcion || ''}" onchange="actualizarProducto(${index}, 'descripcion', this.value)" style="width:150px; padding:4px;"></td>
             <td><input type="text" class="modern-select" value="${p.categoria || ''}" onchange="actualizarProducto(${index}, 'categoria', this.value)" style="width:80px; padding:4px;"></td>
             <td><input type="number" class="modern-select" value="${p.precio || 0}" onchange="actualizarProducto(${index}, 'precio', parseFloat(this.value))" style="width:60px; padding:4px;"></td>
             <td>
