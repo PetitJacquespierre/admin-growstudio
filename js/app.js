@@ -147,6 +147,7 @@ btnNewClient.addEventListener('click', async () => {
     const id = prompt("Ingresa el ID ÃƒÆ’Ã‚Âºnico del cliente (ej. la_flaca, foodpoint):");
     if (!id) return;
     
+
     const name = prompt("Nombre comercial del cliente (ej. Pasteles La Flaca):");
     if (!name) return;
 
