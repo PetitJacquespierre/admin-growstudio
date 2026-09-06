@@ -764,20 +764,20 @@ if (btnSaveBilling) {
         btnSaveBilling.disabled = true;
         try {
             await updateDoc(doc(db, "clientes", currentClientId), {
-                plan: clientPlan.value,
-                deuda: parseFloat(clientDeuda.value) || 0,
-                fechaVencimiento: clientVencimiento.value
+                plan: inputPlan.value,
+                deuda: parseFloat(inputDeuda.value) || 0,
+                fechaVencimiento: inputVencimiento.value
             });
             if (currentClientData) {
-                currentClientData.plan = clientPlan.value;
-                currentClientData.deuda = parseFloat(clientDeuda.value) || 0;
-                currentClientData.fechaVencimiento = clientVencimiento.value;
+                currentClientData.plan = inputPlan.value;
+                currentClientData.deuda = parseFloat(inputDeuda.value) || 0;
+                currentClientData.fechaVencimiento = inputVencimiento.value;
             }
             
             if (billingStatusIndicator) {
-                if (clientVencimiento.value) {
+                if (inputVencimiento.value) {
                     const hoy = new Date();
-                    const fechaV = new Date(clientVencimiento.value + 'T00:00:00');
+                    const fechaV = new Date(inputVencimiento.value + 'T00:00:00');
                     const diff = Math.ceil((fechaV - hoy) / (1000*60*60*24));
                     if (diff > 7) billingStatusIndicator.style.background = '#10b981';
                     else if (diff >= 0 && diff <= 7) billingStatusIndicator.style.background = '#f59e0b';
@@ -1025,3 +1025,64 @@ window.enviarCobroWhatsApp = function() {
 ¡Cualquier duda estamos a la orden!`);
     window.open(`https://wa.me/${tel}?text=${msg}`, '_blank');
 };
+
+
+// ==============================================================
+// GENERADOR DE QR
+// ==============================================================
+window.generarQRMenu = function() {
+    const currentId = clientSelector ? clientSelector.value : null;
+    if (!currentId) {
+        alert("Primero selecciona un cliente del menú superior.");
+        return;
+    }
+    
+    // Asumimos que los menús están en dominio vercel.app o growstudio
+    // O mejor aún, usamos el valor del input de la URL si existe
+    const clientUrlInput = document.getElementById('client-url');
+    let menuUrl = "";
+    if (clientUrlInput && clientUrlInput.value) {
+        menuUrl = "https://" + clientUrlInput.value;
+    } else {
+        // Fallback
+        if (currentId === "demo") menuUrl = "https://demomenudigital.vercel.app/";
+        else if (currentId === "laflaca") menuUrl = "https://pasteleslaflaca.vercel.app/";
+        else menuUrl = "https://" + currentId + ".vercel.app/";
+    }
+    
+    const qrContainer = document.getElementById('qr-code-container');
+    const qrModal = document.getElementById('qr-modal');
+    const qrUrlText = document.getElementById('qr-url-text');
+    
+    if (qrContainer && typeof QRCode !== 'undefined') {
+        qrContainer.innerHTML = "";
+        new QRCode(qrContainer, {
+            text: menuUrl,
+            width: 200,
+            height: 200,
+            colorDark : "#000000",
+            colorLight : "#ffffff",
+            correctLevel : QRCode.CorrectLevel.H
+        });
+        if (qrUrlText) qrUrlText.innerText = menuUrl;
+        if (qrModal) qrModal.style.display = 'flex';
+    } else {
+        alert("No se pudo generar el QR, falta la librería de QRCode.");
+    }
+};
+
+window.cerrarModalQR = function() {
+    const qrModal = document.getElementById('qr-modal');
+    if (qrModal) qrModal.style.display = 'none';
+};
+const btnCloseQr = document.getElementById('btn-close-qr');
+if (btnCloseQr) btnCloseQr.onclick = window.cerrarModalQR;
+window.cerrarModalQR = function() {
+    const qrModal = document.getElementById('qr-modal');
+    if (qrModal) qrModal.style.display = 'none';
+};
+
+if (btnGenerateQr) {
+    btnGenerateQr.onclick = window.generarQRMenu;
+}
+\nconst btnDownloadQr = document.getElementById(\'btn-download-qr\');\nif (btnDownloadQr) {\n    btnDownloadQr.onclick = function() {\n        const img = document.querySelector(\'#qr-code-container img\');\n        if (img && img.src) {\n            const link = document.createElement(\'a\');\n            link.download = \'menu-qr.png\';\n            link.href = img.src;\n            link.click();\n        }\n    };\n}
