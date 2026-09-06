@@ -64,7 +64,6 @@ onAuthStateChanged(auth, (user) => {
 
 loginForm.addEventListener('submit', async (e) => {
     e.preventDefault();
-    alert("Iniciando proceso de login...");
     const email = document.getElementById('email').value;
     const password = document.getElementById('password').value;
     const rememberMe = document.getElementById('remember-me').checked;
@@ -215,7 +214,8 @@ async function openClientManager(id, data, liElement) {
     const colorHex = data.colorPrimario || "#F97316";
     document.getElementById('client-color-picker').value = colorHex;
     document.getElementById('client-color-hex').value = colorHex;
-    document.getElementById('client-status-abierto').checked = data.recibirPedidos !== false;
+    const receiveOrdersEl = document.getElementById('client-receive-orders');
+    if (receiveOrdersEl) receiveOrdersEl.checked = (data.recibirPedidos !== false);
     document.getElementById('client-visitas').innerText = data.visitas || 0;
     
     document.querySelectorAll('#clients-ul li').forEach(li => li.classList.remove('active'));
@@ -230,6 +230,27 @@ async function openClientManager(id, data, liElement) {
         ];
     }
     
+    // Populate Billing
+    if (document.getElementById('client-plan')) {
+        document.getElementById('client-plan').value = data.plan || 'PRUEBA';
+        document.getElementById('client-vencimiento').value = data.fechaVencimiento || '';
+        document.getElementById('client-deuda').value = data.deuda || 0;
+        
+        const indicator = document.getElementById('billing-status-indicator');
+        if (indicator) {
+            if (data.fechaVencimiento) {
+                const hoy = new Date();
+                const fechaV = new Date(data.fechaVencimiento + 'T00:00:00');
+                const diff = Math.ceil((fechaV - hoy) / (1000*60*60*24));
+                if (diff > 7) indicator.style.background = '#10b981';
+                else if (diff >= 0 && diff <= 7) indicator.style.background = '#f59e0b';
+                else indicator.style.background = '#ef4444';
+            } else {
+                indicator.style.background = 'gray';
+            }
+        }
+    }
+
     renderProducts(data.productos || []);
     renderPromos(data.promos);
 }
@@ -735,6 +756,9 @@ window.aprobarPago = async function(pagoId, cedulaPago, montoPagado, fechaPago, 
 if (btnSaveBilling) {
     btnSaveBilling.addEventListener('click', async () => {
         if (!currentClientId) return;
+        const originalText = btnSaveBilling.innerText;
+        btnSaveBilling.innerText = "Guardando...";
+        btnSaveBilling.disabled = true;
         try {
             await updateDoc(doc(db, "clientes", currentClientId), {
                 plan: clientPlan.value,
@@ -746,9 +770,29 @@ if (btnSaveBilling) {
                 currentClientData.deuda = parseFloat(clientDeuda.value) || 0;
                 currentClientData.fechaVencimiento = clientVencimiento.value;
             }
-            alert("Datos de facturaciÃƒÆ’Ã‚Â³n actualizados");
+            
+            if (billingStatusIndicator) {
+                if (clientVencimiento.value) {
+                    const hoy = new Date();
+                    const fechaV = new Date(clientVencimiento.value + 'T00:00:00');
+                    const diff = Math.ceil((fechaV - hoy) / (1000*60*60*24));
+                    if (diff > 7) billingStatusIndicator.style.background = '#10b981';
+                    else if (diff >= 0 && diff <= 7) billingStatusIndicator.style.background = '#f59e0b';
+                    else billingStatusIndicator.style.background = '#ef4444';
+                } else {
+                    billingStatusIndicator.style.background = 'gray';
+                }
+            }
+            
+            btnSaveBilling.innerText = "¡Guardado!";
+            setTimeout(() => {
+                btnSaveBilling.innerText = originalText;
+                btnSaveBilling.disabled = false;
+            }, 2000);
         } catch (error) {
             alert("Error: " + error.message);
+            btnSaveBilling.innerText = originalText;
+            btnSaveBilling.disabled = false;
         }
     });
 }
@@ -756,6 +800,25 @@ if (btnSaveBilling) {
 // ==========================================
 // REPORTES Y ESTADÍSTICAS
 // ==========================================
+window.generarReporteWhatsapp = function() {
+    if (!currentClientData) return;
+    
+    const telefono = currentClientData.whatsapp || currentClientData.telefono || "";
+    const visitas = currentClientData.visitas || 0;
+    const nombre = currentClientData.nombre || currentClientData.businessName || "Cliente";
+    
+    if (!telefono) {
+        alert("El cliente no tiene un número de WhatsApp registrado.");
+        return;
+    }
+    
+    let tlf = telefono.replace(/\D/g, ''); 
+    
+    const mensaje = `¡Hola ${nombre}! 📊 Aquí tienes tu reporte mensual de Grow Studio.\n\nEste mes tu Menú Digital ha recibido *${visitas} visitas*.\n\n¡Tus clientes están amando tu menú digital! Gracias por confiar en nosotros. 🚀`;
+    const url = `https://web.whatsapp.com/send?phone=${tlf}&text=${encodeURIComponent(mensaje)}`;
+    
+    window.open(url, '_blank');
+};
 
 
 // Robot Cobrador (Llamado en auth)

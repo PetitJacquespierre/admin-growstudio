@@ -22,20 +22,6 @@
     <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
-    <script>
-        window.addEventListener('error', function(e) {
-            const errDiv = document.createElement('div');
-            errDiv.style.cssText = 'position:fixed;top:0;left:0;width:100%;background:red;color:white;z-index:9999;padding:20px;font-family:monospace;white-space:pre-wrap;';
-            errDiv.innerText = 'CRITICAL ERROR:\\n' + e.message + '\\n' + e.filename + ':' + e.lineno;
-            document.body.appendChild(errDiv);
-        });
-        window.addEventListener('unhandledrejection', function(e) {
-            const errDiv = document.createElement('div');
-            errDiv.style.cssText = 'position:fixed;top:0;left:0;width:100%;background:darkred;color:white;z-index:9999;padding:20px;font-family:monospace;white-space:pre-wrap;';
-            errDiv.innerText = 'UNHANDLED PROMISE:\\n' + (e.reason && e.reason.message ? e.reason.message : e.reason);
-            document.body.appendChild(errDiv);
-        });
-    </script>
     <!-- PANTALLA DE LOGIN -->
     <div id="login-screen" class="screen">
         <div class="login-card">
