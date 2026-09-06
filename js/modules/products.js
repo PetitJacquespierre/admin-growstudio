@@ -43,8 +43,6 @@ window.openClientManager = async function(id, data, liElement) {
     
     // New fields
     
-    document.getElementById('client-color-picker').value = DOM.colorHex;
-    document.getElementById('client-color-hex').value = DOM.colorHex;
     
     if (DOM.receiveOrdersEl) DOM.receiveOrdersEl.checked = (data.recibirPedidos !== false);
     document.getElementById('client-visitas').innerText = data.visitas || 0;
@@ -167,6 +165,17 @@ DOM.btnSaveUrl.addEventListener('click', async () => {
         alert("URL guardada en la nube. ¡Ya puedes hacer clic en el link ÃƒÂ°Ã…Â¸Ã¢â‚¬ÂÃ¢â‚¬â€ junto al título!");
     } catch (error) {
         alert("Error al guardar URL.");
+    }
+});
+
+// Visitar Tienda
+DOM.btnVisitUrl.addEventListener('click', () => {
+    const url = DOM.clientUrl.value.trim();
+    if (url) {
+        const fullUrl = url.startsWith('http') ? url : `https://${url}`;
+        window.open(fullUrl, '_blank');
+    } else {
+        alert('Por favor ingresa un link de tienda primero.');
     }
 });
 

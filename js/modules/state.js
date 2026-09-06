@@ -26,6 +26,7 @@ export const DOM = {
     btnSaveBilling: document.getElementById('btn-save-billing'),
     colorPicker: document.getElementById('client-color-picker'),
     colorHex: document.getElementById('client-color-hex'),
+    btnVisitUrl: document.getElementById('btn-visit-url'),
     btnSaveConfig: document.getElementById('btn-save-config'),
     btnGenerateQr: document.getElementById('btn-generate-qr'),
     qrModal: document.getElementById('qr-modal'),
