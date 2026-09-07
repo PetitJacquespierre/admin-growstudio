@@ -18,6 +18,8 @@ window.openClientManager = async function(id, data, liElement) {
     // Titulo y Link
     const titleText = document.createTextNode(`Menú de: ${data.nombre || data.nombre || data.businessName || id} `);
     DOM.managerTitle.innerHTML = '';
+    const heroUrlInput = document.getElementById('client-hero-url');
+    if (heroUrlInput) heroUrlInput.value = data.headerMedia || '';
     DOM.managerTitle.appendChild(titleText);
     
     if (data.url) {
