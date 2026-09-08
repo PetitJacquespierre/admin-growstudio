@@ -44,6 +44,7 @@ DOM.btnNewClient.addEventListener('click', async () => {
     if (!name) return;
 
     const whatsapp = prompt("Número de WhatsApp del cliente con código de país (ej. 584120000000):") || "";
+    const instagram = prompt("Link o @ de Instagram del cliente (Opcional, ej: @laflaca):") || "";
     const url = prompt("Link de la tienda en Vercel (Opcional, ej: https://laflaca.vercel.app):") || "";
 
     try {
@@ -52,6 +53,7 @@ DOM.btnNewClient.addEventListener('click', async () => {
             estado: "ACTIVO",
             tiendaAbierta: "AUTO",
             whatsapp: whatsapp,
+            instagram: instagram,
             url: url,
             productos: []
         });

@@ -40,6 +40,7 @@ window.openClientManager = async function(id, data, liElement) {
     DOM.clientStatus.value = data.estado || "ACTIVO";
     DOM.storeStatus.value = data.tiendaAbierta || "AUTO";
     DOM.clientWhatsapp.value = data.whatsapp || "";
+    DOM.clientInstagram.value = data.instagram || "";
     DOM.clientUrl.value = data.url || "";
     DOM.btnDeleteClient.style.display = 'block';
     
@@ -143,6 +144,20 @@ DOM.btnSaveWhatsapp.addEventListener('click', async () => {
         alert("Número de WhatsApp guardado en la nube.");
     } catch (error) {
         alert("Error al guardar WhatsApp.");
+    }
+});
+
+// Cambiar Instagram
+DOM.btnSaveInstagram.addEventListener('click', async () => {
+    if (!state.currentClientId) return;
+    try {
+        const { doc, updateDoc } = await import("https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js");
+        await updateDoc(doc(db, "clientes", state.currentClientId), {
+            instagram: DOM.clientInstagram.value.trim()
+        });
+        alert("Instagram guardado en la nube.");
+    } catch (error) {
+        alert("Error al guardar Instagram.");
     }
 });
 

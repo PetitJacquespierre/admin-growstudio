@@ -14,6 +14,8 @@ export const DOM = {
     storeStatus: document.getElementById('store-status'),
     clientWhatsapp: document.getElementById('client-whatsapp'),
     btnSaveWhatsapp: document.getElementById('btn-save-whatsapp'),
+    clientInstagram: document.getElementById('client-instagram'),
+    btnSaveInstagram: document.getElementById('btn-save-instagram'),
     clientUrl: document.getElementById('client-url'),
     btnSaveUrl: document.getElementById('btn-save-url'),
     clientLink: document.getElementById('client-link'),
