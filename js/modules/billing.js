@@ -183,6 +183,7 @@ window.aprobarPago = async function(pagoId, cedulaPago, montoPagado, fechaPago, 
         const q = query(collection(db, "clientes"), where("cedula", "==", cedulaPago));
         const clientSnap = await getDocs(q);
         
+        let clientUpdated = false;
         if (!clientSnap.empty) {
             clientSnap.forEach(async (cDoc) => {
                 let deudaActual = cDoc.data().deuda || 0;
@@ -193,7 +194,22 @@ window.aprobarPago = async function(pagoId, cedulaPago, montoPagado, fechaPago, 
                     deuda: nuevaDeuda,
                     estado: "ACTIVO"
                 });
+                clientUpdated = true;
             });
+        }
+        
+        if (!clientUpdated) {
+            const { getDoc } = await import("https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js");
+            const cDocSnap = await getDoc(doc(db, "clientes", cedulaPago));
+            if (cDocSnap.exists()) {
+                let deudaActual = cDocSnap.data().deuda || 0;
+                let nuevaDeuda = deudaActual - montoPagado;
+                if (nuevaDeuda < 0) nuevaDeuda = 0;
+                await updateDoc(doc(db, "clientes", cDocSnap.id), {
+                    deuda: nuevaDeuda,
+                    estado: "ACTIVO"
+                });
+            }
         }
         
         alert("Pago aprobado y deuda descontada automÃ¡ticamente.");
@@ -224,15 +240,18 @@ if (DOM.btnSaveBilling) {
         DOM.btnSaveBilling.innerText = "Guardando...";
         DOM.btnSaveBilling.disabled = true;
         try {
+            const cedulaVal = (DOM.inputCedula ? DOM.inputCedula.value.trim() : (document.getElementById('client-cedula') ? document.getElementById('client-cedula').value.trim() : ''));
             await updateDoc(doc(db, "clientes", state.currentClientId), {
                 plan: DOM.inputPlan.value,
                 deuda: parseFloat(DOM.inputDeuda.value) || 0,
-                fechaVencimiento: DOM.inputVencimiento.value
+                fechaVencimiento: DOM.inputVencimiento.value,
+                cedula: cedulaVal
             });
             if (state.currentClientData) {
                 state.currentClientData.plan = DOM.inputPlan.value;
                 state.currentClientData.deuda = parseFloat(DOM.inputDeuda.value) || 0;
                 state.currentClientData.fechaVencimiento = DOM.inputVencimiento.value;
+                state.currentClientData.cedula = cedulaVal;
             }
             
             if (DOM.billingStatusIndicator) {
