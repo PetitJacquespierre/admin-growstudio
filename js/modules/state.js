@@ -23,6 +23,7 @@ export const DOM = {
     btnAddProduct: document.getElementById('btn-add-product'),
     btnDeleteClient: document.getElementById('btn-delete-client'),
     inputPlan: document.getElementById('client-plan'),
+    inputCedula: document.getElementById('client-cedula'),
     inputDeuda: document.getElementById('client-deuda'),
     inputVencimiento: document.getElementById('client-vencimiento'),
     btnSaveBilling: document.getElementById('btn-save-billing'),

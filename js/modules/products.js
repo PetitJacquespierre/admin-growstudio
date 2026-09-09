@@ -65,6 +65,7 @@ window.openClientManager = async function(id, data, liElement) {
     // Populate Billing
     if (document.getElementById('client-plan')) {
         document.getElementById('client-plan').value = data.plan || 'PRUEBA';
+        if (document.getElementById('client-cedula')) document.getElementById('client-cedula').value = data.cedula || '';
         document.getElementById('client-vencimiento').value = data.fechaVencimiento || '';
         document.getElementById('client-deuda').value = data.deuda || 0;
         
@@ -85,6 +86,16 @@ window.openClientManager = async function(id, data, liElement) {
 
     window.renderProducts(data.productos || []);
     window.renderPromos(data.promos);
+    
+    // Auto-scroll al contenido en móviles
+    if (window.innerWidth <= 768) {
+        setTimeout(() => {
+            const mainContent = document.querySelector('.main-content');
+            if (mainContent) {
+                mainContent.scrollIntoView({ behavior: 'smooth' });
+            }
+        }, 100);
+    }
 }
 
 // Eliminar Cliente
