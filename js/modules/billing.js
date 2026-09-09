@@ -245,13 +245,15 @@ if (DOM.btnSaveBilling) {
                 plan: DOM.inputPlan.value,
                 deuda: parseFloat(DOM.inputDeuda.value) || 0,
                 fechaVencimiento: DOM.inputVencimiento.value,
-                cedula: cedulaVal
+                cedula: cedulaVal,
+                usuario: cedulaVal.toLowerCase()
             });
             if (state.currentClientData) {
                 state.currentClientData.plan = DOM.inputPlan.value;
                 state.currentClientData.deuda = parseFloat(DOM.inputDeuda.value) || 0;
                 state.currentClientData.fechaVencimiento = DOM.inputVencimiento.value;
                 state.currentClientData.cedula = cedulaVal;
+                state.currentClientData.usuario = cedulaVal.toLowerCase();
             }
             
             if (DOM.billingStatusIndicator) {
