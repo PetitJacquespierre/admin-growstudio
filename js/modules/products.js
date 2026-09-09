@@ -332,8 +332,11 @@ window.renderPromos = function(promos) {
         
         tr.innerHTML = `
             <td>
-                <input type="text" class="modern-select" value="${p.imagen || ''}" onchange="actualizarPromo(${index}, 'imagen', this.value)" style="width:100%; padding:4px;" placeholder="promo1.jpg">
+                <input type="text" class="modern-select" value="${p.imagen || ''}" onchange="actualizarPromo(${index}, 'imagen', this.value)" style="width:100px; padding:4px;" placeholder="promo1.jpg">
             </td>
+            <td><input type="text" class="modern-select" value="${p.nombre || ''}" onchange="actualizarPromo(${index}, 'nombre', this.value)" style="width:120px; padding:4px;" placeholder="Ej. Promo Chori"></td>
+            <td><input type="text" class="modern-select" value="${p.descripcion || ''}" onchange="actualizarPromo(${index}, 'descripcion', this.value)" style="width:150px; padding:4px;" placeholder="Detalles de la promo"></td>
+            <td><input type="number" class="modern-select" value="${p.precio || 0}" onchange="actualizarPromo(${index}, 'precio', parseFloat(this.value))" style="width:60px; padding:4px;"></td>
             <td>
                 <select class="modern-select" style="padding:4px;" onchange="actualizarPromo(${index}, 'activo', this.value)">
                     <option value="SI" ${isChecked}>SI (Prendido)</option>
@@ -341,7 +344,7 @@ window.renderPromos = function(promos) {
                 </select>
             </td>
             <td>
-                <!-- Las promos principales no se borran, solo se apagan -->
+                <button class="btn-secondary btn-small" onclick="window.deletePromo(${index})" title="Eliminar">❌</button>
             </td>
         `;
         DOM.promosTbody.appendChild(tr);
