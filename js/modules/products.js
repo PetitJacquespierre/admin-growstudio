@@ -179,11 +179,32 @@ DOM.btnSaveUrl.addEventListener('click', async () => {
             DOM.clientLink.style.display = 'none';
         }
         
-        alert("URL guardada en la nube. ¡Ya puedes hacer clic en el link ÃƒÂ°Ã…Â¸Ã¢â‚¬ÂÃ¢â‚¬â€ junto al título!");
+        alert("URL guardada en la nube. ¡Ya puedes hacer clic en el link ÃƒÂ°Ã…Â¸Ã¢â‚¬Â Ã¢â‚¬â€  junto al título!");
     } catch (error) {
         alert("Error al guardar URL.");
     }
 });
+
+// Guardar Portada (Hero Video/Imagen)
+const btnSaveHero = document.getElementById('btn-save-hero');
+if (btnSaveHero) {
+    btnSaveHero.addEventListener('click', async () => {
+        if (!state.currentClientId) return;
+        try {
+            const { doc, updateDoc } = await import("https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js");
+            const heroUrlInput = document.getElementById('client-hero-url');
+            const newHero = heroUrlInput ? heroUrlInput.value.trim() : '';
+            
+            await updateDoc(doc(db, "clientes", state.currentClientId), {
+                headerMedia: newHero
+            });
+            
+            alert(newHero === '' ? "Portada eliminada (se usará el diseño normal)" : "Portada guardada exitosamente.");
+        } catch (error) {
+            alert("Error al guardar la portada: " + error.message);
+        }
+    });
+}
 
 // Visitar Tienda
 DOM.btnVisitUrl.addEventListener('click', () => {
