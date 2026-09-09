@@ -265,12 +265,39 @@ window.renderProducts = function(productos) {
                 </select>
             </td>
             <td>
-                <button class="btn-secondary btn-small" onclick="window.deleteProduct(${index})">❌</button>
+                <button class="btn-secondary btn-small" style="padding: 2px 5px;" onclick="window.moveProduct(${index}, -1)" title="Subir fila">🔼</button>
+                <button class="btn-secondary btn-small" style="padding: 2px 5px;" onclick="window.moveProduct(${index}, 1)" title="Bajar fila">🔽</button>
+                <button class="btn-secondary btn-small" onclick="window.deleteProduct(${index})" title="Eliminar">❌</button>
             </td>
         `;
         DOM.productsTbody.appendChild(tr);
     });
 }
+
+window.moveProduct = async function(index, direction) {
+    if (!state.currentClientId) return;
+    const newIndex = index + direction;
+    
+    // Evitar salir de los límites del array
+    if (newIndex < 0 || newIndex >= state.currentClientData.productos.length) return;
+
+    // Intercambiar elementos
+    const temp = state.currentClientData.productos[index];
+    state.currentClientData.productos[index] = state.currentClientData.productos[newIndex];
+    state.currentClientData.productos[newIndex] = temp;
+
+    // Actualizar vista inmediatamente
+    window.renderProducts(state.currentClientData.productos);
+
+    // Guardar en la nube
+    try {
+        const { doc, updateDoc } = await import("https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js");
+        await updateDoc(doc(db, "clientes", state.currentClientId), { productos: state.currentClientData.productos });
+    } catch (e) {
+        alert("Error guardando el nuevo orden.");
+        console.error(e);
+    }
+};
 
 window.deleteProduct = async function(index) {
     if(!confirm("¿Eliminar este producto?")) return;
