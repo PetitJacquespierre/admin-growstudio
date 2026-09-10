@@ -227,11 +227,17 @@
 
 
                     <div class="stat-card" style="background: rgba(16, 185, 129, 0.1); border: 1px solid rgba(16, 185, 129, 0.3);">
-                        <h3 style="color: #10b981;">Estadísticas</h3>
+                        <div style="display: flex; align-items: center; justify-content: space-between;">
+                            <h3 style="color: #10b981; margin: 0;">Estadísticas</h3>
+                            <button onclick="resetearVisitas()" title="Resetear estadísticas del mes" style="background: none; border: 1px solid rgba(16,185,129,0.4); color: #10b981; border-radius: 6px; padding: 3px 8px; cursor: pointer; font-size: 11px; display: flex; align-items: center; gap: 4px;">
+                                🔄 Reset
+                            </button>
+                        </div>
                         <div style="text-align: center; margin-top: 10px;">
                             <span style="font-size: 11px; color: gray; text-transform: uppercase;">Visitas Totales</span>
                             <h1 id="client-visitas" style="color: #10b981; font-size: 30px;">0</h1>
                             <button class="btn-primary btn-small" style="margin-top: 10px; font-size: 11px; width: 100%; cursor: pointer;" onclick="generarReporteWhatsapp()">Generar Reporte 📊</button>
+                            <button class="btn-secondary btn-small" style="margin-top: 6px; font-size: 11px; width: 100%; cursor: pointer; color: var(--brand-orange); border: 1px solid var(--brand-orange);" onclick="generarReportePDF()">📈 Reporte PDF Mensual</button>
                         </div>
                     </div>
                 </div>
