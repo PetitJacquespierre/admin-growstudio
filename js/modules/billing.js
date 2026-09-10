@@ -231,9 +231,31 @@ window.eliminarPago = async function(pagoId) {
     }
 };
 
+// Helper: calcular nueva fecha de vencimiento según el plan
+function calcularNuevaFecha(fechaActual, plan) {
+    // Base: si la fecha ya venció, partir de hoy; si aún vigente, partir de esa fecha
+    const hoy = new Date();
+    let base = fechaActual ? new Date(fechaActual + 'T00:00:00') : hoy;
+    if (base < hoy) base = hoy; // si ya venció, extender desde hoy
+    
+    const planUpper = (plan || 'MENSUAL').toUpperCase();
+    if (planUpper.includes('ANUAL')) {
+        base.setFullYear(base.getFullYear() + 1);
+    } else if (planUpper.includes('SEMESTRAL')) {
+        base.setMonth(base.getMonth() + 6);
+    } else if (planUpper.includes('TRIMESTRAL')) {
+        base.setMonth(base.getMonth() + 3);
+    } else {
+        // MENSUAL o PRUEBA o cualquier otro → +1 mes
+        base.setMonth(base.getMonth() + 1);
+    }
+    // Devolver en formato YYYY-MM-DD
+    return base.toISOString().split('T')[0];
+}
+
 // Hacer global para el onclick inline
 window.aprobarPago = async function(pagoId, cedulaPago, montoPagado, fechaPago, referenciaPago, clienteIdDirecto) {
-    if (!confirm("¿Confirmas que recibiste $" + montoPagado + " y deseas descontarlo de la deuda del cliente " + cedulaPago + "?")) return;
+    if (!confirm("¿Confirmas que recibiste $" + montoPagado + " y deseas aprobarlo?")) return;
     
     try {
         const { doc: fDoc, updateDoc: fUpdateDoc, getDocs: fGetDocs, query: fQuery, collection: fCollection, where: fWhere, getDoc: fGetDoc } = await import("https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js");
@@ -242,13 +264,26 @@ window.aprobarPago = async function(pagoId, cedulaPago, montoPagado, fechaPago, 
 
         let clienteEncontrado = false;
         
+        // Función interna para actualizar un cliente encontrado
+        async function actualizarCliente(clienteId, clienteData) {
+            const nuevaDeuda = Math.max(0, (clienteData.deuda || 0) - montoPagado);
+            const nuevaFecha = calcularNuevaFecha(clienteData.fechaVencimiento, clienteData.plan);
+            await fUpdateDoc(fDoc(db, "clientes", clienteId), {
+                deuda: nuevaDeuda,
+                estado: "ACTIVO",
+                fechaVencimiento: nuevaFecha
+            });
+            return nuevaFecha;
+        }
+        
+        let nuevaFechaFinal = '';
+        
         // 1. Intentar por clienteId directo
         if (clienteIdDirecto) {
             try {
                 const snap = await fGetDoc(fDoc(db, "clientes", clienteIdDirecto));
                 if (snap.exists()) {
-                    let nuevaDeuda = Math.max(0, (snap.data().deuda || 0) - montoPagado);
-                    await fUpdateDoc(fDoc(db, "clientes", clienteIdDirecto), { deuda: nuevaDeuda, estado: "ACTIVO" });
+                    nuevaFechaFinal = await actualizarCliente(clienteIdDirecto, snap.data());
                     clienteEncontrado = true;
                 }
             } catch(e) { console.warn("No se pudo por clienteIdDirecto:", e); }
@@ -260,8 +295,7 @@ window.aprobarPago = async function(pagoId, cedulaPago, montoPagado, fechaPago, 
             const snap = await fGetDocs(q);
             if (!snap.empty) {
                 for (const cDoc of snap.docs) {
-                    let nuevaDeuda = Math.max(0, (cDoc.data().deuda || 0) - montoPagado);
-                    await fUpdateDoc(fDoc(db, "clientes", cDoc.id), { deuda: nuevaDeuda, estado: "ACTIVO" });
+                    nuevaFechaFinal = await actualizarCliente(cDoc.id, cDoc.data());
                     clienteEncontrado = true;
                 }
             }
@@ -273,17 +307,34 @@ window.aprobarPago = async function(pagoId, cedulaPago, montoPagado, fechaPago, 
             const snap2 = await fGetDocs(q2);
             if (!snap2.empty) {
                 for (const cDoc of snap2.docs) {
-                    let nuevaDeuda = Math.max(0, (cDoc.data().deuda || 0) - montoPagado);
-                    await fUpdateDoc(fDoc(db, "clientes", cDoc.id), { deuda: nuevaDeuda, estado: "ACTIVO" });
+                    nuevaFechaFinal = await actualizarCliente(cDoc.id, cDoc.data());
                     clienteEncontrado = true;
                 }
             }
         }
         
         if (!clienteEncontrado) {
-            alert("Pago marcado APROBADO, pero no se encontró el cliente para descontar la deuda. Verifícalo manualmente.");
+            alert("Pago marcado APROBADO, pero no se encontró el cliente para actualizar. Verifícalo manualmente.");
         } else {
-            alert("✅ Pago aprobado y deuda descontada correctamente.");
+            alert(`✅ Pago aprobado. Vencimiento extendido hasta: ${nuevaFechaFinal}`);
+            
+            // Actualizar el indicador de Cobranza en pantalla si el cliente está abierto
+            const indicator = document.getElementById('billing-status-indicator');
+            const inputVencimiento = document.getElementById('client-vencimiento');
+            const inputDeuda = document.getElementById('client-deuda');
+            if (indicator && inputVencimiento) {
+                inputVencimiento.value = nuevaFechaFinal;
+                const hoy = new Date();
+                const fechaV = new Date(nuevaFechaFinal + 'T00:00:00');
+                const diff = Math.ceil((fechaV - hoy) / (1000*60*60*24));
+                if (diff > 7) indicator.style.background = '#10b981';
+                else if (diff >= 0 && diff <= 7) indicator.style.background = '#f59e0b';
+                else indicator.style.background = '#ef4444';
+            }
+            if (inputDeuda) {
+                const deudaActual = parseFloat(inputDeuda.value) || 0;
+                inputDeuda.value = Math.max(0, deudaActual - montoPagado);
+            }
         }
         
         cargarPagos();
