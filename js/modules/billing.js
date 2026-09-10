@@ -151,12 +151,16 @@ async function cargarPagos() {
                 btnAccion = `<button class="btn-secondary btn-small" style="color:var(--brand-orange); border: 1px solid var(--brand-orange);" onclick="window.generarReciboPDF('${p.cedula}', ${p.monto}, '${p.fechaLocal || 'Hoy'}', '${p.referencia || '-'}')">Ã°Å¸â€œÂ¥ PDF</button>`;
             }
             
+            const montoTexto = (p.montoReportado && p.moneda === 'Bs')
+                ? `$${p.monto} <span style="font-size:11px; color:#a1a1aa; display:block;">(${Number(p.montoReportado).toLocaleString('es-VE')} Bs)</span>`
+                : `$${p.monto}`;
+
             tr.innerHTML = `
                 <td>${p.fechaLocal || 'Reciente'}</td>
                 <td>${p.cedula}</td>
                 <td>${p.plan || 'N/A'}</td>
-                <td>$${p.monto}</td>
-                <td>${p.referencia}</td>
+                <td>${montoTexto}</td>
+                <td>${p.referencia} <span style="font-size:11px; color:#a1a1aa; display:block;">${p.metodo || ''}</span></td>
                 <td><span class="badge ${badgeClass}">${p.estado}</span></td>
                 <td>${btnAccion}</td>
             `;
