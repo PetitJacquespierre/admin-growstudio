@@ -158,11 +158,14 @@ async function cargarPagos() {
             let btnAccion = '';
             let badgeClass = 'por-revisar';
             if (p.estado === "POR REVISAR") {
-                btnAccion = `<button class="btn-primary btn-small" onclick="window.aprobarPago('${p.id}', '${p.cedula || p.clienteId}', ${p.monto}, '${p.fechaLocal || 'Hoy'}', '${p.referencia || '-'}')">✅ Aprobar</button>`;
+                btnAccion = `<button class="btn-primary btn-small" onclick="window.aprobarPago('${p.id}', '${p.cedula || p.clienteId}', ${p.monto}, '${p.fechaLocal || 'Hoy'}', '${p.referencia || '-'}', '${p.clienteId || ''}')">✅ Aprobar</button>`;
             } else if (p.estado === "APROBADO") {
                 badgeClass = 'aprobado';
-                btnAccion = `<button class="btn-secondary btn-small" style="color:var(--brand-orange); border: 1px solid var(--brand-orange);" onclick="window.generarReciboPDF('${p.cedula || p.clienteId}', ${p.monto}, '${p.fechaLocal || 'Hoy'}', '${p.referencia || '-'}')">📥 PDF</button>`;
+                btnAccion = `<button class="btn-secondary btn-small" style="color:var(--brand-orange); border: 1px solid var(--brand-orange);" onclick="window.generarReciboPDF('${p.cedula || p.clienteId}', ${p.monto}, '${p.montoReportado || p.monto}', '${p.moneda || 'USD'}', ${p.tasaBcv || 0}, '${p.fechaLocal || 'Hoy'}', '${p.referencia || '-'}', '${p.nombre || ''}')">📥 PDF</button>`;
             }
+            
+            // Botón eliminar siempre visible
+            const btnEliminar = `<button class="btn-secondary btn-small" style="color:#ef4444; border:1px solid #ef4444; margin-top:4px;" onclick="window.eliminarPago('${p.id}')">🗑️ Borrar</button>`;
             
             // Si el pago es en Bolívares (Pago Móvil), reflejar claramente los Bolívares y el monto equivalente en Dólares
             let montoHTML = '';
@@ -204,7 +207,10 @@ async function cargarPagos() {
                     <small style="display:block; color:#9ca3af; font-size:11px;">${p.metodo || ''}</small>
                 </td>
                 <td><span class="badge ${badgeClass}">${p.estado}</span></td>
-                <td>${btnAccion}</td>
+                <td style="display:flex; flex-direction:column; gap:4px;">
+                    ${btnAccion}
+                    ${btnEliminar}
+                </td>
             `;
             paymentsTbody.appendChild(tr);
         });
@@ -214,61 +220,170 @@ async function cargarPagos() {
     }
 }
 
+// Eliminar pago
+window.eliminarPago = async function(pagoId) {
+    if (!confirm("¿Seguro que deseas eliminar este pago? Esta acción no se puede deshacer.")) return;
+    try {
+        await deleteDoc(doc(db, "pagos", pagoId));
+        cargarPagos();
+    } catch (error) {
+        alert("Error al eliminar: " + error.message);
+    }
+};
+
 // Hacer global para el onclick inline
-window.aprobarPago = async function(pagoId, cedulaPago, montoPagado, fechaPago, referenciaPago) {
-    if (!confirm("Â¿Confirmas que recibiste $" + montoPagado + " y deseas descontarlo de la deuda del cliente " + cedulaPago + "?")) return;
+window.aprobarPago = async function(pagoId, cedulaPago, montoPagado, fechaPago, referenciaPago, clienteIdDirecto) {
+    if (!confirm("¿Confirmas que recibiste $" + montoPagado + " y deseas descontarlo de la deuda del cliente " + cedulaPago + "?")) return;
     
     try {
-        const { doc, updateDoc, getDocs, query, collection, where } = await import("https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js");
+        const { doc: fDoc, updateDoc: fUpdateDoc, getDocs: fGetDocs, query: fQuery, collection: fCollection, where: fWhere, getDoc: fGetDoc } = await import("https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js");
         
-        await updateDoc(doc(db, "pagos", pagoId), {
-            estado: "APROBADO"
-        });
+        await fUpdateDoc(fDoc(db, "pagos", pagoId), { estado: "APROBADO" });
 
-        // Buscar al cliente por la cÃ©dula
-        const q = query(collection(db, "clientes"), where("cedula", "==", cedulaPago));
-        const clientSnap = await getDocs(q);
+        let clienteEncontrado = false;
         
-        let clientUpdated = false;
-        if (!clientSnap.empty) {
-            clientSnap.forEach(async (cDoc) => {
-                let deudaActual = cDoc.data().deuda || 0;
-                let nuevaDeuda = deudaActual - montoPagado;
-                if (nuevaDeuda < 0) nuevaDeuda = 0;
-                
-                await updateDoc(doc(db, "clientes", cDoc.id), {
-                    deuda: nuevaDeuda,
-                    estado: "ACTIVO"
-                });
-                clientUpdated = true;
-            });
+        // 1. Intentar por clienteId directo
+        if (clienteIdDirecto) {
+            try {
+                const snap = await fGetDoc(fDoc(db, "clientes", clienteIdDirecto));
+                if (snap.exists()) {
+                    let nuevaDeuda = Math.max(0, (snap.data().deuda || 0) - montoPagado);
+                    await fUpdateDoc(fDoc(db, "clientes", clienteIdDirecto), { deuda: nuevaDeuda, estado: "ACTIVO" });
+                    clienteEncontrado = true;
+                }
+            } catch(e) { console.warn("No se pudo por clienteIdDirecto:", e); }
         }
         
-        if (!clientUpdated) {
-            const { getDoc } = await import("https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js");
-            const cDocSnap = await getDoc(doc(db, "clientes", cedulaPago));
-            if (cDocSnap.exists()) {
-                let deudaActual = cDocSnap.data().deuda || 0;
-                let nuevaDeuda = deudaActual - montoPagado;
-                if (nuevaDeuda < 0) nuevaDeuda = 0;
-                await updateDoc(doc(db, "clientes", cDocSnap.id), {
-                    deuda: nuevaDeuda,
-                    estado: "ACTIVO"
-                });
+        // 2. Buscar por campo cedula
+        if (!clienteEncontrado) {
+            const q = fQuery(fCollection(db, "clientes"), fWhere("cedula", "==", cedulaPago));
+            const snap = await fGetDocs(q);
+            if (!snap.empty) {
+                for (const cDoc of snap.docs) {
+                    let nuevaDeuda = Math.max(0, (cDoc.data().deuda || 0) - montoPagado);
+                    await fUpdateDoc(fDoc(db, "clientes", cDoc.id), { deuda: nuevaDeuda, estado: "ACTIVO" });
+                    clienteEncontrado = true;
+                }
             }
         }
         
-        alert("Pago aprobado y deuda descontada automÃ¡ticamente.");
+        // 3. Buscar por campo usuario
+        if (!clienteEncontrado) {
+            const q2 = fQuery(fCollection(db, "clientes"), fWhere("usuario", "==", cedulaPago.toLowerCase()));
+            const snap2 = await fGetDocs(q2);
+            if (!snap2.empty) {
+                for (const cDoc of snap2.docs) {
+                    let nuevaDeuda = Math.max(0, (cDoc.data().deuda || 0) - montoPagado);
+                    await fUpdateDoc(fDoc(db, "clientes", cDoc.id), { deuda: nuevaDeuda, estado: "ACTIVO" });
+                    clienteEncontrado = true;
+                }
+            }
+        }
         
-        // Generar PDF
-        if (window.generarReciboPDF) {
-            window.generarReciboPDF(cedulaPago, montoPagado, fechaPago, referenciaPago);
+        if (!clienteEncontrado) {
+            alert("Pago marcado APROBADO, pero no se encontró el cliente para descontar la deuda. Verifícalo manualmente.");
+        } else {
+            alert("✅ Pago aprobado y deuda descontada correctamente.");
         }
         
         cargarPagos();
     } catch (error) {
         alert("Error al aprobar el pago: " + error.message);
     }
+};
+
+// Generar recibo PDF en ventana emergente basado en la plantilla recibo.html
+window.generarReciboPDF = function(cedula, montoUSD, montoReportado, moneda, tasaBcv, fechaPago, referencia, nombreCliente) {
+    const monto = parseFloat(montoUSD) || 0;
+    const reportado = parseFloat(montoReportado) || monto;
+    const tasa = parseFloat(tasaBcv) || 0;
+    
+    const montoTexto = (moneda === 'Bs' && tasa > 0)
+        ? `Abono recibido en Bs (Tasa BCV: ${tasa.toLocaleString('es-VE', {minimumFractionDigits: 2})})`
+        : `Abono recibido en ${moneda || 'USD'}`;
+    
+    const montoBs = (moneda === 'Bs' && tasa > 0)
+        ? `- $${monto.toFixed(2)} (Bs. ${reportado.toLocaleString('es-VE', {minimumFractionDigits: 2})})`
+        : `- $${monto.toFixed(2)}`;
+    
+    const html = `<!DOCTYPE html>
+<html lang="es"><head><meta charset="UTF-8"><title>Recibo Grow Studio</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;800;900&family=Roboto+Mono:wght@500&display=swap');
+:root{--cyan:#00c6eb;--orange:#f25c27;--dark:#1a1a2e;--gray:#f5f6fa}
+body{font-family:'Montserrat',sans-serif;color:#333;margin:0;padding:40px;background:#eef2f5;display:flex;justify-content:center}
+@media print{body{background:white;padding:0}.receipt-container{box-shadow:none!important;border:none!important;margin:0!important;width:100%!important;max-width:100%!important}.no-print{display:none!important}}
+.receipt-container{background:white;width:100%;max-width:800px;margin:0 auto;padding:50px;border-top:8px solid var(--cyan);border-bottom:8px solid var(--orange);border-radius:4px;position:relative;box-shadow:0 15px 35px rgba(0,0,0,.1);box-sizing:border-box}
+.header{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:50px}
+.receipt-details{text-align:right}
+.receipt-details h1{margin:0 0 5px;color:var(--dark);font-size:32px;font-weight:800;text-transform:uppercase;letter-spacing:2px}
+.receipt-num{font-family:'Roboto Mono',monospace;font-size:18px;color:var(--orange);font-weight:600;margin-bottom:5px}
+.receipt-date{font-size:14px;color:#777}
+.client-info{margin-bottom:40px;background:var(--gray);padding:20px;border-left:4px solid var(--cyan);border-radius:0 8px 8px 0}
+.client-info h3{margin:0 0 10px;color:var(--dark);font-size:14px;text-transform:uppercase;letter-spacing:1px}
+.client-info p{margin:5px 0;font-size:16px;color:#222}
+.client-name{font-size:20px!important;font-weight:600;color:var(--dark)!important}
+table{width:100%;border-collapse:collapse;margin-bottom:40px}
+th{background:var(--dark);color:white;padding:15px;text-align:left;font-size:13px;text-transform:uppercase;letter-spacing:1px}
+th.amount-col,td.amount-col{text-align:right}
+td{padding:20px 15px;border-bottom:1px solid #eee;font-size:16px;color:#333}
+td.amount-col{font-family:'Roboto Mono',monospace;font-weight:500}
+.totals{width:50%;margin-left:auto;background:var(--gray);padding:20px;border-radius:8px}
+.totals-row{display:flex;justify-content:space-between;padding:10px 0;font-size:15px;color:#555}
+.totals-row.grand-total{font-weight:600;color:var(--dark);border-bottom:2px solid #ddd;padding-bottom:15px;margin-bottom:5px}
+.totals-row.balance{font-weight:800;font-size:20px;color:var(--orange);padding-top:10px}
+.footer{text-align:center;margin-top:60px;font-size:14px;color:#777;border-top:1px solid #eee;padding-top:25px}
+.footer strong{color:var(--cyan);font-weight:800}
+.print-btn{position:fixed;bottom:30px;right:30px;background:var(--cyan);color:white;border:none;padding:15px 25px;font-size:16px;font-weight:600;border-radius:50px;cursor:pointer;box-shadow:0 4px 15px rgba(0,198,235,.4);transition:.2s;font-family:'Montserrat',sans-serif;z-index:100}
+.print-btn:hover{background:var(--dark);transform:translateY(-2px)}
+</style></head><body>
+<div class="receipt-container">
+  <div class="header">
+    <div style="display:flex;align-items:stretch;gap:6px;height:58px">
+      <div style="display:flex;flex-direction:column;justify-content:space-between;padding:2px 0">
+        <span style="font-family:'Montserrat',sans-serif;font-weight:900;font-size:36px;color:#1a1a2e;line-height:0.75;letter-spacing:2px">GROW</span>
+        <span style="font-family:'Montserrat',sans-serif;font-weight:400;font-size:22.5px;color:#1a1a2e;line-height:0.8;letter-spacing:8.5px;margin-left:2px">STUDIO</span>
+      </div>
+    </div>
+    <div class="receipt-details">
+      <h1>Recibo de Pago</h1>
+      <div class="receipt-num">Ref: ${referencia}</div>
+      <div class="receipt-date">Fecha: ${fechaPago}</div>
+    </div>
+  </div>
+  <div class="client-info">
+    <h3>Facturado a:</h3>
+    <p class="client-name">${nombreCliente || cedula}</p>
+    <p>Usuario / Cédula: ${cedula}</p>
+  </div>
+  <table>
+    <thead><tr><th>Descripción del Servicio</th><th class="amount-col">Monto</th></tr></thead>
+    <tbody><tr>
+      <td>Plan Mensual – Plataforma Web Grow Studio</td>
+      <td class="amount-col">$${monto.toFixed(2)}</td>
+    </tr></tbody>
+  </table>
+  <div class="totals">
+    <div class="totals-row grand-total">
+      <span>${montoTexto}</span>
+      <span style="color:#27ae60">${montoBs}</span>
+    </div>
+    <div class="totals-row balance">
+      <span>Estado</span>
+      <span>✅ PAGADO</span>
+    </div>
+  </div>
+  <div class="footer">
+    <p>Gracias por confiar en <strong>GROW STUDIO</strong> para tu desarrollo tecnológico.</p>
+    <p><a href="https://growstudioweb.vercel.app/" target="_blank" style="color:#777;text-decoration:none">https://growstudioweb.vercel.app/</a></p>
+  </div>
+</div>
+<button class="print-btn no-print" onclick="window.print()">🖨️ Guardar PDF</button>
+</body></html>`;
+    
+    const ventana = window.open('', '_blank', 'width=900,height=700');
+    ventana.document.write(html);
+    ventana.document.close();
 };
 
 // ==========================================
