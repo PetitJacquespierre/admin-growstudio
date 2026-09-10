@@ -129,38 +129,80 @@ if(btnViewPayments) btnViewPayments.addEventListener('click', () => {
 async function cargarPagos() {
     paymentsTbody.innerHTML = '<tr><td colspan="7" style="text-align:center;">Cargando pagos...</td></tr>';
     try {
-        const q = query(collection(db, "pagos"), orderBy("fecha", "desc"));
-        const snapshot = await getDocs(q);
+        let docsArray = [];
+        try {
+            const q = query(collection(db, "pagos"), orderBy("fechaRegistro", "desc"));
+            const snapshot = await getDocs(q);
+            snapshot.forEach(d => docsArray.push({ id: d.id, ...d.data() }));
+        } catch (e) {
+            console.warn("Fallo orderBy fechaRegistro, obteniendo sin orden de Firebase:", e);
+            const snapshot = await getDocs(collection(db, "pagos"));
+            snapshot.forEach(d => docsArray.push({ id: d.id, ...d.data() }));
+            docsArray.sort((a, b) => {
+                const dateA = new Date(a.fechaRegistro || a.fecha || 0);
+                const dateB = new Date(b.fechaRegistro || b.fecha || 0);
+                return dateB - dateA;
+            });
+        }
+        
         paymentsTbody.innerHTML = '';
         
-        if (snapshot.empty) {
-            paymentsTbody.innerHTML = '<tr><td colspan="7" style="text-align:center;">No hay pagos registrados.</td></tr>';
+        if (docsArray.length === 0) {
+            paymentsTbody.innerHTML = '<tr><td colspan="7" style="text-align:center; color: #9ca3af;">No hay pagos registrados aún.</td></tr>';
             return;
         }
 
-        snapshot.forEach(docSnap => {
-            const p = docSnap.data();
+        docsArray.forEach(p => {
             const tr = document.createElement('tr');
             
             let btnAccion = '';
             let badgeClass = 'por-revisar';
             if (p.estado === "POR REVISAR") {
-                btnAccion = `<button class="btn-primary btn-small" onclick="window.aprobarPago('${docSnap.id}', '${p.cedula}', ${p.monto}, '${p.fechaLocal || 'Hoy'}', '${p.referencia || '-'}')">Ã¢Å“â€¦ Aprobar</button>`;
+                btnAccion = `<button class="btn-primary btn-small" onclick="window.aprobarPago('${p.id}', '${p.cedula || p.clienteId}', ${p.monto}, '${p.fechaLocal || 'Hoy'}', '${p.referencia || '-'}')">✅ Aprobar</button>`;
             } else if (p.estado === "APROBADO") {
                 badgeClass = 'aprobado';
-                btnAccion = `<button class="btn-secondary btn-small" style="color:var(--brand-orange); border: 1px solid var(--brand-orange);" onclick="window.generarReciboPDF('${p.cedula}', ${p.monto}, '${p.fechaLocal || 'Hoy'}', '${p.referencia || '-'}')">Ã°Å¸â€œÂ¥ PDF</button>`;
+                btnAccion = `<button class="btn-secondary btn-small" style="color:var(--brand-orange); border: 1px solid var(--brand-orange);" onclick="window.generarReciboPDF('${p.cedula || p.clienteId}', ${p.monto}, '${p.fechaLocal || 'Hoy'}', '${p.referencia || '-'}')">📥 PDF</button>`;
             }
             
-            const montoTexto = (p.montoReportado && p.moneda === 'Bs')
-                ? `$${p.monto} <span style="font-size:11px; color:#a1a1aa; display:block;">(${Number(p.montoReportado).toLocaleString('es-VE')} Bs)</span>`
-                : `$${p.monto}`;
+            // Si el pago es en Bolívares (Pago Móvil), reflejar claramente los Bolívares y el monto equivalente en Dólares
+            let montoHTML = '';
+            if (p.moneda === 'Bs' || p.metodo === 'Pago Móvil') {
+                const bsVal = p.montoReportado || p.monto;
+                const tasaVal = p.tasaBcv ? Number(p.tasaBcv).toFixed(2) : '-';
+                montoHTML = `
+                    <div style="font-weight: bold; color: #4ade80; font-size: 14px;">
+                        ${Number(bsVal).toLocaleString('es-VE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} Bs
+                    </div>
+                    <div style="font-size: 11px; color: #fff; margin-top: 2px;">
+                        ($${Number(p.monto).toFixed(2)} USD)
+                    </div>
+                    <div style="font-size: 10px; color: #9ca3af;">
+                        Tasa BCV: ${tasaVal}
+                    </div>
+                `;
+            } else {
+                montoHTML = `
+                    <div style="font-weight: bold; color: #fff; font-size: 14px;">
+                        $${Number(p.monto).toFixed(2)} USD
+                    </div>
+                    <div style="font-size: 11px; color: #a1a1aa; margin-top: 2px;">
+                        ${p.metodo || 'Divisa'}
+                    </div>
+                `;
+            }
 
             tr.innerHTML = `
                 <td>${p.fechaLocal || 'Reciente'}</td>
-                <td>${p.cedula}</td>
-                <td>${p.plan || 'N/A'}</td>
-                <td>${montoTexto}</td>
-                <td>${p.referencia} <span style="font-size:11px; color:#a1a1aa; display:block;">${p.metodo || ''}</span></td>
+                <td>
+                    <strong>${p.cedula || p.clienteId || 'N/A'}</strong>
+                    <small style="display:block; color:#9ca3af; font-size:11px;">${p.nombre || ''}</small>
+                </td>
+                <td>${p.plan || p.metodo || 'N/A'}</td>
+                <td>${montoHTML}</td>
+                <td>
+                    <strong>${p.referencia}</strong>
+                    <small style="display:block; color:#9ca3af; font-size:11px;">${p.metodo || ''}</small>
+                </td>
                 <td><span class="badge ${badgeClass}">${p.estado}</span></td>
                 <td>${btnAccion}</td>
             `;
@@ -168,7 +210,7 @@ async function cargarPagos() {
         });
     } catch (error) {
         console.error("Error al cargar pagos:", error);
-        paymentsTbody.innerHTML = '<tr><td colspan="7" style="color:red; text-align:center;">Error al cargar pagos</td></tr>';
+        paymentsTbody.innerHTML = '<tr><td colspan="7" style="color:red; text-align:center;">Error al cargar pagos: ' + error.message + '</td></tr>';
     }
 }
 
