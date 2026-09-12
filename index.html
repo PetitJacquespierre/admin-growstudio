@@ -72,13 +72,14 @@
         <!-- SIDEBAR IZQUIERDO -->
         <aside class="sidebar">
             <div class="sidebar-logo">
-                <img src="img/growlogo.png" alt="Grow Studio" width="180" style="cursor: pointer;" onclick="document.getElementById('client-manager').style.display='none'; document.getElementById('payments-screen').style.display='none'; document.getElementById('welcome-screen').style.display='flex'; document.querySelectorAll('.menu-btn, .menu-list li').forEach(el => el.classList.remove('active'));">
+                <img src="img/growlogo.png" alt="Grow Studio" width="180" style="cursor: pointer;" onclick="document.querySelectorAll('#dashboard-screen > main > section').forEach(sec => sec.style.display = 'none'); document.getElementById('welcome-screen').style.display='flex'; document.querySelectorAll('.menu-btn, .menu-list li').forEach(el => el.classList.remove('active'));">
             </div>
             
             <div class="sidebar-menu">
                 <p class="menu-label">MENÚ</p>
                 <button id="btn-new-client" class="menu-btn active">+ Nuevo Cliente</button>
                 <button id="btn-view-payments" class="menu-btn">💰 Pagos Recibidos</button>
+                <button id="btn-nav-sandia" class="menu-btn" style="border: 1px solid rgba(230, 32, 53, 0.4); background: rgba(230, 32, 53, 0.08); color: #ff4d61; font-weight: bold; margin-top: 5px;">🍉 Sandía Production</button>
             </div>
 
             <div class="sidebar-menu" style="flex: 1; overflow-y: auto; margin-top: 40px;">
@@ -302,8 +303,189 @@
                         <button id="btn-add-promo" class="btn-primary btn-small" style="margin-top: 15px;">+ Añadir Promo</button>
                     </div>
                 </div>
+            <!-- PANTALLA SANDÍA PRODUCTION -->
+            <section id="sandia-screen" style="display: none; padding: 25px; height: 100%; flex-direction: column; overflow-y: auto;">
+                <header class="top-bar" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px; border-bottom: 1px solid rgba(230, 32, 53, 0.2); padding-bottom: 15px;">
+                    <div>
+                        <h2 style="color: #ff334b; display: flex; align-items: center; gap: 10px; margin: 0;">
+                            🍉 Sandía Production | Control Central
+                        </h2>
+                        <p style="font-size: 12px; color: #888; margin: 5px 0 0 0;">Administra carreras, retos deportivos, aliados y estados en tiempo real.</p>
+                    </div>
+                    <div style="display: flex; gap: 10px;">
+                        <button id="btn-new-sandia-aliado" class="btn-secondary" style="border-color: rgba(255,255,255,0.2);">🤝 + Nuevo Aliado</button>
+                        <button id="btn-new-sandia-event" class="btn-primary" style="background: #e62035; border-color: #e62035;">🏆 + Nuevo Evento</button>
+                    </div>
+                </header>
+
+                <!-- TABLA DE EVENTOS DEPORTIVOS -->
+                <div style="margin-bottom: 35px;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                        <h3 style="color: white; margin: 0; font-size: 1.15rem;">🏆 Directorio de Carreras y Retos</h3>
+                        <span style="font-size: 11px; color: #aaa;">Sincronizado en vivo con Firebase</span>
+                    </div>
+                    <div class="table-container" style="background: var(--bg-card); border-radius: 12px; border: 1px solid var(--border); overflow: hidden;">
+                        <table style="width: 100%; border-collapse: collapse;">
+                            <thead>
+                                <tr style="background: rgba(255,255,255,0.03); border-bottom: 1px solid var(--border); text-align: left;">
+                                    <th style="padding: 12px 15px;">Evento</th>
+                                    <th style="padding: 12px 15px;">Fecha</th>
+                                    <th style="padding: 12px 15px;">Categoría</th>
+                                    <th style="padding: 12px 15px;">Estado</th>
+                                    <th style="padding: 12px 15px;">Destacado</th>
+                                    <th style="padding: 12px 15px; text-align: right;">Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody id="sandia-events-tbody">
+                                <!-- Dinámico -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- TABLA DE ALIADOS COMERCIALES -->
+                <div>
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                        <h3 style="color: white; margin: 0; font-size: 1.15rem;">🤝 Aliados Comerciales (Patrocinantes)</h3>
+                        <span style="font-size: 11px; color: #aaa;">Alimenta el carrusel de marcas en el Index</span>
+                    </div>
+                    <div class="table-container" style="background: var(--bg-card); border-radius: 12px; border: 1px solid var(--border); overflow: hidden;">
+                        <table style="width: 100%; border-collapse: collapse;">
+                            <thead>
+                                <tr style="background: rgba(255,255,255,0.03); border-bottom: 1px solid var(--border); text-align: left;">
+                                    <th style="padding: 12px 15px;">Marca / Aliado</th>
+                                    <th style="padding: 12px 15px;">Ruta Imagen</th>
+                                    <th style="padding: 12px 15px;">Enlace Web / Instagram</th>
+                                    <th style="padding: 12px 15px; text-align: right;">Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody id="sandia-aliados-tbody">
+                                <!-- Dinámico -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
             </section>
         </main>
+    </div>
+
+    <!-- MODAL CREAR/EDITAR EVENTO SANDÍA -->
+    <div id="modal-sandia-event" class="screen" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); z-index: 2000; justify-content: center; align-items: center; overflow-y: auto;">
+        <div class="login-card" style="max-width: 580px; width: 90%; text-align: left; margin: 30px auto; background: #121826; border: 1px solid rgba(230,32,53,0.3);">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                <h3 id="sandia-modal-title" style="margin: 0; color: #ff334b;">🏆 Evento Deportivo</h3>
+                <button type="button" id="btn-close-sandia-event" style="background: none; border: none; color: #aaa; font-size: 20px; cursor: pointer;">&times;</button>
+            </div>
+
+            <form id="form-sandia-event">
+                <div class="input-group">
+                    <label>Título del Evento *</label>
+                    <input type="text" id="sandia-event-titulo" class="input-modern" placeholder="Ej: 5K Paraguaná Horror Story" required style="width: 100%; box-sizing: border-box;">
+                </div>
+
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+                    <div class="input-group">
+                        <label>Día (Número) *</label>
+                        <input type="text" id="sandia-event-dia" class="input-modern" placeholder="31" required style="width: 100%; box-sizing: border-box;">
+                    </div>
+                    <div class="input-group">
+                        <label>Mes (3 Letras) *</label>
+                        <input type="text" id="sandia-event-mes" class="input-modern" placeholder="OCT" required style="width: 100%; box-sizing: border-box; text-transform: uppercase;">
+                    </div>
+                </div>
+
+                <div class="input-group">
+                    <label>Ubicación y Hora *</label>
+                    <input type="text" id="sandia-event-ubicacion" class="input-modern" placeholder="Ej: Sambil Paraguaná / 7:00 PM" required style="width: 100%; box-sizing: border-box;">
+                </div>
+
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+                    <div class="input-group">
+                        <label>Categoría</label>
+                        <select id="sandia-event-categoria" class="modern-select" style="width: 100%; box-sizing: border-box;">
+                            <option value="SANDIA">🍉 Sandía Original (Oficial)</option>
+                            <option value="REGIONAL">📍 Regional (Falcón / Paraguaná)</option>
+                            <option value="NACIONAL">🇻🇪 Nacional (Caracas/Valencia)</option>
+                            <option value="VIRTUAL">🌐 Virtual</option>
+                        </select>
+                    </div>
+                    <div class="input-group">
+                        <label>Estado del Evento</label>
+                        <select id="sandia-event-estado" class="modern-select" style="width: 100%; box-sizing: border-box;">
+                            <option value="ACTIVO">🟢 Próximo (Activo)</option>
+                            <option value="COMPLETADO">🏁 Completado (Historial)</option>
+                            <option value="OCULTO">⚪ Oculto (Borrador)</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+                    <div class="input-group">
+                        <label>Enlace de Inscripción / Info</label>
+                        <input type="text" id="sandia-event-enlace" class="input-modern" placeholder="paraguanahorror.html o https://..." style="width: 100%; box-sizing: border-box;">
+                    </div>
+                    <div class="input-group">
+                        <label>Texto del Botón</label>
+                        <input type="text" id="sandia-event-boton-texto" class="input-modern" placeholder="Inscribirme Ahora" style="width: 100%; box-sizing: border-box;">
+                    </div>
+                </div>
+
+                <!-- SELECTOR DE IMAGEN CON VISTA PREVIA -->
+                <div class="input-group" style="background: rgba(255,255,255,0.03); padding: 12px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.08);">
+                    <label style="color: var(--brand-orange); font-weight: bold;">🖼️ Flyer / Imagen (Selección Automática)</label>
+                    <select id="sandia-event-img-select" class="modern-select" style="width: 100%; margin-top: 5px; box-sizing: border-box;">
+                        <!-- Dinámico -->
+                    </select>
+                    <input type="text" id="sandia-event-custom-img" class="input-modern" placeholder="O escribe el nombre si subiste una nueva (ej: nuevo_flyer.jpg)" style="width: 100%; margin-top: 8px; font-size: 11px; box-sizing: border-box;">
+                    
+                    <div style="margin-top: 10px; text-align: center;">
+                        <img id="sandia-event-img-preview" src="" alt="Vista Previa" style="max-height: 120px; border-radius: 8px; display: none; margin: 0 auto; border: 1px solid rgba(255,255,255,0.2);">
+                    </div>
+                </div>
+
+                <div style="display: flex; align-items: center; gap: 10px; margin: 15px 0;">
+                    <input type="checkbox" id="sandia-event-destacado" style="width: 18px; height: 18px; cursor: pointer;" checked>
+                    <label for="sandia-event-destacado" style="cursor: pointer; font-size: 13px; color: white;">⭐ Mostrar destacado en el carrusel de Inicio (index.html)</label>
+                </div>
+
+                <div style="display: flex; gap: 10px; margin-top: 20px;">
+                    <button type="button" onclick="document.getElementById('modal-sandia-event').style.display='none'" class="btn-secondary" style="flex: 1;">Cancelar</button>
+                    <button type="submit" class="btn-primary" style="flex: 1; background: #e62035; border-color: #e62035;">Guardar Evento</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- MODAL CREAR ALIADO COMERCIAL -->
+    <div id="modal-sandia-aliado" class="screen" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); z-index: 2000; justify-content: center; align-items: center;">
+        <div class="login-card" style="max-width: 450px; width: 90%; text-align: left; background: #121826; border: 1px solid rgba(255,255,255,0.1);">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                <h3 style="margin: 0; color: white;">🤝 Nuevo Aliado Comercial</h3>
+                <button type="button" id="btn-close-sandia-aliado" style="background: none; border: none; color: #aaa; font-size: 20px; cursor: pointer;">&times;</button>
+            </div>
+
+            <form id="form-sandia-aliado">
+                <div class="input-group">
+                    <label>Nombre de la Empresa / Marca *</label>
+                    <input type="text" id="sandia-aliado-nombre" class="input-modern" placeholder="Ej: Falcón Fit / Sambil" required style="width: 100%; box-sizing: border-box;">
+                </div>
+
+                <div class="input-group">
+                    <label>Nombre del Archivo en img/ *</label>
+                    <input type="text" id="sandia-aliado-img" class="input-modern" placeholder="Ej: logoconfondo.jpg o aliado1.png" required style="width: 100%; box-sizing: border-box;">
+                </div>
+
+                <div class="input-group">
+                    <label>Enlace Web o Instagram</label>
+                    <input type="text" id="sandia-aliado-enlace" class="input-modern" placeholder="https://instagram.com/..." style="width: 100%; box-sizing: border-box;">
+                </div>
+
+                <div style="display: flex; gap: 10px; margin-top: 20px;">
+                    <button type="button" onclick="document.getElementById('modal-sandia-aliado').style.display='none'" class="btn-secondary" style="flex: 1;">Cancelar</button>
+                    <button type="submit" class="btn-primary" style="flex: 1;">Guardar Aliado</button>
+                </div>
+            </form>
+        </div>
     </div>
 
     <!-- MODAL DE IMPORTACIÓN CON IA -->
@@ -393,5 +575,11 @@
     <script type="module" src="js/modules/reports.js"></script>
     <script type="module" src="js/modules/qr-config.js"></script>
     <script type="module" src="js/modules/hero.js"></script>
+    <script type="module">
+        import { initSandiaAdmin } from "./js/modules/sandia-admin.js";
+        document.addEventListener('DOMContentLoaded', () => {
+            initSandiaAdmin();
+        });
+    </script>
 </body>
 </html>
