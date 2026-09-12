@@ -79,7 +79,7 @@
                 <p class="menu-label">MENÚ</p>
                 <button id="btn-new-client" class="menu-btn active">+ Nuevo Cliente</button>
                 <button id="btn-view-payments" class="menu-btn">💰 Pagos Recibidos</button>
-                <button id="btn-nav-sandia" class="menu-btn" style="border: 1px solid rgba(230, 32, 53, 0.4); background: rgba(230, 32, 53, 0.08); color: #ff4d61; font-weight: bold; margin-top: 5px;">🍉 Sandía Production</button>
+                <button id="btn-nav-sandia" class="menu-btn" onclick="window.openSandiaScreen && window.openSandiaScreen()" style="border: 1px solid rgba(230, 32, 53, 0.4); background: rgba(230, 32, 53, 0.08); color: #ff4d61; font-weight: bold; margin-top: 5px;">🍉 Sandía Production</button>
             </div>
 
             <div class="sidebar-menu" style="flex: 1; overflow-y: auto; margin-top: 40px;">
@@ -303,6 +303,8 @@
                         <button id="btn-add-promo" class="btn-primary btn-small" style="margin-top: 15px;">+ Añadir Promo</button>
                     </div>
                 </div>
+            </section>
+
             <!-- PANTALLA SANDÍA PRODUCTION -->
             <section id="sandia-screen" style="display: none; padding: 25px; height: 100%; flex-direction: column; overflow-y: auto;">
                 <header class="top-bar" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px; border-bottom: 1px solid rgba(230, 32, 53, 0.2); padding-bottom: 15px;">
@@ -577,9 +579,7 @@
     <script type="module" src="js/modules/hero.js"></script>
     <script type="module">
         import { initSandiaAdmin } from "./js/modules/sandia-admin.js";
-        document.addEventListener('DOMContentLoaded', () => {
-            initSandiaAdmin();
-        });
+        initSandiaAdmin();
     </script>
 </body>
 </html>

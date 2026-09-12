@@ -30,21 +30,23 @@ let currentEventId = null;
 
 // Inicializador del Módulo
 export function initSandiaAdmin() {
+    window.openSandiaScreen = function() {
+        const btnNavSandia = document.getElementById('btn-nav-sandia');
+        const sandiaScreen = document.getElementById('sandia-screen');
+        
+        document.querySelectorAll('#dashboard-screen > main > section').forEach(sec => sec.style.display = 'none');
+        document.querySelectorAll('.menu-btn, .menu-list li').forEach(el => el.classList.remove('active'));
+        
+        if (btnNavSandia) btnNavSandia.classList.add('active');
+        if (sandiaScreen) {
+            sandiaScreen.style.display = 'flex';
+            loadSandiaData();
+        }
+    };
+
     const btnNavSandia = document.getElementById('btn-nav-sandia');
-    const sandiaScreen = document.getElementById('sandia-screen');
-    
     if (btnNavSandia) {
-        btnNavSandia.addEventListener('click', () => {
-            // Ocultar otras pantallas
-            document.querySelectorAll('#dashboard-screen > main > section').forEach(sec => sec.style.display = 'none');
-            document.querySelectorAll('.menu-btn, .menu-list li').forEach(el => el.classList.remove('active'));
-            
-            btnNavSandia.classList.add('active');
-            if (sandiaScreen) {
-                sandiaScreen.style.display = 'flex';
-                loadSandiaData();
-            }
-        });
+        btnNavSandia.addEventListener('click', window.openSandiaScreen);
     }
 
     // Modal Crear/Editar Evento
