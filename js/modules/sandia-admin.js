@@ -49,6 +49,8 @@ export function initSandiaAdmin() {
         btnNavSandia.addEventListener('click', window.openSandiaScreen);
     }
 
+    initSandiaConfig();
+
     // Modal Crear/Editar Evento
     const btnNewEvent = document.getElementById('btn-new-sandia-event');
     const modalEvent = document.getElementById('modal-sandia-event');
@@ -306,5 +308,68 @@ async function deleteAliado(id, nombre) {
         } catch (err) {
             alert("Error al eliminar aliado: " + err.message);
         }
+    }
+}
+
+// ==========================================
+// CONTROL DE ESTADO WEB Y COBRANZA
+// ==========================================
+function initSandiaConfig() {
+    const btnSaveStatus = document.getElementById('btn-save-sandia-status');
+    const selectStatus = document.getElementById('sandia-web-status');
+    const badgeStatus = document.getElementById('sandia-web-status-badge');
+
+    const btnSaveBilling = document.getElementById('btn-save-sandia-billing');
+    const selectPlan = document.getElementById('sandia-plan');
+    const inputVencimiento = document.getElementById('sandia-vencimiento');
+
+    // Escuchar cambios de configuración en Firestore
+    onSnapshot(doc(db, "sandia_config", "general"), (docSnap) => {
+        if (docSnap.exists()) {
+            const data = docSnap.data();
+            if (selectStatus && data.estadoWeb) selectStatus.value = data.estadoWeb;
+            if (badgeStatus) {
+                if (data.estadoWeb === 'ONLINE') badgeStatus.style.background = '#2ecc71';
+                else if (data.estadoWeb === 'MANTENIMIENTO') badgeStatus.style.background = '#f39c12';
+                else badgeStatus.style.background = '#e74c3c';
+            }
+            if (selectPlan && data.plan) selectPlan.value = data.plan;
+            if (inputVencimiento && data.vencimiento) inputVencimiento.value = data.vencimiento;
+        }
+    });
+
+    if (btnSaveStatus) {
+        btnSaveStatus.addEventListener('click', async () => {
+            const estadoWeb = selectStatus.value;
+            btnSaveStatus.disabled = true;
+            btnSaveStatus.innerText = "Guardando...";
+            try {
+                await setDoc(doc(db, "sandia_config", "general"), { estadoWeb, fechaModificacion: new Date().toISOString() }, { merge: true });
+                alert("¡Estado del sitio web actualizado!");
+            } catch (err) {
+                alert("Error: " + err.message);
+            } finally {
+                btnSaveStatus.disabled = false;
+                btnSaveStatus.innerText = "Guardar Estado Web";
+            }
+        });
+    }
+
+    if (btnSaveBilling) {
+        btnSaveBilling.addEventListener('click', async () => {
+            const plan = selectPlan.value;
+            const vencimiento = inputVencimiento.value;
+            btnSaveBilling.disabled = true;
+            btnSaveBilling.innerText = "Guardando...";
+            try {
+                await setDoc(doc(db, "sandia_config", "general"), { plan, vencimiento, mensualidad: 20, fechaModificacion: new Date().toISOString() }, { merge: true });
+                alert("¡Datos de cobranza actualizados!");
+            } catch (err) {
+                alert("Error: " + err.message);
+            } finally {
+                btnSaveBilling.disabled = false;
+                btnSaveBilling.innerText = "Guardar Cobranza";
+            }
+        });
     }
 }
