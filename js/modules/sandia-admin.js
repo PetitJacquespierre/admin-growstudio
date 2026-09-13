@@ -291,19 +291,21 @@ export function loadSandiaData() {
     if (unsubscribeAliados) unsubscribeAliados();
 
     // Eventos
-    const qEventos = query(collection(db, "sandia_eventos"));
+    const qEventos = query(collection(db, "sandia_eventos"), orderBy("orden", "asc"));
     unsubscribeEventos = onSnapshot(qEventos, (snapshot) => {
         if (!tableBody) return;
         tableBody.innerHTML = '';
 
         if (snapshot.empty) {
-            tableBody.innerHTML = `<tr><td colspan="6" style="text-align:center; padding: 20px; color: #888;">No hay eventos registrados. Haz clic en '+ Nuevo Evento'.</td></tr>`;
+            tableBody.innerHTML = `<tr><td colspan="7" style="text-align:center; padding: 20px; color: #888;">No hay eventos registrados. Haz clic en '+ Nuevo Evento'.</td></tr>`;
             return;
         }
 
-        snapshot.forEach((docSnap) => {
-            const ev = docSnap.data();
-            const id = docSnap.id;
+        const docsArray = [];
+        snapshot.forEach(d => docsArray.push({ id: d.id, ...d.data() }));
+
+        docsArray.forEach((ev, index) => {
+            const id = ev.id;
             
             let badgeEstado = '';
             if (ev.estado === 'ACTIVO') badgeEstado = '<span style="background: rgba(46, 204, 113, 0.2); color: #2ecc71; padding: 4px 8px; border-radius: 6px; font-weight: bold; font-size: 11px;">🟢 Próximo (Activo)</span>';
@@ -313,6 +315,10 @@ export function loadSandiaData() {
             const imgSrc = resolveSandiaImgPath(ev.imagen);
             const tr = document.createElement('tr');
             tr.innerHTML = `
+                <td style="white-space: nowrap;">
+                    <button class="btn-secondary btn-small btn-move-event-up" style="padding: 2px 6px; font-size: 11px;" ${index === 0 ? 'disabled style="opacity:0.3;"' : ''}>⬆️</button>
+                    <button class="btn-secondary btn-small btn-move-event-down" style="padding: 2px 6px; font-size: 11px;" ${index === docsArray.length - 1 ? 'disabled style="opacity:0.3;"' : ''}>⬇️</button>
+                </td>
                 <td>
                     <div style="display: flex; align-items: center; gap: 10px;">
                         <img src="${imgSrc}" onerror="this.onerror=null; this.src='img/growisotipo.png'" style="width: 40px; height: 40px; object-fit: cover; border-radius: 6px; border: 1px solid rgba(255,255,255,0.1); background: #1a1f2c;">
@@ -332,6 +338,11 @@ export function loadSandiaData() {
                 </td>
             `;
 
+            const btnUp = tr.querySelector('.btn-move-event-up');
+            const btnDown = tr.querySelector('.btn-move-event-down');
+            if (btnUp && index > 0) btnUp.addEventListener('click', () => moverPosicion('sandia_eventos', docsArray, index, index - 1));
+            if (btnDown && index < docsArray.length - 1) btnDown.addEventListener('click', () => moverPosicion('sandia_eventos', docsArray, index, index + 1));
+
             tr.querySelector('.btn-edit-event').addEventListener('click', () => editEvent(id, ev));
             tr.querySelector('.btn-del-event').addEventListener('click', () => deleteEvent(id, ev.titulo));
 
@@ -340,22 +351,28 @@ export function loadSandiaData() {
     });
 
     // Aliados Comerciales (Patrocinantes)
-    const qAliados = query(collection(db, "sandia_aliados"));
+    const qAliados = query(collection(db, "sandia_aliados"), orderBy("orden", "asc"));
     unsubscribeAliados = onSnapshot(qAliados, (snapshot) => {
         if (!tableAliadosBody) return;
         tableAliadosBody.innerHTML = '';
 
         if (snapshot.empty) {
-            tableAliadosBody.innerHTML = `<tr><td colspan="4" style="text-align:center; padding: 20px; color: #888;">No hay aliados comerciales registrados. Haz clic en '+ Nuevo Aliado'.</td></tr>`;
+            tableAliadosBody.innerHTML = `<tr><td colspan="5" style="text-align:center; padding: 20px; color: #888;">No hay aliados comerciales registrados. Haz clic en '+ Nuevo Aliado'.</td></tr>`;
             return;
         }
 
-        snapshot.forEach((docSnap) => {
-            const al = docSnap.data();
-            const id = docSnap.id;
+        const aliadosArray = [];
+        snapshot.forEach(d => aliadosArray.push({ id: d.id, ...d.data() }));
+
+        aliadosArray.forEach((al, index) => {
+            const id = al.id;
             const imgSrc = resolveSandiaImgPath(al.imagen);
             const tr = document.createElement('tr');
             tr.innerHTML = `
+                <td style="white-space: nowrap;">
+                    <button class="btn-secondary btn-small btn-move-aliado-up" style="padding: 2px 6px; font-size: 11px;" ${index === 0 ? 'disabled style="opacity:0.3;"' : ''}>⬆️</button>
+                    <button class="btn-secondary btn-small btn-move-aliado-down" style="padding: 2px 6px; font-size: 11px;" ${index === aliadosArray.length - 1 ? 'disabled style="opacity:0.3;"' : ''}>⬇️</button>
+                </td>
                 <td>
                     <div style="display: flex; align-items: center; gap: 10px;">
                         <img src="${imgSrc}" onerror="this.onerror=null; this.src='img/growisotipo.png'" style="width: 35px; height: 35px; object-fit: contain; background: #fff; border-radius: 6px; padding: 2px;">
@@ -369,6 +386,11 @@ export function loadSandiaData() {
                     <button class="btn-secondary btn-small btn-del-aliado" data-id="${id}" style="color: #ef4444; border-color: rgba(239, 68, 68, 0.3);">🗑️</button>
                 </td>
             `;
+
+            const btnUp = tr.querySelector('.btn-move-aliado-up');
+            const btnDown = tr.querySelector('.btn-move-aliado-down');
+            if (btnUp && index > 0) btnUp.addEventListener('click', () => moverPosicion('sandia_aliados', aliadosArray, index, index - 1));
+            if (btnDown && index < aliadosArray.length - 1) btnDown.addEventListener('click', () => moverPosicion('sandia_aliados', aliadosArray, index, index + 1));
 
             tr.querySelector('.btn-edit-aliado').addEventListener('click', () => editAliado(id, al));
             tr.querySelector('.btn-del-aliado').addEventListener('click', () => deleteAliado(id, al.nombre));
@@ -460,6 +482,25 @@ async function deleteAliado(id, nombre) {
         } catch (err) {
             alert("Error al eliminar aliado: " + err.message);
         }
+    }
+}
+
+// Función auxiliar para reordenar (cambiar posición con flechas ⬆️ / ⬇️)
+async function moverPosicion(coleccion, itemsArray, indexActual, indexDestino) {
+    if (indexDestino < 0 || indexDestino >= itemsArray.length) return;
+
+    const itemActual = itemsArray[indexActual];
+    const itemDestino = itemsArray[indexDestino];
+
+    const ordenActual = itemActual.orden !== undefined ? itemActual.orden : indexActual;
+    const ordenDestino = itemDestino.orden !== undefined ? itemDestino.orden : indexDestino;
+
+    try {
+        await updateDoc(doc(db, coleccion, itemActual.id), { orden: ordenDestino });
+        await updateDoc(doc(db, coleccion, itemDestino.id), { orden: ordenActual });
+    } catch (e) {
+        console.error("Error al reordenar:", e);
+        alert("Error al cambiar la posición: " + e.message);
     }
 }
 
@@ -811,8 +852,8 @@ async function seedInitialSandiaData() {
             }
         ];
 
-        for (const ev of eventosBase) {
-            await addDoc(collection(db, "sandia_eventos"), ev);
+        for (let idx = 0; idx < eventosBase.length; idx++) {
+            await addDoc(collection(db, "sandia_eventos"), { ...eventosBase[idx], orden: idx });
         }
 
         // Aliados Iniciales Oficiales
@@ -833,8 +874,8 @@ async function seedInitialSandiaData() {
             }
         ];
 
-        for (const al of aliadosBase) {
-            await addDoc(collection(db, "sandia_aliados"), al);
+        for (let idx = 0; idx < aliadosBase.length; idx++) {
+            await addDoc(collection(db, "sandia_aliados"), { ...aliadosBase[idx], orden: idx });
         }
 
         alert("🎉 ¡Datos iniciales importados con éxito a Firebase Firestore!");
