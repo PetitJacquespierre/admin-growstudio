@@ -291,7 +291,7 @@ export function loadSandiaData() {
     if (unsubscribeAliados) unsubscribeAliados();
 
     // Eventos
-    const qEventos = query(collection(db, "sandia_eventos"), orderBy("orden", "asc"));
+    const qEventos = query(collection(db, "sandia_eventos"));
     unsubscribeEventos = onSnapshot(qEventos, (snapshot) => {
         if (!tableBody) return;
         tableBody.innerHTML = '';
@@ -303,6 +303,9 @@ export function loadSandiaData() {
 
         const docsArray = [];
         snapshot.forEach(d => docsArray.push({ id: d.id, ...d.data() }));
+
+        // Ordenar en memoria (si no tienen 'orden', usar 0)
+        docsArray.sort((a, b) => (a.orden !== undefined ? a.orden : 999) - (b.orden !== undefined ? b.orden : 999));
 
         docsArray.forEach((ev, index) => {
             const id = ev.id;
@@ -351,7 +354,7 @@ export function loadSandiaData() {
     });
 
     // Aliados Comerciales (Patrocinantes)
-    const qAliados = query(collection(db, "sandia_aliados"), orderBy("orden", "asc"));
+    const qAliados = query(collection(db, "sandia_aliados"));
     unsubscribeAliados = onSnapshot(qAliados, (snapshot) => {
         if (!tableAliadosBody) return;
         tableAliadosBody.innerHTML = '';
@@ -363,6 +366,9 @@ export function loadSandiaData() {
 
         const aliadosArray = [];
         snapshot.forEach(d => aliadosArray.push({ id: d.id, ...d.data() }));
+
+        // Ordenar en memoria
+        aliadosArray.sort((a, b) => (a.orden !== undefined ? a.orden : 999) - (b.orden !== undefined ? b.orden : 999));
 
         aliadosArray.forEach((al, index) => {
             const id = al.id;

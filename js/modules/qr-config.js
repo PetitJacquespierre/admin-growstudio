@@ -213,12 +213,28 @@ window.generarQRMenu = function() {
     qrContainer.innerHTML = "";
     new QRCode(qrContainer, {
         text: urlToEncode,
-        width: 200,
-        height: 200,
+        width: 190,
+        height: 190,
         colorDark: "#000000",
         colorLight: "#ffffff",
         correctLevel: QRCode.CorrectLevel.H
     });
+
+    // Estilizado forzado para evitar estiramiento por CSS global de imágenes
+    setTimeout(() => {
+        const img = qrContainer.querySelector('img');
+        const canvas = qrContainer.querySelector('canvas');
+        if (img) {
+            img.style.width = '190px';
+            img.style.height = '190px';
+            img.style.maxWidth = 'none';
+            img.style.display = 'block';
+            img.style.margin = '0 auto';
+        }
+        if (canvas) {
+            canvas.style.display = 'none';
+        }
+    }, 50);
 
     if (qrUrlText) qrUrlText.innerText = urlToEncode;
     if (qrModal) qrModal.style.display = 'flex';
