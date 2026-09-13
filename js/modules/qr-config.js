@@ -46,41 +46,9 @@ if (DOM.btnSaveConfig) {
 
 
 
-let currentQrcode = null;
-
-if (DOM.btnGenerateQr) {
-    DOM.btnGenerateQr.addEventListener('click', () => {
-        if (!state.currentClientData || !state.currentClientData.url) {
-            alert("El cliente no tiene un Link de la Tienda configurado.");
-            return;
-        }
-        
-        DOM.qrModal.style.display = 'flex';
-        DOM.qrContainer.innerHTML = ''; // Limpiar anterior
-        
-        let urlToEncode = state.currentClientData.url;
-        if (!urlToEncode.startsWith('http')) urlToEncode = 'https://' + urlToEncode;
-        DOM.qrUrlText.innerText = urlToEncode;
-        
-        // Timeout ligero para asegurar renderizado del DOM
-        setTimeout(() => {
-            currentQrcode = new QRCode(DOM.qrContainer, {
-                text: urlToEncode,
-                width: 250,
-                height: 250,
-                colorDark : "#000000",
-                colorLight : "#ffffff",
-                correctLevel : QRCode.CorrectLevel.H
-            });
-        }, 100);
-    });
-}
-
-if (DOM.btnCloseQr) {
-    DOM.btnCloseQr.addEventListener('click', () => {
-        DOM.qrModal.style.display = 'none';
-    });
-}
+// ==============================================================
+// GENERADOR DE QR
+// ==============================================================
 
 if (DOM.btnDownloadQr) {
     DOM.btnDownloadQr.addEventListener('click', () => {
