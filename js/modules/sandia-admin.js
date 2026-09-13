@@ -803,66 +803,211 @@ th:last-child{width:45%}
 };
 
 // ==========================================
-// IMPORTACIÓN AUTOMÁTICA DE DATOS INICIALES
+// IMPORTACIÓN AUTOMÁTICA DE TODOS LOS EVENTOS & FLYERS
 // ==========================================
 async function seedInitialSandiaData() {
-    if (!confirm("¿Deseas importar los eventos y aliados iniciales a la base de datos de Firebase Firestore?")) return;
+    if (!confirm("¿Deseas importar TODOS los eventos del Calendario (Locales, Regionales, Nacionales y Aliados) a Firebase Firestore automáticamente?")) return;
 
     const btn = document.getElementById('btn-seed-sandia-data');
     if (btn) {
         btn.disabled = true;
-        btn.innerText = "Importando...";
+        btn.innerText = "Sincronizando Todo...";
     }
 
     try {
-        // Eventos Iniciales Oficiales
-        const eventosBase = [
+        // 1. Catálogo Completo de Eventos y Carreras (Local, Regional, Nacional y Pasados)
+        const catalogoCompletoEventos = [
             {
                 titulo: "5K Paraguaná Horror Story",
                 dia: "31",
                 mes: "OCT",
                 ubicacion: "Sambil Paraguaná / 7:00 PM",
                 categoria: "SANDIA",
+                etiqueta: "Punto Fijo",
                 imagen: "paraguanahorror.jpeg",
                 enlace: "paraguanahorror.html",
-                textoBoton: "Inscribirme Ahora 🎃",
+                textoBoton: "INSCRIBIRME",
                 estado: "ACTIVO",
+                activo: "SI",
                 destacado_index: true,
                 fechaCreacion: new Date().toISOString()
             },
             {
-                titulo: "Coffee Run ¡Madre Mía! 3K Vol. 2",
+                titulo: "Coffee Run ¡Madre Mía! 3K",
                 dia: "27",
                 mes: "SEP",
                 ubicacion: "Av. Francisco de Miranda / Madre Mía",
                 categoria: "REGIONAL",
+                etiqueta: "Punto Fijo",
                 imagen: "madremia.jpg",
                 enlace: "https://forms.gle/CqN4gF54xLK3vo6T6",
-                textoBoton: "Inscribirme en Google Forms",
+                textoBoton: "INSCRIBIRME",
                 estado: "ACTIVO",
+                activo: "SI",
                 destacado_index: true,
                 fechaCreacion: new Date().toISOString()
             },
             {
-                titulo: "Coffee Run 3K Vol. 1",
-                dia: "10",
-                mes: "AGO",
-                ubicacion: "Terraza Tinaja",
-                categoria: "SANDIA",
-                imagen: "coffee_run.png",
+                titulo: "Matea Arepa Run 5K",
+                dia: "04",
+                mes: "SEP",
+                ubicacion: "Punto Fijo, Falcón",
+                categoria: "LOCAL",
+                etiqueta: "Punto Fijo",
+                imagen: "matea_run.png",
                 enlace: "",
-                textoBoton: "Galería de Fotos",
+                textoBoton: "",
                 estado: "COMPLETADO",
+                activo: "NO",
+                destacado_index: false,
+                fechaCreacion: new Date().toISOString()
+            },
+            {
+                titulo: "1era Coffee Run Terraza Tinaja 3K",
+                dia: "15",
+                mes: "AGO",
+                ubicacion: "Punto Fijo, Falcón",
+                categoria: "LOCAL",
+                etiqueta: "Punto Fijo",
+                imagen: "coffee_run.png",
+                enlace: "https://fotoshare.co/e/mLqiMWncPCFtJhfZkTRIY?fbclid=PAZn",
+                textoBoton: "Ver Galería",
+                estado: "COMPLETADO",
+                activo: "NO",
+                destacado_index: false,
+                fechaCreacion: new Date().toISOString()
+            },
+            {
+                titulo: "7ma Carrera Infantil New Generation",
+                dia: "15",
+                mes: "AGO",
+                ubicacion: "Maracaibo, Zulia",
+                categoria: "NACIONAL",
+                etiqueta: "Nacional",
+                imagen: "7maCarreraInfantilNewGeneration.png",
+                enlace: "",
+                textoBoton: "",
+                estado: "COMPLETADO",
+                activo: "NO",
+                destacado_index: false,
+                fechaCreacion: new Date().toISOString()
+            },
+            {
+                titulo: "10k Paraguana 2026",
+                dia: "23",
+                mes: "AGO",
+                ubicacion: "Punto Fijo, Falcón",
+                categoria: "LOCAL",
+                etiqueta: "Punto Fijo",
+                imagen: "10kparaguana2026.png",
+                enlace: "https://papaya25.info/modp25.php?idc=16947",
+                textoBoton: "Inscribirse",
+                estado: "ACTIVO",
+                activo: "SI",
+                destacado_index: false,
+                fechaCreacion: new Date().toISOString()
+            },
+            {
+                titulo: "Trail Botánico 10K",
+                dia: "30",
+                mes: "AGO",
+                ubicacion: "Maracaibo, Zulia",
+                categoria: "NACIONAL",
+                etiqueta: "Nacional",
+                imagen: "trailbotanico2026.png",
+                enlace: "https://papaya25.info/modp25.php?idc=16892",
+                textoBoton: "Inscribirse",
+                estado: "ACTIVO",
+                activo: "SI",
+                destacado_index: false,
+                fechaCreacion: new Date().toISOString()
+            },
+            {
+                titulo: "Run and Music Fest 10K",
+                dia: "20",
+                mes: "SEP",
+                ubicacion: "Maracaibo, Zulia",
+                categoria: "NACIONAL",
+                etiqueta: "Nacional",
+                imagen: "runmusicfest.png",
+                enlace: "https://papaya25.info/modp25.php?idc=16923",
+                textoBoton: "Inscribirse",
+                estado: "ACTIVO",
+                activo: "SI",
+                destacado_index: false,
+                fechaCreacion: new Date().toISOString()
+            },
+            {
+                titulo: "Chirimena Extrema 15K",
+                dia: "27",
+                mes: "SEP",
+                ubicacion: "Miranda",
+                categoria: "NACIONAL",
+                etiqueta: "Nacional",
+                imagen: "chirimenaextrema15ksep27.png",
+                enlace: "",
+                textoBoton: "",
+                estado: "ACTIVO",
+                activo: "SI",
+                destacado_index: false,
+                fechaCreacion: new Date().toISOString()
+            },
+            {
+                titulo: "Bicolor 10K",
+                dia: "10",
+                mes: "OCT",
+                ubicacion: "San Francisco, Zulia",
+                categoria: "NACIONAL",
+                etiqueta: "Nacional",
+                imagen: "bicolor10k2026.png",
+                enlace: "https://papaya25.info/modp25.php?idc=16901",
+                textoBoton: "Inscribirse",
+                estado: "ACTIVO",
+                activo: "SI",
+                destacado_index: false,
+                fechaCreacion: new Date().toISOString()
+            },
+            {
+                titulo: "Copaiba 10K 2026",
+                dia: "25",
+                mes: "OCT",
+                ubicacion: "Cabimas, Zulia",
+                categoria: "NACIONAL",
+                etiqueta: "Nacional",
+                imagen: "Copaiba10K2026.png",
+                enlace: "https://papaya25.info/modp25.php?idc=16911",
+                textoBoton: "Inscribirse",
+                estado: "ACTIVO",
+                activo: "SI",
+                destacado_index: false,
+                fechaCreacion: new Date().toISOString()
+            },
+            {
+                titulo: "CHINITA 10K 2026",
+                dia: "29",
+                mes: "NOV",
+                ubicacion: "Maracaibo, Zulia",
+                categoria: "NACIONAL",
+                etiqueta: "Nacional",
+                imagen: "Chinita10K2026.png",
+                enlace: "https://papaya25.info/modp25.php?idc=16956",
+                textoBoton: "Inscribirse",
+                estado: "ACTIVO",
+                activo: "SI",
                 destacado_index: false,
                 fechaCreacion: new Date().toISOString()
             }
         ];
 
-        for (let idx = 0; idx < eventosBase.length; idx++) {
-            await addDoc(collection(db, "sandia_eventos"), { ...eventosBase[idx], orden: idx });
+        // Guardar todos los eventos en Firestore
+        for (let idx = 0; idx < catalogoCompletoEventos.length; idx++) {
+            await addDoc(collection(db, "sandia_eventos"), { 
+                ...catalogoCompletoEventos[idx], 
+                orden: idx 
+            });
         }
 
-        // Aliados Iniciales Oficiales
+        // 2. Aliados Comerciales Oficiales
         const aliadosBase = [
             {
                 nombre: "Runner Club",
@@ -884,10 +1029,10 @@ async function seedInitialSandiaData() {
             await addDoc(collection(db, "sandia_aliados"), { ...aliadosBase[idx], orden: idx });
         }
 
-        alert("🎉 ¡Datos iniciales importados con éxito a Firebase Firestore!");
+        alert(`🎉 ¡Éxito! Se sincronizaron ${catalogoCompletoEventos.length} eventos y flyers a Firebase Firestore.`);
     } catch (error) {
         console.error("Error sembrando datos:", error);
-        alert("Error al importar datos: " + error.message);
+        alert("Error al sincronizar datos: " + error.message);
     } finally {
         if (btn) {
             btn.disabled = false;
