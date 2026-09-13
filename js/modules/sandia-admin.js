@@ -27,6 +27,33 @@ export const sandiaImagesList = [
 let unsubscribeEventos = null;
 let unsubscribeAliados = null;
 let currentEventId = null;
+let currentAliadoId = null;
+
+// Función para resolver rutas de imágenes sin romper el entorno ni entrar en loops
+export function resolveSandiaImgPath(img) {
+    if (!img || typeof img !== 'string') return 'img/growisotipo.png';
+    const trimmed = img.trim();
+    if (!trimmed) return 'img/growisotipo.png';
+    if (trimmed.startsWith('http://') || trimmed.startsWith('https://') || trimmed.startsWith('data:')) {
+        return trimmed;
+    }
+    const clean = trimmed.replace(/^img\//, '');
+    return `../Sandia Production/img/${clean}`;
+}
+
+function previewImage(previewEl, imageVal) {
+    if (!previewEl) return;
+    if (!imageVal) {
+        previewEl.style.display = 'none';
+        return;
+    }
+    previewEl.onerror = () => {
+        previewEl.onerror = null;
+        previewEl.src = 'img/growisotipo.png';
+    };
+    previewEl.src = resolveSandiaImgPath(imageVal);
+    previewEl.style.display = 'block';
+}
 
 // Inicializador del Módulo
 export function initSandiaAdmin() {
@@ -57,6 +84,7 @@ export function initSandiaAdmin() {
     const btnCloseEventModal = document.getElementById('btn-close-sandia-event');
     const formEvent = document.getElementById('form-sandia-event');
     const selectEventImg = document.getElementById('sandia-event-img-select');
+    const customEventImg = document.getElementById('sandia-event-custom-img');
     const eventImgPreview = document.getElementById('sandia-event-img-preview');
 
     // Poblar Selector de Imágenes de Eventos
@@ -67,8 +95,24 @@ export function initSandiaAdmin() {
         selectEventImg.addEventListener('change', (e) => {
             const val = e.target.value;
             if (val) {
-                eventImgPreview.src = `../Sandia Production/img/${val}`;
-                eventImgPreview.style.display = 'block';
+                if (customEventImg) customEventImg.value = '';
+                previewImage(eventImgPreview, val);
+            } else if (customEventImg && customEventImg.value.trim()) {
+                previewImage(eventImgPreview, customEventImg.value.trim());
+            } else {
+                eventImgPreview.style.display = 'none';
+            }
+        });
+    }
+
+    if (customEventImg) {
+        customEventImg.addEventListener('input', (e) => {
+            const val = e.target.value.trim();
+            if (val) {
+                if (selectEventImg) selectEventImg.value = '';
+                previewImage(eventImgPreview, val);
+            } else if (selectEventImg && selectEventImg.value) {
+                previewImage(eventImgPreview, selectEventImg.value);
             } else {
                 eventImgPreview.style.display = 'none';
             }
@@ -78,16 +122,17 @@ export function initSandiaAdmin() {
     if (btnNewEvent) {
         btnNewEvent.addEventListener('click', () => {
             currentEventId = null;
-            formEvent.reset();
-            document.getElementById('sandia-modal-title').innerText = "🏆 Nuevo Evento Deportivo";
-            eventImgPreview.style.display = 'none';
-            modalEvent.style.display = 'flex';
+            if (formEvent) formEvent.reset();
+            const titleEl = document.getElementById('sandia-modal-title');
+            if (titleEl) titleEl.innerText = "🏆 Nuevo Evento Deportivo";
+            if (eventImgPreview) eventImgPreview.style.display = 'none';
+            if (modalEvent) modalEvent.style.display = 'flex';
         });
     }
 
     if (btnCloseEventModal) {
         btnCloseEventModal.addEventListener('click', () => {
-            modalEvent.style.display = 'none';
+            if (modalEvent) modalEvent.style.display = 'none';
         });
     }
 
@@ -106,7 +151,7 @@ export function initSandiaAdmin() {
                 categoria: document.getElementById('sandia-event-categoria').value,
                 enlace: document.getElementById('sandia-event-enlace').value.trim(),
                 textoBoton: document.getElementById('sandia-event-boton-texto').value.trim() || "Inscribirme Ahora",
-                imagen: document.getElementById('sandia-event-img-select').value || document.getElementById('sandia-event-custom-img').value.trim() || "Isotipo.png",
+                imagen: document.getElementById('sandia-event-img-select').value || (document.getElementById('sandia-event-custom-img') ? document.getElementById('sandia-event-custom-img').value.trim() : "") || "Isotipo.png",
                 estado: document.getElementById('sandia-event-estado').value, // 'ACTIVO', 'COMPLETADO', 'OCULTO'
                 destacado_index: document.getElementById('sandia-event-destacado').checked,
                 fechaActualizacion: new Date().toISOString()
@@ -137,6 +182,7 @@ export function initSandiaAdmin() {
     const btnCloseAliadoModal = document.getElementById('btn-close-sandia-aliado');
     const formAliado = document.getElementById('form-sandia-aliado');
     const selectAliadoImg = document.getElementById('sandia-aliado-img-select');
+    const customAliadoImg = document.getElementById('sandia-aliado-custom-img');
     const aliadoImgPreview = document.getElementById('sandia-aliado-img-preview');
     const btnSeedData = document.getElementById('btn-seed-sandia-data');
 
@@ -148,8 +194,24 @@ export function initSandiaAdmin() {
         selectAliadoImg.addEventListener('change', (e) => {
             const val = e.target.value;
             if (val) {
-                aliadoImgPreview.src = `../Sandia Production/img/${val}`;
-                aliadoImgPreview.style.display = 'block';
+                if (customAliadoImg) customAliadoImg.value = '';
+                previewImage(aliadoImgPreview, val);
+            } else if (customAliadoImg && customAliadoImg.value.trim()) {
+                previewImage(aliadoImgPreview, customAliadoImg.value.trim());
+            } else {
+                aliadoImgPreview.style.display = 'none';
+            }
+        });
+    }
+
+    if (customAliadoImg) {
+        customAliadoImg.addEventListener('input', (e) => {
+            const val = e.target.value.trim();
+            if (val) {
+                if (selectAliadoImg) selectAliadoImg.value = '';
+                previewImage(aliadoImgPreview, val);
+            } else if (selectAliadoImg && selectAliadoImg.value) {
+                previewImage(aliadoImgPreview, selectAliadoImg.value);
             } else {
                 aliadoImgPreview.style.display = 'none';
             }
@@ -158,15 +220,18 @@ export function initSandiaAdmin() {
 
     if (btnNewAliado) {
         btnNewAliado.addEventListener('click', () => {
-            formAliado.reset();
+            currentAliadoId = null;
+            if (formAliado) formAliado.reset();
+            const titleAliado = document.getElementById('sandia-aliado-modal-title');
+            if (titleAliado) titleAliado.innerText = "🤝 Nuevo Aliado Comercial";
             if (aliadoImgPreview) aliadoImgPreview.style.display = 'none';
-            modalAliado.style.display = 'flex';
+            if (modalAliado) modalAliado.style.display = 'flex';
         });
     }
 
     if (btnCloseAliadoModal) {
         btnCloseAliadoModal.addEventListener('click', () => {
-            modalAliado.style.display = 'none';
+            if (modalAliado) modalAliado.style.display = 'none';
         });
     }
 
@@ -178,17 +243,26 @@ export function initSandiaAdmin() {
             btnSubmit.innerText = "Guardando...";
 
             const nombre = document.getElementById('sandia-aliado-nombre').value.trim();
-            const imagen = (selectAliadoImg && selectAliadoImg.value) || document.getElementById('sandia-aliado-custom-img').value.trim() || "Isotipo.png";
+            const imagen = (selectAliadoImg && selectAliadoImg.value) || (customAliadoImg && customAliadoImg.value.trim()) || "Isotipo.png";
             const enlace = document.getElementById('sandia-aliado-enlace').value.trim() || "#";
 
             try {
-                await addDoc(collection(db, "sandia_aliados"), {
-                    nombre,
-                    imagen,
-                    enlace,
-                    activo: true,
-                    fechaCreacion: new Date().toISOString()
-                });
+                if (currentAliadoId) {
+                    await updateDoc(doc(db, "sandia_aliados", currentAliadoId), {
+                        nombre,
+                        imagen,
+                        enlace,
+                        fechaActualizacion: new Date().toISOString()
+                    });
+                } else {
+                    await addDoc(collection(db, "sandia_aliados"), {
+                        nombre,
+                        imagen,
+                        enlace,
+                        activo: true,
+                        fechaCreacion: new Date().toISOString()
+                    });
+                }
                 modalAliado.style.display = 'none';
                 formAliado.reset();
                 if (aliadoImgPreview) aliadoImgPreview.style.display = 'none';
@@ -209,7 +283,7 @@ export function initSandiaAdmin() {
 }
 
 // Cargar Datos en Tiempo Real
-function loadSandiaData() {
+export function loadSandiaData() {
     const tableBody = document.getElementById('sandia-events-tbody');
     const tableAliadosBody = document.getElementById('sandia-aliados-tbody');
 
@@ -236,11 +310,12 @@ function loadSandiaData() {
             else if (ev.estado === 'COMPLETADO') badgeEstado = '<span style="background: rgba(230, 126, 34, 0.2); color: #e67e22; padding: 4px 8px; border-radius: 6px; font-weight: bold; font-size: 11px;">🏁 Completado</span>';
             else badgeEstado = '<span style="background: rgba(149, 165, 166, 0.2); color: #95a5a6; padding: 4px 8px; border-radius: 6px; font-weight: bold; font-size: 11px;">⚪ Oculto (Borrador)</span>';
 
+            const imgSrc = resolveSandiaImgPath(ev.imagen);
             const tr = document.createElement('tr');
             tr.innerHTML = `
                 <td>
                     <div style="display: flex; align-items: center; gap: 10px;">
-                        <img src="../Sandia Production/img/${ev.imagen}" onerror="this.src='../Sandia Production/img/Isotipo.png'" style="width: 40px; height: 40px; object-fit: cover; border-radius: 6px; border: 1px solid rgba(255,255,255,0.1);">
+                        <img src="${imgSrc}" onerror="this.onerror=null; this.src='img/growisotipo.png'" style="width: 40px; height: 40px; object-fit: cover; border-radius: 6px; border: 1px solid rgba(255,255,255,0.1); background: #1a1f2c;">
                         <div>
                             <strong>${ev.titulo}</strong>
                             <div style="font-size: 11px; color: #888;">${ev.ubicacion || ''}</div>
@@ -251,7 +326,7 @@ function loadSandiaData() {
                 <td><span style="font-size: 11px; text-transform: uppercase; background: rgba(255,255,255,0.05); padding: 3px 8px; border-radius: 4px;">${ev.categoria}</span></td>
                 <td>${badgeEstado}</td>
                 <td>${ev.destacado_index ? '⭐ Sí (Home)' : 'No'}</td>
-                <td style="text-align: right;">
+                <td style="text-align: right; white-space: nowrap;">
                     <button class="btn-secondary btn-small btn-edit-event" data-id="${id}" style="margin-right: 5px;">✏️ Editar</button>
                     <button class="btn-secondary btn-small btn-del-event" data-id="${id}" style="color: #ef4444; border-color: rgba(239, 68, 68, 0.3);">🗑️</button>
                 </td>
@@ -264,35 +339,38 @@ function loadSandiaData() {
         });
     });
 
-    // Aliados
+    // Aliados Comerciales (Patrocinantes)
     const qAliados = query(collection(db, "sandia_aliados"));
     unsubscribeAliados = onSnapshot(qAliados, (snapshot) => {
         if (!tableAliadosBody) return;
         tableAliadosBody.innerHTML = '';
 
         if (snapshot.empty) {
-            tableAliadosBody.innerHTML = `<tr><td colspan="4" style="text-align:center; padding: 20px; color: #888;">No hay aliados comerciales registrados.</td></tr>`;
+            tableAliadosBody.innerHTML = `<tr><td colspan="4" style="text-align:center; padding: 20px; color: #888;">No hay aliados comerciales registrados. Haz clic en '+ Nuevo Aliado'.</td></tr>`;
             return;
         }
 
         snapshot.forEach((docSnap) => {
             const al = docSnap.data();
             const id = docSnap.id;
+            const imgSrc = resolveSandiaImgPath(al.imagen);
             const tr = document.createElement('tr');
             tr.innerHTML = `
                 <td>
                     <div style="display: flex; align-items: center; gap: 10px;">
-                        <img src="../Sandia Production/img/${al.imagen}" onerror="this.src='../Sandia Production/img/Isotipo.png'" style="width: 35px; height: 35px; object-fit: contain; background: #fff; border-radius: 6px; padding: 2px;">
+                        <img src="${imgSrc}" onerror="this.onerror=null; this.src='img/growisotipo.png'" style="width: 35px; height: 35px; object-fit: contain; background: #fff; border-radius: 6px; padding: 2px;">
                         <strong>${al.nombre}</strong>
                     </div>
                 </td>
-                <td><span style="font-size: 12px; color: #888;">img/${al.imagen}</span></td>
+                <td><span style="font-size: 12px; color: #888;">${al.imagen || ''}</span></td>
                 <td><a href="${al.enlace}" target="_blank" style="color: var(--brand-cyan); text-decoration: none; font-size: 12px;">${al.enlace}</a></td>
-                <td style="text-align: right;">
-                    <button class="btn-secondary btn-small btn-del-aliado" data-id="${id}" style="color: #ef4444;">🗑️</button>
+                <td style="text-align: right; white-space: nowrap;">
+                    <button class="btn-secondary btn-small btn-edit-aliado" data-id="${id}" style="margin-right: 5px;">✏️ Editar</button>
+                    <button class="btn-secondary btn-small btn-del-aliado" data-id="${id}" style="color: #ef4444; border-color: rgba(239, 68, 68, 0.3);">🗑️</button>
                 </td>
             `;
 
+            tr.querySelector('.btn-edit-aliado').addEventListener('click', () => editAliado(id, al));
             tr.querySelector('.btn-del-aliado').addEventListener('click', () => deleteAliado(id, al.nombre));
             tableAliadosBody.appendChild(tr);
         });
@@ -301,7 +379,9 @@ function loadSandiaData() {
 
 function editEvent(id, ev) {
     currentEventId = id;
-    document.getElementById('sandia-modal-title').innerText = "✏️ Editar Evento Deportivo";
+    const titleEl = document.getElementById('sandia-modal-title');
+    if (titleEl) titleEl.innerText = "✏️ Editar Evento Deportivo";
+    
     document.getElementById('sandia-event-titulo').value = ev.titulo || '';
     document.getElementById('sandia-event-dia').value = ev.dia || '';
     document.getElementById('sandia-event-mes').value = ev.mes || '';
@@ -309,20 +389,58 @@ function editEvent(id, ev) {
     document.getElementById('sandia-event-categoria').value = ev.categoria || 'SANDIA';
     document.getElementById('sandia-event-enlace').value = ev.enlace || '';
     document.getElementById('sandia-event-boton-texto').value = ev.textoBoton || 'Inscribirme Ahora';
-    document.getElementById('sandia-event-img-select').value = sandiaImagesList.includes(ev.imagen) ? ev.imagen : '';
-    document.getElementById('sandia-event-custom-img').value = !sandiaImagesList.includes(ev.imagen) ? ev.imagen : '';
+    
+    const selectImg = document.getElementById('sandia-event-img-select');
+    const customImg = document.getElementById('sandia-event-custom-img');
+    
+    if (sandiaImagesList.includes(ev.imagen)) {
+        if (selectImg) selectImg.value = ev.imagen;
+        if (customImg) customImg.value = '';
+    } else {
+        if (selectImg) selectImg.value = '';
+        if (customImg) customImg.value = ev.imagen || '';
+    }
+
     document.getElementById('sandia-event-estado').value = ev.estado || 'ACTIVO';
     document.getElementById('sandia-event-destacado').checked = !!ev.destacado_index;
 
     const eventImgPreview = document.getElementById('sandia-event-img-preview');
     if (ev.imagen) {
-        eventImgPreview.src = `../Sandia Production/img/${ev.imagen}`;
-        eventImgPreview.style.display = 'block';
-    } else {
+        previewImage(eventImgPreview, ev.imagen);
+    } else if (eventImgPreview) {
         eventImgPreview.style.display = 'none';
     }
 
     document.getElementById('modal-sandia-event').style.display = 'flex';
+}
+
+function editAliado(id, al) {
+    currentAliadoId = id;
+    const titleAliado = document.getElementById('sandia-aliado-modal-title');
+    if (titleAliado) titleAliado.innerText = "✏️ Editar Aliado Comercial";
+    
+    document.getElementById('sandia-aliado-nombre').value = al.nombre || '';
+    document.getElementById('sandia-aliado-enlace').value = al.enlace || '';
+
+    const selectAliadoImg = document.getElementById('sandia-aliado-img-select');
+    const customAliadoImg = document.getElementById('sandia-aliado-custom-img');
+
+    if (sandiaImagesList.includes(al.imagen)) {
+        if (selectAliadoImg) selectAliadoImg.value = al.imagen;
+        if (customAliadoImg) customAliadoImg.value = '';
+    } else {
+        if (selectAliadoImg) selectAliadoImg.value = '';
+        if (customAliadoImg) customAliadoImg.value = al.imagen || '';
+    }
+
+    const aliadoImgPreview = document.getElementById('sandia-aliado-img-preview');
+    if (al.imagen) {
+        previewImage(aliadoImgPreview, al.imagen);
+    } else if (aliadoImgPreview) {
+        aliadoImgPreview.style.display = 'none';
+    }
+
+    document.getElementById('modal-sandia-aliado').style.display = 'flex';
 }
 
 async function deleteEvent(id, titulo) {
