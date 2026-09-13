@@ -321,7 +321,8 @@
                         </h2>
                         <p style="font-size: 12px; color: #888; margin: 5px 0 0 0;">Administra carreras, retos deportivos, aliados y estados en tiempo real.</p>
                     </div>
-                    <div style="display: flex; gap: 10px;">
+                    <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+                        <button id="btn-seed-sandia-data" class="btn-secondary" style="border-color: rgba(230, 32, 53, 0.4); color: #ff4d61; font-size: 11px;" title="Carga los eventos y aliados iniciales si la base de datos está vacía">🌱 Importar Datos Iniciales</button>
                         <button id="btn-new-sandia-aliado" class="btn-secondary" style="border-color: rgba(255,255,255,0.2);">🤝 + Nuevo Aliado</button>
                         <button id="btn-new-sandia-event" class="btn-primary" style="background: #e62035; border-color: #e62035;">🏆 + Nuevo Evento</button>
                     </div>
@@ -515,9 +516,16 @@
                     <input type="text" id="sandia-aliado-nombre" class="input-modern" placeholder="Ej: Falcón Fit / Sambil" required style="width: 100%; box-sizing: border-box;">
                 </div>
 
-                <div class="input-group">
-                    <label>Nombre del Archivo en img/ *</label>
-                    <input type="text" id="sandia-aliado-img" class="input-modern" placeholder="Ej: logoconfondo.jpg o aliado1.png" required style="width: 100%; box-sizing: border-box;">
+                <div class="input-group" style="background: rgba(255,255,255,0.03); padding: 12px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.08);">
+                    <label style="color: var(--brand-cyan); font-weight: bold;">🖼️ Logo / Imagen del Aliado *</label>
+                    <select id="sandia-aliado-img-select" class="modern-select" style="width: 100%; margin-top: 5px; box-sizing: border-box;">
+                        <!-- Dinámico -->
+                    </select>
+                    <input type="text" id="sandia-aliado-custom-img" class="input-modern" placeholder="O escribe el archivo (ej: aliado.png)" style="width: 100%; margin-top: 8px; font-size: 11px; box-sizing: border-box;">
+                    
+                    <div style="margin-top: 10px; text-align: center;">
+                        <img id="sandia-aliado-img-preview" src="" alt="Vista Previa" style="max-height: 80px; max-width: 160px; object-fit: contain; background: #fff; padding: 4px; border-radius: 6px; display: none; margin: 0 auto; border: 1px solid rgba(255,255,255,0.2);">
+                    </div>
                 </div>
 
                 <div class="input-group">

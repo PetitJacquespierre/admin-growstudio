@@ -59,9 +59,9 @@ export function initSandiaAdmin() {
     const selectEventImg = document.getElementById('sandia-event-img-select');
     const eventImgPreview = document.getElementById('sandia-event-img-preview');
 
-    // Poblar Selector de Imágenes
+    // Poblar Selector de Imágenes de Eventos
     if (selectEventImg) {
-        selectEventImg.innerHTML = '<option value="">-- Selecciona una imagen --</option>' + 
+        selectEventImg.innerHTML = '<option value="">-- Selecciona una imagen de img/ --</option>' + 
             sandiaImagesList.map(img => `<option value="${img}">${img}</option>`).join('');
         
         selectEventImg.addEventListener('change', (e) => {
@@ -136,9 +136,30 @@ export function initSandiaAdmin() {
     const modalAliado = document.getElementById('modal-sandia-aliado');
     const btnCloseAliadoModal = document.getElementById('btn-close-sandia-aliado');
     const formAliado = document.getElementById('form-sandia-aliado');
+    const selectAliadoImg = document.getElementById('sandia-aliado-img-select');
+    const aliadoImgPreview = document.getElementById('sandia-aliado-img-preview');
+    const btnSeedData = document.getElementById('btn-seed-sandia-data');
+
+    // Poblar Selector de Imágenes de Aliados
+    if (selectAliadoImg) {
+        selectAliadoImg.innerHTML = '<option value="">-- Selecciona un logo de img/ --</option>' + 
+            sandiaImagesList.map(img => `<option value="${img}">${img}</option>`).join('');
+        
+        selectAliadoImg.addEventListener('change', (e) => {
+            const val = e.target.value;
+            if (val) {
+                aliadoImgPreview.src = `../Sandia Production/img/${val}`;
+                aliadoImgPreview.style.display = 'block';
+            } else {
+                aliadoImgPreview.style.display = 'none';
+            }
+        });
+    }
 
     if (btnNewAliado) {
         btnNewAliado.addEventListener('click', () => {
+            formAliado.reset();
+            if (aliadoImgPreview) aliadoImgPreview.style.display = 'none';
             modalAliado.style.display = 'flex';
         });
     }
@@ -152,8 +173,12 @@ export function initSandiaAdmin() {
     if (formAliado) {
         formAliado.addEventListener('submit', async (e) => {
             e.preventDefault();
+            const btnSubmit = formAliado.querySelector('button[type="submit"]');
+            btnSubmit.disabled = true;
+            btnSubmit.innerText = "Guardando...";
+
             const nombre = document.getElementById('sandia-aliado-nombre').value.trim();
-            const imagen = document.getElementById('sandia-aliado-img').value.trim();
+            const imagen = (selectAliadoImg && selectAliadoImg.value) || document.getElementById('sandia-aliado-custom-img').value.trim() || "Isotipo.png";
             const enlace = document.getElementById('sandia-aliado-enlace').value.trim() || "#";
 
             try {
@@ -166,11 +191,20 @@ export function initSandiaAdmin() {
                 });
                 modalAliado.style.display = 'none';
                 formAliado.reset();
+                if (aliadoImgPreview) aliadoImgPreview.style.display = 'none';
             } catch (err) {
                 console.error("Error guardando aliado:", err);
                 alert("Error: " + err.message);
+            } finally {
+                btnSubmit.disabled = false;
+                btnSubmit.innerText = "Guardar Aliado";
             }
         });
+    }
+
+    // Botón de Importar / Sembrar Datos Iniciales de Respaldo
+    if (btnSeedData) {
+        btnSeedData.addEventListener('click', seedInitialSandiaData);
     }
 }
 
@@ -371,5 +405,99 @@ function initSandiaConfig() {
                 btnSaveBilling.innerText = "Guardar Cobranza";
             }
         });
+    }
+}
+
+// ==========================================
+// IMPORTACIÓN AUTOMÁTICA DE DATOS INICIALES
+// ==========================================
+async function seedInitialSandiaData() {
+    if (!confirm("¿Deseas importar los eventos y aliados iniciales a la base de datos de Firebase Firestore?")) return;
+
+    const btn = document.getElementById('btn-seed-sandia-data');
+    if (btn) {
+        btn.disabled = true;
+        btn.innerText = "Importando...";
+    }
+
+    try {
+        // Eventos Iniciales Oficiales
+        const eventosBase = [
+            {
+                titulo: "5K Paraguaná Horror Story",
+                dia: "31",
+                mes: "OCT",
+                ubicacion: "Sambil Paraguaná / 7:00 PM",
+                categoria: "SANDIA",
+                imagen: "paraguanahorror.jpeg",
+                enlace: "paraguanahorror.html",
+                textoBoton: "Inscribirme Ahora 🎃",
+                estado: "ACTIVO",
+                destacado_index: true,
+                fechaCreacion: new Date().toISOString()
+            },
+            {
+                titulo: "Coffee Run ¡Madre Mía! 3K Vol. 2",
+                dia: "27",
+                mes: "SEP",
+                ubicacion: "Av. Francisco de Miranda / Madre Mía",
+                categoria: "REGIONAL",
+                imagen: "madremia.jpg",
+                enlace: "https://forms.gle/CqN4gF54xLK3vo6T6",
+                textoBoton: "Inscribirme en Google Forms",
+                estado: "ACTIVO",
+                destacado_index: true,
+                fechaCreacion: new Date().toISOString()
+            },
+            {
+                titulo: "Coffee Run 3K Vol. 1",
+                dia: "10",
+                mes: "AGO",
+                ubicacion: "Terraza Tinaja",
+                categoria: "SANDIA",
+                imagen: "coffee_run.png",
+                enlace: "",
+                textoBoton: "Galería de Fotos",
+                estado: "COMPLETADO",
+                destacado_index: false,
+                fechaCreacion: new Date().toISOString()
+            }
+        ];
+
+        for (const ev of eventosBase) {
+            await addDoc(collection(db, "sandia_eventos"), ev);
+        }
+
+        // Aliados Iniciales Oficiales
+        const aliadosBase = [
+            {
+                nombre: "Runner Club",
+                imagen: "runfreelogo.png",
+                enlace: "https://www.instagram.com/runfreest/",
+                activo: true,
+                fechaCreacion: new Date().toISOString()
+            },
+            {
+                nombre: "Grow Studio Agency",
+                imagen: "Logo.png",
+                enlace: "https://growstudioweb.vercel.app/",
+                activo: true,
+                fechaCreacion: new Date().toISOString()
+            }
+        ];
+
+        for (const al of aliadosBase) {
+            await addDoc(collection(db, "sandia_aliados"), al);
+        }
+
+        alert("🎉 ¡Datos iniciales importados con éxito a Firebase Firestore!");
+    } catch (error) {
+        console.error("Error sembrando datos:", error);
+        alert("Error al importar datos: " + error.message);
+    } finally {
+        if (btn) {
+            btn.disabled = false;
+            btn.innerText = "🌱 Importar Datos Iniciales";
+        }
     }
 }
