@@ -213,11 +213,21 @@ async function openClientManager(id, data, liElement) {
     
     // New fields
     const colorHex = data.colorPrimario || "#F97316";
-    document.getElementById('client-color-picker').value = colorHex;
-    document.getElementById('client-color-hex').value = colorHex;
+    const colorPickerEl = document.getElementById('client-color-picker');
+    if (colorPickerEl) colorPickerEl.value = colorHex;
+    const colorHexEl = document.getElementById('client-color-hex');
+    if (colorHexEl) colorHexEl.value = colorHex;
     const receiveOrdersEl = document.getElementById('client-receive-orders');
     if (receiveOrdersEl) receiveOrdersEl.checked = (data.recibirPedidos !== false);
-    document.getElementById('client-visitas').innerText = data.visitas || 0;
+    const visitasEl = document.getElementById('client-visitas');
+    if (visitasEl) visitasEl.innerText = data.visitas || 0;
+    
+    // Sincronizar state global para qr-config y reports
+    try {
+        const { state } = await import('./modules/state.js');
+        state.currentClientId = id;
+        state.currentClientData = data;
+    } catch(e) {}
     
     document.querySelectorAll('#clients-ul li').forEach(li => li.classList.remove('active'));
     document.getElementById('btn-new-client').classList.remove('active');

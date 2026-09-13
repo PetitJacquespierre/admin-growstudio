@@ -329,28 +329,42 @@
                 </header>
 
                 <!-- PANEL DE CONTROL DE SERVICIO WEB & COBRANZA -->
-                <div class="stats-grid" style="grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 15px; margin-bottom: 25px;">
+                <div class="stats-grid" style="grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 15px; margin-bottom: 25px;">
                     <!-- ESTADO DEL SERVICIO WEB -->
-                    <div class="stat-card" style="border: 1px solid rgba(230, 32, 53, 0.3); background: rgba(230, 32, 53, 0.05);">
-                        <h3 style="color: #ff4d61; display: flex; justify-content: space-between; align-items: center; margin: 0 0 10px 0;">
+                    <div class="stat-card" style="border: 1px solid rgba(230, 32, 53, 0.3); background: rgba(230, 32, 53, 0.05); padding: 15px;">
+                        <h3 style="color: #ff4d61; display: flex; justify-content: space-between; align-items: center; margin: 0 0 8px 0; font-size: 13px;">
                             Estado del Sitio Web
                             <span id="sandia-web-status-badge" style="width: 10px; height: 10px; border-radius: 50%; background: #2ecc71; display: inline-block;"></span>
                         </h3>
-                        <select id="sandia-web-status" class="modern-select" style="width: 100%; margin-bottom: 8px;">
+                        <select id="sandia-web-status" class="modern-select" style="width: 100%; margin-bottom: 8px; font-size: 11px; padding: 4px;">
                             <option value="ONLINE">🟢 100% Online (Activo)</option>
                             <option value="MANTENIMIENTO">⚠️ Modo Mantenimiento</option>
                             <option value="SUSPENDIDO">🔴 Pausado / Suspendido (Kill Switch)</option>
                         </select>
-                        <button id="btn-save-sandia-status" class="btn-primary btn-small" style="width: 100%; background: #e62035; border: none;">Guardar Estado Web</button>
+                        <button id="btn-save-sandia-status" class="btn-primary btn-small" style="width: 100%; background: #e62035; border: none; font-size: 11px;">Guardar Estado Web</button>
+                    </div>
+
+                    <!-- CONTADOR DE VISITAS WEB CON RESET Y REPORTES -->
+                    <div class="stat-card" style="border: 1px solid rgba(0, 210, 255, 0.3); background: rgba(0, 210, 255, 0.05); padding: 15px;">
+                        <h3 style="color: var(--brand-cyan); display: flex; justify-content: space-between; align-items: center; margin: 0 0 6px 0; font-size: 13px;">
+                            👁️ Visitas Totales
+                            <button id="btn-reset-sandia-visitas" title="Resetear contador de visitas a 0" style="background: none; border: 1px solid rgba(0, 210, 255, 0.4); color: var(--brand-cyan); border-radius: 6px; padding: 2px 6px; cursor: pointer; font-size: 10px;">↺ Reset</button>
+                        </h3>
+                        <div style="font-size: 26px; font-weight: bold; color: white; margin-bottom: 2px;" id="sandia-visitas-count">0</div>
+                        <p style="font-size: 11px; color: #888; margin: 0 0 8px 0;">Visitas acumuladas en index.html</p>
+                        <div style="display: flex; flex-direction: column; gap: 5px;">
+                            <button class="btn-primary btn-small" id="btn-sandia-reporte-wa" style="font-size: 11px; width: 100%; cursor: pointer;" onclick="generarReporteSandiaWhatsapp()">Generar Reporte 📊</button>
+                            <button class="btn-secondary btn-small" id="btn-sandia-reporte-pdf" style="font-size: 11px; width: 100%; cursor: pointer; color: var(--brand-orange); border: 1px solid var(--brand-orange);" onclick="generarReporteSandiaPDF()">📈 Reporte PDF Mensual</button>
+                        </div>
                     </div>
 
                     <!-- FACTURACIÓN / COBRANZA MENSUAL / ANUAL -->
-                    <div class="stat-card stat-highlight">
-                        <h3 style="color: var(--brand-orange); margin: 0 0 10px 0;">Cobranza Sandía Production</h3>
-                        <div style="display: flex; flex-direction: column; gap: 8px;">
+                    <div class="stat-card stat-highlight" style="padding: 15px;">
+                        <h3 style="color: var(--brand-orange); margin: 0 0 8px 0; font-size: 13px;">Cobranza Sandía Production</h3>
+                        <div style="display: flex; flex-direction: column; gap: 6px;">
                             <div style="display: flex; justify-content: space-between; align-items: center;">
                                 <label style="font-size: 11px; color: #a1a1aa;">Plan Actual</label>
-                                <select id="sandia-plan" class="modern-select" style="width: 170px; padding: 3px; font-size: 11px;">
+                                <select id="sandia-plan" class="modern-select" style="width: 150px; padding: 3px; font-size: 11px;">
                                     <option value="MENSUAL">Mensual ($20)</option>
                                     <option value="ANUAL">Anual ($35 - Dominio .com)</option>
                                 </select>
@@ -359,7 +373,7 @@
                                 <label style="font-size: 11px; color: #a1a1aa;">Vencimiento</label>
                                 <input type="date" id="sandia-vencimiento" class="modern-select" style="width: 120px; padding: 3px; font-size: 11px;">
                             </div>
-                            <button id="btn-save-sandia-billing" class="btn-secondary btn-small" style="width: 100%; border-color: var(--brand-orange); color: var(--brand-orange);">Guardar Cobranza</button>
+                            <button id="btn-save-sandia-billing" class="btn-secondary btn-small" style="width: 100%; border-color: var(--brand-orange); color: var(--brand-orange); font-size: 11px;">Guardar Cobranza</button>
                         </div>
                     </div>
                 </div>
@@ -415,88 +429,88 @@
         </main>
     </div>
 
-    <!-- MODAL CREAR/EDITAR EVENTO SANDÍA -->
-    <div id="modal-sandia-event" class="screen" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); z-index: 2000; justify-content: center; align-items: center; overflow-y: auto;">
-        <div class="login-card" style="max-width: 580px; width: 90%; text-align: left; margin: 30px auto; background: #121826; border: 1px solid rgba(230,32,53,0.3);">
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
-                <h3 id="sandia-modal-title" style="margin: 0; color: #ff334b;">🏆 Evento Deportivo</h3>
+    <!-- MODAL CREAR/EDITAR EVENTO SANDÍA (COMPACTO Y MODERNO) -->
+    <div id="modal-sandia-event" class="screen" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); z-index: 2000; justify-content: center; align-items: center; padding: 15px;">
+        <div class="login-card" style="max-width: 500px; width: 95%; max-height: 85vh; overflow-y: auto; text-align: left; background: #121826; border: 1px solid rgba(230,32,53,0.4); border-radius: 12px; padding: 20px; box-shadow: 0 15px 40px rgba(0,0,0,0.6);">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+                <h3 id="sandia-modal-title" style="margin: 0; color: #ff334b; font-size: 1.1rem;">🏆 Evento Deportivo</h3>
                 <button type="button" id="btn-close-sandia-event" style="background: none; border: none; color: #aaa; font-size: 20px; cursor: pointer;">&times;</button>
             </div>
 
             <form id="form-sandia-event">
-                <div class="input-group">
-                    <label>Título del Evento *</label>
-                    <input type="text" id="sandia-event-titulo" class="input-modern" placeholder="Ej: 5K Paraguaná Horror Story" required style="width: 100%; box-sizing: border-box;">
+                <div class="input-group" style="margin-bottom: 10px;">
+                    <label style="font-size: 11px;">Título del Evento *</label>
+                    <input type="text" id="sandia-event-titulo" class="input-modern" placeholder="Ej: 5K Paraguaná Horror Story" required style="width: 100%; box-sizing: border-box; padding: 8px; font-size: 12px;">
                 </div>
 
-                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
-                    <div class="input-group">
-                        <label>Día (Número) *</label>
-                        <input type="text" id="sandia-event-dia" class="input-modern" placeholder="31" required style="width: 100%; box-sizing: border-box;">
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 10px;">
+                    <div class="input-group" style="margin-bottom: 0;">
+                        <label style="font-size: 11px;">Día (Número) *</label>
+                        <input type="text" id="sandia-event-dia" class="input-modern" placeholder="31" required style="width: 100%; box-sizing: border-box; padding: 8px; font-size: 12px;">
                     </div>
-                    <div class="input-group">
-                        <label>Mes (3 Letras) *</label>
-                        <input type="text" id="sandia-event-mes" class="input-modern" placeholder="OCT" required style="width: 100%; box-sizing: border-box; text-transform: uppercase;">
+                    <div class="input-group" style="margin-bottom: 0;">
+                        <label style="font-size: 11px;">Mes (3 Letras) *</label>
+                        <input type="text" id="sandia-event-mes" class="input-modern" placeholder="OCT" required style="width: 100%; box-sizing: border-box; text-transform: uppercase; padding: 8px; font-size: 12px;">
                     </div>
                 </div>
 
-                <div class="input-group">
-                    <label>Ubicación y Hora *</label>
-                    <input type="text" id="sandia-event-ubicacion" class="input-modern" placeholder="Ej: Sambil Paraguaná / 7:00 PM" required style="width: 100%; box-sizing: border-box;">
+                <div class="input-group" style="margin-bottom: 10px;">
+                    <label style="font-size: 11px;">Ubicación y Hora *</label>
+                    <input type="text" id="sandia-event-ubicacion" class="input-modern" placeholder="Ej: Sambil Paraguaná / 7:00 PM" required style="width: 100%; box-sizing: border-box; padding: 8px; font-size: 12px;">
                 </div>
 
-                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
-                    <div class="input-group">
-                        <label>Categoría</label>
-                        <select id="sandia-event-categoria" class="modern-select" style="width: 100%; box-sizing: border-box;">
-                            <option value="SANDIA">🍉 Sandía Original (Oficial)</option>
-                            <option value="REGIONAL">📍 Regional (Falcón / Paraguaná)</option>
-                            <option value="NACIONAL">🇻🇪 Nacional (Caracas/Valencia)</option>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 10px;">
+                    <div class="input-group" style="margin-bottom: 0;">
+                        <label style="font-size: 11px;">Categoría</label>
+                        <select id="sandia-event-categoria" class="modern-select" style="width: 100%; box-sizing: border-box; padding: 7px; font-size: 11px;">
+                            <option value="SANDIA">🍉 Sandía Original</option>
+                            <option value="REGIONAL">📍 Regional (Falcón)</option>
+                            <option value="NACIONAL">🇻🇪 Nacional</option>
                             <option value="VIRTUAL">🌐 Virtual</option>
                         </select>
                     </div>
-                    <div class="input-group">
-                        <label>Estado del Evento</label>
-                        <select id="sandia-event-estado" class="modern-select" style="width: 100%; box-sizing: border-box;">
+                    <div class="input-group" style="margin-bottom: 0;">
+                        <label style="font-size: 11px;">Estado del Evento</label>
+                        <select id="sandia-event-estado" class="modern-select" style="width: 100%; box-sizing: border-box; padding: 7px; font-size: 11px;">
                             <option value="ACTIVO">🟢 Próximo (Activo)</option>
-                            <option value="COMPLETADO">🏁 Completado (Historial)</option>
+                            <option value="COMPLETADO">🏁 Completado</option>
                             <option value="OCULTO">⚪ Oculto (Borrador)</option>
                         </select>
                     </div>
                 </div>
 
-                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
-                    <div class="input-group">
-                        <label>Enlace de Inscripción / Info</label>
-                        <input type="text" id="sandia-event-enlace" class="input-modern" placeholder="paraguanahorror.html o https://..." style="width: 100%; box-sizing: border-box;">
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 10px;">
+                    <div class="input-group" style="margin-bottom: 0;">
+                        <label style="font-size: 11px;">Enlace Inscripción / Info</label>
+                        <input type="text" id="sandia-event-enlace" class="input-modern" placeholder="paraguanahorror.html o https://..." style="width: 100%; box-sizing: border-box; padding: 8px; font-size: 12px;">
                     </div>
-                    <div class="input-group">
-                        <label>Texto del Botón</label>
-                        <input type="text" id="sandia-event-boton-texto" class="input-modern" placeholder="Inscribirme Ahora" style="width: 100%; box-sizing: border-box;">
+                    <div class="input-group" style="margin-bottom: 0;">
+                        <label style="font-size: 11px;">Texto del Botón</label>
+                        <input type="text" id="sandia-event-boton-texto" class="input-modern" placeholder="Inscribirme" style="width: 100%; box-sizing: border-box; padding: 8px; font-size: 12px;">
                     </div>
                 </div>
 
-                <!-- SELECTOR DE IMAGEN CON VISTA PREVIA -->
-                <div class="input-group" style="background: rgba(255,255,255,0.03); padding: 12px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.08);">
-                    <label style="color: var(--brand-orange); font-weight: bold;">🖼️ Flyer / Imagen (Selección Automática)</label>
-                    <select id="sandia-event-img-select" class="modern-select" style="width: 100%; margin-top: 5px; box-sizing: border-box;">
+                <!-- SELECTOR DE IMAGEN COMPACTO -->
+                <div class="input-group" style="background: rgba(255,255,255,0.03); padding: 10px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.08); margin-bottom: 10px;">
+                    <label style="color: var(--brand-orange); font-size: 11px; font-weight: bold;">🖼️ Flyer / Imagen (Selección Automática)</label>
+                    <select id="sandia-event-img-select" class="modern-select" style="width: 100%; margin-top: 4px; box-sizing: border-box; padding: 6px; font-size: 11px;">
                         <!-- Dinámico -->
                     </select>
-                    <input type="text" id="sandia-event-custom-img" class="input-modern" placeholder="O escribe el nombre si subiste una nueva (ej: nuevo_flyer.jpg)" style="width: 100%; margin-top: 8px; font-size: 11px; box-sizing: border-box;">
+                    <input type="text" id="sandia-event-custom-img" class="input-modern" placeholder="O escribe el nombre (ej: flyer.jpg)" style="width: 100%; margin-top: 6px; font-size: 11px; box-sizing: border-box; padding: 6px;">
                     
-                    <div style="margin-top: 10px; text-align: center;">
-                        <img id="sandia-event-img-preview" src="" alt="Vista Previa" style="max-height: 120px; border-radius: 8px; display: none; margin: 0 auto; border: 1px solid rgba(255,255,255,0.2);">
+                    <div style="margin-top: 8px; text-align: center;">
+                        <img id="sandia-event-img-preview" src="" alt="Vista Previa" style="max-height: 80px; border-radius: 6px; display: none; margin: 0 auto; border: 1px solid rgba(255,255,255,0.2);">
                     </div>
                 </div>
 
-                <div style="display: flex; align-items: center; gap: 10px; margin: 15px 0;">
-                    <input type="checkbox" id="sandia-event-destacado" style="width: 18px; height: 18px; cursor: pointer;" checked>
-                    <label for="sandia-event-destacado" style="cursor: pointer; font-size: 13px; color: white;">⭐ Mostrar destacado en el carrusel de Inicio (index.html)</label>
+                <div style="display: flex; align-items: center; gap: 8px; margin: 10px 0 15px 0;">
+                    <input type="checkbox" id="sandia-event-destacado" style="width: 16px; height: 16px; cursor: pointer;" checked>
+                    <label for="sandia-event-destacado" style="cursor: pointer; font-size: 12px; color: white;">⭐ Mostrar destacado en el carrusel de Inicio (index.html)</label>
                 </div>
 
-                <div style="display: flex; gap: 10px; margin-top: 20px;">
-                    <button type="button" onclick="document.getElementById('modal-sandia-event').style.display='none'" class="btn-secondary" style="flex: 1;">Cancelar</button>
-                    <button type="submit" class="btn-primary" style="flex: 1; background: #e62035; border-color: #e62035;">Guardar Evento</button>
+                <div style="display: flex; gap: 10px;">
+                    <button type="button" onclick="document.getElementById('modal-sandia-event').style.display='none'" class="btn-secondary btn-small" style="flex: 1;">Cancelar</button>
+                    <button type="submit" class="btn-primary btn-small" style="flex: 1; background: #e62035; border-color: #e62035;">Guardar Evento</button>
                 </div>
             </form>
         </div>

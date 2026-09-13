@@ -176,58 +176,80 @@ window.enviarCobroWhatsApp = function() {
 // GENERADOR DE QR
 // ==============================================================
 window.generarQRMenu = function() {
-    const currentId = DOM.clientSelector ? DOM.clientSelector.value : null;
-    if (!currentId) {
-        alert("Primero selecciona un cliente del menú superior.");
+    if (!state.currentClientData && !state.currentClientId) {
+        alert("Primero selecciona un cliente de la lista lateral.");
         return;
     }
-    
-    // Asumimos que los menús están en dominio vercel.app o growstudio
-    // O mejor aún, usamos el valor del input de la URL si existe
+
+    const data = state.currentClientData || {};
     const clientUrlInput = document.getElementById('client-url');
-    let menuUrl = "";
-    if (clientUrlInput && clientUrlInput.value) {
-        menuUrl = "https://" + clientUrlInput.value;
-    } else {
-        // Fallback
-        if (currentId === "demo") menuUrl = "https://demomenudigital.vercel.app/";
-        else if (currentId === "laflaca") menuUrl = "https://pasteleslaflaca.vercel.app/";
-        else menuUrl = "https://" + currentId + ".vercel.app/";
+    let urlToEncode = (clientUrlInput && clientUrlInput.value.trim()) || data.url || "";
+
+    if (!urlToEncode) {
+        const id = state.currentClientId || "demo";
+        if (id === "demo") urlToEncode = "demomenudigital.vercel.app";
+        else if (id === "laflaca") urlToEncode = "pasteleslaflaca.vercel.app";
+        else urlToEncode = id + ".vercel.app";
     }
-    
-    
-    
-    
-    
-    if (DOM.qrContainer && typeof QRCode !== 'undefined') {
-        DOM.qrContainer.innerHTML = "";
-        new QRCode(DOM.qrContainer, {
-            text: menuUrl,
-            width: 200,
-            height: 200,
-            colorDark : "#000000",
-            colorLight : "#ffffff",
-            correctLevel : QRCode.CorrectLevel.H
-        });
-        if (DOM.qrUrlText) DOM.qrUrlText.innerText = menuUrl;
-        if (DOM.qrModal) DOM.qrModal.style.display = 'flex';
-    } else {
-        alert("No se pudo generar el QR, falta la librería de QRCode.");
+
+    if (!urlToEncode.startsWith('http://') && !urlToEncode.startsWith('https://')) {
+        urlToEncode = 'https://' + urlToEncode;
     }
+
+    const qrContainer = DOM.qrContainer || document.getElementById('qr-code-container');
+    const qrModal = DOM.qrModal || document.getElementById('qr-modal');
+    const qrUrlText = DOM.qrUrlText || document.getElementById('qr-url-text');
+
+    if (!qrContainer) {
+        alert("No se encontró el contenedor del código QR.");
+        return;
+    }
+
+    if (typeof QRCode === 'undefined') {
+        alert("La librería QRCode aún se está cargando. Reintenta en unos segundos.");
+        return;
+    }
+
+    qrContainer.innerHTML = "";
+    new QRCode(qrContainer, {
+        text: urlToEncode,
+        width: 220,
+        height: 220,
+        colorDark: "#000000",
+        colorLight: "#ffffff",
+        correctLevel: QRCode.CorrectLevel.H
+    });
+
+    if (qrUrlText) qrUrlText.innerText = urlToEncode;
+    if (qrModal) qrModal.style.display = 'flex';
 };
 
 window.cerrarModalQR = function() {
-    
-    if (DOM.qrModal) DOM.qrModal.style.display = 'none';
+    const qrModal = DOM.qrModal || document.getElementById('qr-modal');
+    if (qrModal) qrModal.style.display = 'none';
 };
 
-if (DOM.btnCloseQr) DOM.btnCloseQr.onclick = window.cerrarModalQR;
-window.cerrarModalQR = function() {
-    
-    if (DOM.qrModal) DOM.qrModal.style.display = 'none';
-};
-
-if (DOM.btnGenerateQr) {
-    DOM.btnGenerateQr.onclick = window.generarQRMenu;
+const btnCloseQr = DOM.btnCloseQr || document.getElementById('btn-close-qr');
+if (btnCloseQr) {
+    btnCloseQr.onclick = window.cerrarModalQR;
 }
-\n\nif (DOM.btnDownloadQr) {\n    DOM.btnDownloadQr.onclick = function() {\n        const img = document.querySelector(\'#qr-code-container img\');\n        if (img && img.src) {\n            const link = document.createElement(\'a\');\n            link.download = \'menu-qr.png\';\n            link.href = img.src;\n            link.click();\n        }\n    };\n}
+
+const btnGenerateQr = DOM.btnGenerateQr || document.getElementById('btn-generate-qr');
+if (btnGenerateQr) {
+    btnGenerateQr.onclick = window.generarQRMenu;
+}
+
+const btnDownloadQr = DOM.btnDownloadQr || document.getElementById('btn-download-qr');
+if (btnDownloadQr) {
+    btnDownloadQr.onclick = function() {
+        const img = document.querySelector('#qr-code-container img');
+        if (img && img.src) {
+            const link = document.createElement('a');
+            link.download = `QR_Menu_${state.currentClientId || 'cliente'}.png`;
+            link.href = img.src;
+            link.click();
+        } else {
+            alert("El código QR se está generando, reintenta en un momento.");
+        }
+    };
+}
