@@ -213,8 +213,8 @@ window.generarQRMenu = function() {
     qrContainer.innerHTML = "";
     new QRCode(qrContainer, {
         text: urlToEncode,
-        width: 220,
-        height: 220,
+        width: 200,
+        height: 200,
         colorDark: "#000000",
         colorLight: "#ffffff",
         correctLevel: QRCode.CorrectLevel.H

@@ -31,13 +31,13 @@ let currentAliadoId = null;
 
 // Función para resolver rutas de imágenes sin romper el entorno ni entrar en loops
 export function resolveSandiaImgPath(img) {
-    if (!img || typeof img !== 'string') return 'img/growisotipo.png';
+    if (!img || typeof img !== 'string') return '../Sandia Production/img/Isotipo.png';
     const trimmed = img.trim();
-    if (!trimmed) return 'img/growisotipo.png';
+    if (!trimmed) return '../Sandia Production/img/Isotipo.png';
     if (trimmed.startsWith('http://') || trimmed.startsWith('https://') || trimmed.startsWith('data:')) {
         return trimmed;
     }
-    const clean = trimmed.replace(/^img\//, '');
+    const clean = trimmed.replace(/^img\//, '').replace(/^\.\.\/Sandia Production\/img\//, '');
     return `../Sandia Production/img/${clean}`;
 }
 
@@ -552,13 +552,22 @@ function initSandiaConfig() {
 // ==========================================
 window.generarReporteSandiaWhatsapp = async function() {
     try {
-        const docSnap = await getDoc(doc(db, "sandia_config", "general"));
-        const data = docSnap.exists() ? docSnap.data() : {};
-        const visitas = data.visitas || 0;
-        const telefono = "584126574354"; // WhatsApp Oficial Sandía
+        let visitas = 0;
+        try {
+            const docSnap = await getDoc(doc(db, "sandia_config", "general"));
+            if (docSnap.exists()) {
+                visitas = docSnap.data().visitas || 0;
+            }
+        } catch(e) {}
 
+        if (!visitas) {
+            const countEl = document.getElementById('sandia-visitas-count');
+            if (countEl) visitas = parseInt(countEl.innerText.replace(/\D/g, '')) || 0;
+        }
+
+        const telefono = "584126574354";
         const mensaje = `¡Hola Sandía Production! 📊 Aquí tienes tu reporte de tráfico web de Grow Studio.\n\nTu portal de eventos deportivos ha recibido *${visitas.toLocaleString('es-VE')} visitas* acumuladas.\n\n¡La comunidad runner sigue atenta a los próximos retos! 🏃‍♂️💨🚀`;
-        const url = `https://web.whatsapp.com/send?phone=${telefono}&text=${encodeURIComponent(mensaje)}`;
+        const url = `https://api.whatsapp.com/send?phone=${telefono}&text=${encodeURIComponent(mensaje)}`;
         window.open(url, '_blank');
     } catch (e) {
         alert("Error al generar reporte de WhatsApp: " + e.message);
@@ -567,16 +576,18 @@ window.generarReporteSandiaWhatsapp = async function() {
 
 window.generarReporteSandiaPDF = async function() {
     try {
-        const docSnap = await getDoc(doc(db, "sandia_config", "general"));
-        if (!docSnap.exists()) {
-            alert("No se encontraron datos de configuración de Sandía Production.");
-            return;
-        }
-        const data = docSnap.data();
+        let data = {};
+        try {
+            const docSnap = await getDoc(doc(db, "sandia_config", "general"));
+            if (docSnap.exists()) data = docSnap.data();
+        } catch(e) {}
+
+        const countEl = document.getElementById('sandia-visitas-count');
+        const visitasDom = countEl ? (parseInt(countEl.innerText.replace(/\D/g, '')) || 0) : 0;
 
         const nombre = "Sandía Production";
         const plan = data.plan || "MENSUAL ($20)";
-        const visitas = data.visitas || 0;
+        const visitas = data.visitas !== undefined ? data.visitas : visitasDom;
 
         // Extraer campos vis_YYYY_MM
         const meses = [];
