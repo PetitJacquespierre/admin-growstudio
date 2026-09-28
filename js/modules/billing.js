@@ -32,7 +32,6 @@ if(DOM.btnConfirmImport) DOM.btnConfirmImport.addEventListener('click', async ()
         DOM.btnCancelImport.disabled = true;
         DOM.aiLoadingText.style.display = 'block';
         
-        // Llamada a la API de Gemini (REST) usando el modelo más reciente (3.6-flash)
         const promptText = `
         Tengo este menú crudo de un restaurante. Extrae todos los productos y devuélvelos estrictamente como un arreglo de objetos JSON con esta estructura exacta, basándote en un esquema de Excel, sin texto extra:
         [
@@ -50,14 +49,26 @@ if(DOM.btnConfirmImport) DOM.btnConfirmImport.addEventListener('click', async ()
         Menú crudo a procesar:
         ${rawText}
         `;
-        
-        const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-3.6-flash:generateContent?key=${apiKey}`, {
+
+        // Llamada a la API de Gemini (REST) usando modelos oficiales (1.5-flash / 2.0-flash)
+        let response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
                 contents: [{ parts: [{ text: promptText }] }]
             })
         });
+
+        // Si 1.5-flash no responde o falla, intentar con 2.0-flash
+        if (!response.ok) {
+            response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    contents: [{ parts: [{ text: promptText }] }]
+                })
+            });
+        }
         
         const result = await response.json();
         
