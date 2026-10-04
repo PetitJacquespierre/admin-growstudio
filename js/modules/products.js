@@ -265,6 +265,17 @@ DOM.btnVisitUrl.addEventListener('click', () => {
 // ==========================================
 state.activeProductCategoryFilter = 'ALL';
 
+// Helper: Limpiar nombre de archivo y corregir extensiones truncadas
+function sanitizeImageFilename(filename) {
+    if (!filename) return '';
+    let clean = filename.trim().replace(/^img\//, '').replace(/^\.\.\/[^\/]+\/img\//, '');
+    // Corregir truncamientos conocidos de la base de datos como .j o .jpe
+    if (clean.endsWith('.j') || clean.endsWith('.jpe')) {
+        clean = clean.replace(/\.jpe?$/, '.jpeg');
+    }
+    return clean;
+}
+
 // Helper: Resolver URL de imagen para preview (web o archivo local de cada cliente)
 function resolveImagePreviewUrl(imgSrc) {
     if (!imgSrc || typeof imgSrc !== 'string' || imgSrc.trim() === '') {
@@ -275,57 +286,148 @@ function resolveImagePreviewUrl(imgSrc) {
         return trimmed;
     }
 
-    const cleanFile = trimmed.replace(/^img\//, '');
+    const cleanFile = sanitizeImageFilename(trimmed);
 
-    // Mapeo conocido de carpetas locales de clientes para vista en localhost/archivo
-    const clientFolderMap = {
-        'neneburger_rock': '../Burguer Rock Metal/img/',
-        'burger_rock': '../Burguer Rock Metal/img/',
-        'burger rock metal': '../Burguer Rock Metal/img/',
-        'la_flaca': '../Pasteles La Flaca/img/',
-        'pasteles_la_flaca': '../Pasteles La Flaca/img/',
-        'pasteles la flaca': '../Pasteles La Flaca/img/',
-        'foodpoint': '../The Food Point/img/',
-        'the_food_point': '../The Food Point/img/',
-        'the food point': '../The Food Point/img/',
-        'grow_studio_demo': '../Demo_Menu_Digital/img/',
-        'demo_grow_studio': '../Demo_Menu_Digital/img/',
-        'demo_menu': '../Demo_Menu_Digital/img/',
-        'demo grow studio': '../Demo_Menu_Digital/img/',
-        'cactus_empanadas': '../Cactus Empanadas/img/',
-        'mi_lechuga': '../Mi Lechuga/img/'
+    // Mapeo conocido de carpetas locales y URLs de fallback en vivo por cliente
+    const clientMetaMap = {
+        'neneburger_rock': { folder: '../Burguer Rock Metal/img/', liveUrl: 'https://burger-rock-metal.vercel.app' },
+        'burger_rock': { folder: '../Burguer Rock Metal/img/', liveUrl: 'https://burger-rock-metal.vercel.app' },
+        'burger rock metal': { folder: '../Burguer Rock Metal/img/', liveUrl: 'https://burger-rock-metal.vercel.app' },
+        'la_flaca': { folder: '../Pasteles La Flaca/img/', liveUrl: 'https://pasteles-la-flaca.vercel.app' },
+        'pasteles_la_flaca': { folder: '../Pasteles La Flaca/img/', liveUrl: 'https://pasteles-la-flaca.vercel.app' },
+        'pasteles la flaca': { folder: '../Pasteles La Flaca/img/', liveUrl: 'https://pasteles-la-flaca.vercel.app' },
+        'foodpoint': { folder: '../The Food Point/img/', liveUrl: 'https://thefoodpoint.vercel.app' },
+        'the_food_point': { folder: '../The Food Point/img/', liveUrl: 'https://thefoodpoint.vercel.app' },
+        'the food point': { folder: '../The Food Point/img/', liveUrl: 'https://thefoodpoint.vercel.app' },
+        'grow_studio_demo': { folder: '../Demo_Menu_Digital/img/', liveUrl: 'https://growstudiodemo.vercel.app' },
+        'demo_grow_studio': { folder: '../Demo_Menu_Digital/img/', liveUrl: 'https://growstudiodemo.vercel.app' },
+        'demo_menu': { folder: '../Demo_Menu_Digital/img/', liveUrl: 'https://growstudiodemo.vercel.app' },
+        'demo grow studio': { folder: '../Demo_Menu_Digital/img/', liveUrl: 'https://growstudiodemo.vercel.app' },
+        'cactus_empanadas': { folder: '../Cactus Empanadas/img/', liveUrl: '' },
+        'mi_lechuga': { folder: '../Mi Lechuga/img/', liveUrl: '' }
     };
 
     const currentId = String(state.currentClientId || '').toLowerCase();
     const currentName = String((state.currentClientData && (state.currentClientData.businessName || state.currentClientData.nombre)) || '').toLowerCase();
 
-    // 1. Coincidencia por ID o Nombre comercial
-    let matchedFolder = clientFolderMap[currentId] || clientFolderMap[currentName];
+    let matched = clientMetaMap[currentId] || clientMetaMap[currentName];
 
-    // 2. Búsqueda por subcadena
-    if (!matchedFolder) {
-        if (currentId.includes('rock') || currentName.includes('rock')) matchedFolder = '../Burguer Rock Metal/img/';
-        else if (currentId.includes('flaca') || currentName.includes('flaca')) matchedFolder = '../Pasteles La Flaca/img/';
-        else if (currentId.includes('food') || currentName.includes('food')) matchedFolder = '../The Food Point/img/';
-        else if (currentId.includes('demo') || currentName.includes('demo') || currentId.includes('grow')) matchedFolder = '../Demo_Menu_Digital/img/';
-        else if (currentId.includes('cactus')) matchedFolder = '../Cactus Empanadas/img/';
-        else if (currentId.includes('lechuga')) matchedFolder = '../Mi Lechuga/img/';
+    if (!matched) {
+        if (currentId.includes('rock') || currentName.includes('rock')) matched = clientMetaMap['burger_rock'];
+        else if (currentId.includes('flaca') || currentName.includes('flaca')) matched = clientMetaMap['la_flaca'];
+        else if (currentId.includes('food') || currentName.includes('food')) matched = clientMetaMap['foodpoint'];
+        else if (currentId.includes('demo') || currentName.includes('demo') || currentId.includes('grow')) matched = clientMetaMap['demo_grow_studio'];
+        else if (currentId.includes('cactus')) matched = clientMetaMap['cactus_empanadas'];
+        else if (currentId.includes('lechuga')) matched = clientMetaMap['mi_lechuga'];
     }
 
-    if (matchedFolder) {
-        return `${matchedFolder}${cleanFile}`;
+    // Asegurar si el archivo carece de extensión para el primer intento
+    let fileToUse = cleanFile;
+    const hasExtension = /\.(jpe?g|png|webp|gif|svg|mp4)$/i.test(fileToUse);
+    if (!hasExtension) {
+        // En Burger Rock la gran mayoría son .jpeg o .jpg
+        fileToUse = `${fileToUse}.jpeg`;
     }
 
-    // 3. Si el cliente tiene URL de tienda en vivo (ej: .vercel.app), cargar desde su web
+    // 1. Si estamos bajo protocolo http/https (Live Server, Vite o Vercel),
+    // las rutas relativas tipo ../ no siempre son accesibles por restricciones del navegador.
+    // Usamos el liveUrl si existe o la URL guardada del cliente.
+    const isHttp = (window.location.protocol === 'http:' || window.location.protocol === 'https:');
+    let clientLiveUrl = '';
     if (state.currentClientData && state.currentClientData.url) {
-        let domain = String(state.currentClientData.url).trim();
-        if (!domain.startsWith('http')) domain = `https://${domain}`;
-        domain = domain.replace(/\/$/, '');
-        return `${domain}/img/${cleanFile}`;
+        let u = String(state.currentClientData.url).trim();
+        if (!u.startsWith('http')) u = `https://${u}`;
+        clientLiveUrl = u.replace(/\/$/, '');
+    } else if (matched && matched.liveUrl) {
+        clientLiveUrl = matched.liveUrl;
     }
 
-    return `img/${cleanFile}`;
+    // Si está en http/https y tenemos URL en vivo, preferir la web oficial para asegurar visualización
+    if (isHttp && clientLiveUrl) {
+        return `${clientLiveUrl}/img/${fileToUse}`;
+    }
+
+    // 2. Si hay carpeta local identificada
+    if (matched && matched.folder) {
+        return `${matched.folder}${fileToUse}`;
+    }
+
+    // 3. Fallback genérico
+    if (clientLiveUrl) {
+        return `${clientLiveUrl}/img/${fileToUse}`;
+    }
+
+    return `img/${fileToUse}`;
 }
+
+// Fallback dinámico inteligente para miniaturas: prueba extensiones y URL en vivo antes de desistir
+window.handleImageError = function(imgElement, originalSrc) {
+    if (!imgElement) return;
+    const currentAttempt = parseInt(imgElement.getAttribute('data-fallback-attempt') || '0', 10);
+    const rawClean = sanitizeImageFilename(originalSrc || imgElement.getAttribute('data-raw-img') || '');
+    const baseName = rawClean.replace(/\.[^/.]+$/, ''); // Quita extensión si tiene
+
+    const currentId = String(state.currentClientId || '').toLowerCase();
+    const currentName = String((state.currentClientData && (state.currentClientData.businessName || state.currentClientData.nombre)) || '').toLowerCase();
+    
+    // Obtener posible carpeta local y web en vivo
+    let folder = 'img/';
+    let liveUrl = '';
+    if (state.currentClientData && state.currentClientData.url) {
+        let u = String(state.currentClientData.url).trim();
+        if (!u.startsWith('http')) u = `https://${u}`;
+        liveUrl = u.replace(/\/$/, '');
+    }
+
+    if (currentId.includes('rock') || currentName.includes('rock')) {
+        folder = '../Burguer Rock Metal/img/';
+        if (!liveUrl) liveUrl = 'https://burger-rock-metal.vercel.app';
+    } else if (currentId.includes('flaca') || currentName.includes('flaca')) {
+        folder = '../Pasteles La Flaca/img/';
+        if (!liveUrl) liveUrl = 'https://pasteles-la-flaca.vercel.app';
+    } else if (currentId.includes('food') || currentName.includes('food')) {
+        folder = '../The Food Point/img/';
+        if (!liveUrl) liveUrl = 'https://thefoodpoint.vercel.app';
+    } else if (currentId.includes('demo') || currentName.includes('demo') || currentId.includes('grow')) {
+        folder = '../Demo_Menu_Digital/img/';
+        if (!liveUrl) liveUrl = 'https://growstudiodemo.vercel.app';
+    }
+
+    // Secuencia de intentos de rescate
+    // 0 -> Probar .jpeg en carpeta local
+    // 1 -> Probar .jpg en carpeta local
+    // 2 -> Probar .png en carpeta local
+    // 3 -> Probar en URL en vivo con .jpeg
+    // 4 -> Probar en URL en vivo con .jpg
+    // 5 -> Probar en URL en vivo con .png
+    // 6 -> Si todo falla, mostrar placeholder limpio "No Img"
+    
+    imgElement.setAttribute('data-fallback-attempt', (currentAttempt + 1).toString());
+
+    if (currentAttempt === 0) {
+        imgElement.src = `${folder}${baseName}.jpeg`;
+        if (imgElement.parentElement && imgElement.parentElement.tagName === 'A') imgElement.parentElement.href = imgElement.src;
+    } else if (currentAttempt === 1) {
+        imgElement.src = `${folder}${baseName}.jpg`;
+        if (imgElement.parentElement && imgElement.parentElement.tagName === 'A') imgElement.parentElement.href = imgElement.src;
+    } else if (currentAttempt === 2) {
+        imgElement.src = `${folder}${baseName}.png`;
+        if (imgElement.parentElement && imgElement.parentElement.tagName === 'A') imgElement.parentElement.href = imgElement.src;
+    } else if (currentAttempt === 3 && liveUrl) {
+        imgElement.src = `${liveUrl}/img/${baseName}.jpeg`;
+        if (imgElement.parentElement && imgElement.parentElement.tagName === 'A') imgElement.parentElement.href = imgElement.src;
+    } else if (currentAttempt === 4 && liveUrl) {
+        imgElement.src = `${liveUrl}/img/${baseName}.jpg`;
+        if (imgElement.parentElement && imgElement.parentElement.tagName === 'A') imgElement.parentElement.href = imgElement.src;
+    } else if (currentAttempt === 5 && liveUrl) {
+        imgElement.src = `${liveUrl}/img/${baseName}.png`;
+        if (imgElement.parentElement && imgElement.parentElement.tagName === 'A') imgElement.parentElement.href = imgElement.src;
+    } else {
+        imgElement.onerror = null;
+        imgElement.src = 'https://placehold.co/80x80/27272a/a1a1aa?text=No+Img';
+        if (imgElement.parentElement && imgElement.parentElement.tagName === 'A') imgElement.parentElement.href = '#';
+    }
+};
 
 // Actualizar un campo específico de producto
 window.actualizarProducto = async function(index, campo, valor) {
@@ -503,11 +605,13 @@ window.renderProducts = function(productos) {
         const isNotChecked = p.activo === 'NO' ? 'selected' : '';
         const previewUrl = resolveImagePreviewUrl(p.imagen);
         
+        const rawImgStr = (p.imagen || '').replace(/'/g, "\\'");
+        
         tr.innerHTML = `
             <td>
                 <div style="display: flex; align-items: center; gap: 8px;">
                     <a href="${previewUrl}" target="_blank" title="Clic para ver imagen grande" style="flex-shrink: 0; text-decoration: none;">
-                        <img src="${previewUrl}" alt="Preview" onerror="this.onerror=null; this.src='https://placehold.co/80x80/27272a/a1a1aa?text=No+Img';" style="width: 36px; height: 36px; object-fit: cover; border-radius: 6px; border: 1px solid rgba(255,255,255,0.15); background: #000; display: block; transition: transform 0.2s;" onmouseover="this.style.transform='scale(1.15)'" onmouseout="this.style.transform='scale(1)'">
+                        <img src="${previewUrl}" data-raw-img="${rawImgStr}" alt="Preview" onerror="window.handleImageError(this, '${rawImgStr}')" style="width: 36px; height: 36px; object-fit: cover; border-radius: 6px; border: 1px solid rgba(255,255,255,0.15); background: #000; display: block; transition: transform 0.2s;" onmouseover="this.style.transform='scale(1.15)'" onmouseout="this.style.transform='scale(1)'">
                     </a>
                     <input type="text" class="modern-select" value="${p.imagen || ''}" onchange="actualizarProducto(${originalIndex}, 'imagen', this.value)" style="width: 90px; padding: 4px; font-size: 11px;" placeholder="URL o archivo">
                 </div>
@@ -732,11 +836,13 @@ window.renderPromos = function(promos) {
         const isNotChecked = p.activo === 'NO' ? 'selected' : '';
         const previewUrl = resolveImagePreviewUrl(p.imagen);
         
+        const rawPromoStr = (p.imagen || '').replace(/'/g, "\\'");
+        
         tr.innerHTML = `
             <td>
                 <div style="display: flex; align-items: center; gap: 8px;">
                     <a href="${previewUrl}" target="_blank" title="Clic para ver promo grande" style="flex-shrink: 0; text-decoration: none;">
-                        <img src="${previewUrl}" alt="Promo" onerror="this.onerror=null; this.src='https://placehold.co/80x80/27272a/a1a1aa?text=Sin+Foto';" style="width: 36px; height: 36px; object-fit: cover; border-radius: 6px; border: 1px solid rgba(255,255,255,0.15); background: #000; display: block; transition: transform 0.2s;" onmouseover="this.style.transform='scale(1.15)'" onmouseout="this.style.transform='scale(1)'">
+                        <img src="${previewUrl}" data-raw-img="${rawPromoStr}" alt="Promo" onerror="window.handleImageError(this, '${rawPromoStr}')" style="width: 36px; height: 36px; object-fit: cover; border-radius: 6px; border: 1px solid rgba(255,255,255,0.15); background: #000; display: block; transition: transform 0.2s;" onmouseover="this.style.transform='scale(1.15)'" onmouseout="this.style.transform='scale(1)'">
                     </a>
                     <input type="text" class="modern-select" value="${p.imagen || ''}" onchange="actualizarPromo(${index}, 'imagen', this.value)" style="width: 90px; padding: 4px; font-size: 11px;" placeholder="promo1.jpg">
                 </div>
