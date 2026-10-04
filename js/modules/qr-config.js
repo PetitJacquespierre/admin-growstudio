@@ -203,11 +203,11 @@ Te recordamos que tu suscripción del servicio de *Menú Digital SaaS* (${planNo
 • *Tasa Oficial BCV:* ${tasaFormateada} Bs/USD
 
 📱 *Datos para Pago Móvil:*
-• Banco: Banesco (0134)
-• Cédula: V-14.074.299
-• Teléfono: 0412-6804153
+• Banco: Mercantil (0105)
+• Cédula: V-14.074.229
+• Teléfono: 0412-7732710
 
-*(Si prefieres transferir en USD vía Binance Pay, Zelle o Efectivo, indícanos por aquí).*
+*(Si prefieres pagar en USD vía Binance Pay, Zinli o Efectivo, indícanos por aquí).*
 
 Una vez realizado tu pago, por favor compártenos el comprobante por este medio para registrarlo y mantener tu tienda 100% activa sin interrupciones. 🚀
 
