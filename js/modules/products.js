@@ -5,100 +5,117 @@ import { DOM, state } from './state.js';
  // Guardar datos para actualizaciones rápidas
 
 window.openClientManager = async function(id, data, liElement) {
-    state.currentClientId = id;
-    state.currentClientData = data;
-    
-    document.getElementById('welcome-screen').style.display = 'none';
-    DOM.clientManager.style.display = 'block';
-    
-    if (document.getElementById('payments-screen')) {
-        document.getElementById('payments-screen').style.display = 'none';
-    }
-    if (document.getElementById('sandia-screen')) {
-        document.getElementById('sandia-screen').style.display = 'none';
-    }
-
-    // Titulo y Link
-    const titleText = document.createTextNode(`Menú de: ${data.nombre || data.nombre || data.businessName || id} `);
-    DOM.managerTitle.innerHTML = '';
-    const heroUrlInput = document.getElementById('client-hero-url');
-    if (heroUrlInput) heroUrlInput.value = data.headerMedia || '';
-    DOM.managerTitle.appendChild(titleText);
-    
-    if (data.url) {
-        DOM.clientLink.href = data.url.startsWith('http') ? data.url : `https://${data.url}`;
-        DOM.clientLink.style.display = 'inline-block';
-        DOM.managerTitle.appendChild(DOM.clientLink);
-    } else {
-        DOM.clientLink.style.display = 'none';
-    }
-
-    if (document.getElementById('client-mensualidad')) {
-        document.getElementById('client-mensualidad').value = data.mensualidad || 0;
-        document.getElementById('client-deuda').value = data.deuda || 0;
-        document.getElementById('client-corte').value = data.diaCorte || 1;
-    }
-    DOM.managerTitle.appendChild(DOM.clientLink); // mantener en dom
-
-    DOM.clientStatus.value = data.estado || "ACTIVO";
-    DOM.storeStatus.value = data.tiendaAbierta || "AUTO";
-    DOM.clientWhatsapp.value = data.whatsapp || "";
-    DOM.clientInstagram.value = data.instagram || "";
-    DOM.clientUrl.value = data.url || "";
-    DOM.btnDeleteClient.style.display = 'block';
-    
-    // New fields
-    
-    
-    if (DOM.receiveOrdersEl) DOM.receiveOrdersEl.checked = (data.recibirPedidos !== false);
-    document.getElementById('client-visitas').innerText = data.visitas || 0;
-    
-    document.querySelectorAll('#clients-ul li').forEach(li => li.classList.remove('active'));
-    document.getElementById('btn-new-client').classList.remove('active');
-    if (liElement) liElement.classList.add('active');
-    
-    // Si no tiene promos creadas por defecto, creamos promo1 y promo2 apagadas visualmente
-    if (!data.promos || data.promos.length === 0) {
-        data.promos = [
-            { imagen: 'promo1.jpg', activo: 'NO' },
-            { imagen: 'promo2.jpg', activo: 'NO' }
-        ];
-    }
-    
-    // Populate Billing
-    if (document.getElementById('client-plan')) {
-        document.getElementById('client-plan').value = data.plan || 'PRUEBA';
-        if (document.getElementById('client-cedula')) document.getElementById('client-cedula').value = data.cedula || '';
-        document.getElementById('client-vencimiento').value = data.fechaVencimiento || '';
-        document.getElementById('client-deuda').value = data.deuda || 0;
+    try {
+        state.currentClientId = id;
+        state.currentClientData = data || {};
         
-        const indicator = document.getElementById('billing-status-indicator');
-        if (indicator) {
-            if (data.fechaVencimiento) {
-                const hoy = new Date();
-                const fechaV = new Date(data.fechaVencimiento + 'T00:00:00');
-                const diff = Math.ceil((fechaV - hoy) / (1000*60*60*24));
-                if (diff > 7) indicator.style.background = '#10b981';
-                else if (diff >= 0 && diff <= 7) indicator.style.background = '#f59e0b';
-                else indicator.style.background = '#ef4444';
-            } else {
-                indicator.style.background = 'gray';
+        // Ocultar todas las secciones del contenido principal y mostrar client-manager
+        document.querySelectorAll('.main-content > section, #dashboard-screen > main > section').forEach(sec => {
+            sec.style.display = 'none';
+        });
+        if (DOM.clientManager) {
+            DOM.clientManager.style.display = 'block';
+        } else {
+            const cm = document.getElementById('client-manager');
+            if (cm) cm.style.display = 'block';
+        }
+
+        // Título y Enlace a la tienda
+        const clientDisplayName = data.businessName || data.nombre || id;
+        if (DOM.managerTitle) {
+            DOM.managerTitle.innerHTML = '';
+            const titleText = document.createTextNode(`Menú de: ${clientDisplayName} `);
+            DOM.managerTitle.appendChild(titleText);
+            
+            if (DOM.clientLink) {
+                if (data.url) {
+                    DOM.clientLink.href = data.url.startsWith('http') ? data.url : `https://${data.url}`;
+                    DOM.clientLink.style.display = 'inline-block';
+                    DOM.managerTitle.appendChild(DOM.clientLink);
+                } else {
+                    DOM.clientLink.style.display = 'none';
+                }
             }
         }
-    }
 
-    state.activeProductCategoryFilter = 'ALL';
-    window.renderProducts(data.productos || []);
-    window.renderPromos(data.promos);
-    
-    // Auto-scroll al contenido en móviles
-    if (window.innerWidth <= 768) {
-        setTimeout(() => {
-            const mainContent = document.querySelector('.main-content');
-            if (mainContent) {
-                mainContent.scrollIntoView({ behavior: 'smooth' });
+        const heroUrlInput = document.getElementById('client-hero-url');
+        if (heroUrlInput) heroUrlInput.value = data.headerMedia || '';
+
+        if (document.getElementById('client-mensualidad')) {
+            document.getElementById('client-mensualidad').value = data.mensualidad || 0;
+            document.getElementById('client-deuda').value = data.deuda || 0;
+            document.getElementById('client-corte').value = data.diaCorte || 1;
+        }
+
+        if (DOM.clientStatus) DOM.clientStatus.value = data.estado || "ACTIVO";
+        if (DOM.storeStatus) DOM.storeStatus.value = data.tiendaAbierta || "AUTO";
+        if (DOM.clientWhatsapp) DOM.clientWhatsapp.value = data.whatsapp || "";
+        if (DOM.clientInstagram) DOM.clientInstagram.value = data.instagram || "";
+        if (DOM.clientUrl) DOM.clientUrl.value = data.url || "";
+        if (DOM.btnDeleteClient) DOM.btnDeleteClient.style.display = 'block';
+        
+        if (DOM.receiveOrdersEl) DOM.receiveOrdersEl.checked = (data.recibirPedidos !== false);
+        const visitasEl = document.getElementById('client-visitas');
+        if (visitasEl) visitasEl.innerText = data.visitas || 0;
+        
+        // Actualizar selector activo en el sidebar
+        document.querySelectorAll('#clients-ul li').forEach(li => li.classList.remove('active'));
+        const btnNew = document.getElementById('btn-new-client');
+        if (btnNew) btnNew.classList.remove('active');
+        const btnSandia = document.getElementById('btn-nav-sandia');
+        if (btnSandia) btnSandia.classList.remove('active');
+        const btnPay = document.getElementById('btn-view-payments');
+        if (btnPay) btnPay.classList.remove('active');
+        if (liElement) liElement.classList.add('active');
+        
+        // Si no tiene promos creadas por defecto, creamos promo1 y promo2 apagadas visualmente
+        if (!data.promos || data.promos.length === 0) {
+            data.promos = [
+                { imagen: 'promo1.jpg', activo: 'NO' },
+                { imagen: 'promo2.jpg', activo: 'NO' }
+            ];
+        }
+        
+        // Poblar Facturación / Cobranza
+        if (document.getElementById('client-plan')) {
+            document.getElementById('client-plan').value = data.plan || 'PRUEBA';
+            if (document.getElementById('client-cedula')) document.getElementById('client-cedula').value = data.cedula || '';
+            const vencInput = document.getElementById('client-vencimiento');
+            if (vencInput) vencInput.value = data.fechaVencimiento || '';
+            const deudaInput = document.getElementById('client-deuda');
+            if (deudaInput) deudaInput.value = data.deuda || 0;
+            
+            const indicator = document.getElementById('billing-status-indicator');
+            if (indicator) {
+                if (data.fechaVencimiento) {
+                    const hoy = new Date();
+                    const fechaV = new Date(data.fechaVencimiento + 'T00:00:00');
+                    const diff = Math.ceil((fechaV - hoy) / (1000*60*60*24));
+                    if (diff > 7) indicator.style.background = '#10b981';
+                    else if (diff >= 0 && diff <= 7) indicator.style.background = '#f59e0b';
+                    else indicator.style.background = '#ef4444';
+                } else {
+                    indicator.style.background = 'gray';
+                }
             }
-        }, 100);
+        }
+
+        state.activeProductCategoryFilter = 'ALL';
+        window.renderProducts(data.productos || []);
+        window.renderPromos(data.promos || []);
+        
+        // Auto-scroll al contenido en móviles
+        if (window.innerWidth <= 768) {
+            setTimeout(() => {
+                const mainContent = document.querySelector('.main-content');
+                if (mainContent) {
+                    mainContent.scrollIntoView({ behavior: 'smooth' });
+                }
+            }, 100);
+        }
+    } catch (err) {
+        console.error("Error abriendo panel del cliente:", err);
+        if (window.showToast) window.showToast("Error al abrir cliente: " + err.message, "error");
     }
 }
 
@@ -250,7 +267,7 @@ state.activeProductCategoryFilter = 'ALL';
 
 // Helper: Resolver URL de imagen para preview (web o archivo local de cada cliente)
 function resolveImagePreviewUrl(imgSrc) {
-    if (!imgSrc || imgSrc.trim() === '') {
+    if (!imgSrc || typeof imgSrc !== 'string' || imgSrc.trim() === '') {
         return 'https://placehold.co/80x80/27272a/a1a1aa?text=Sin+Foto';
     }
     const trimmed = imgSrc.trim();
@@ -279,8 +296,8 @@ function resolveImagePreviewUrl(imgSrc) {
         'mi_lechuga': '../Mi Lechuga/img/'
     };
 
-    const currentId = (state.currentClientId || '').toLowerCase();
-    const currentName = (state.currentClientData && (state.currentClientData.businessName || state.currentClientData.nombre) || '').toLowerCase();
+    const currentId = String(state.currentClientId || '').toLowerCase();
+    const currentName = String((state.currentClientData && (state.currentClientData.businessName || state.currentClientData.nombre)) || '').toLowerCase();
 
     // 1. Coincidencia por ID o Nombre comercial
     let matchedFolder = clientFolderMap[currentId] || clientFolderMap[currentName];
@@ -301,7 +318,7 @@ function resolveImagePreviewUrl(imgSrc) {
 
     // 3. Si el cliente tiene URL de tienda en vivo (ej: .vercel.app), cargar desde su web
     if (state.currentClientData && state.currentClientData.url) {
-        let domain = state.currentClientData.url.trim();
+        let domain = String(state.currentClientData.url).trim();
         if (!domain.startsWith('http')) domain = `https://${domain}`;
         domain = domain.replace(/\/$/, '');
         return `${domain}/img/${cleanFile}`;
