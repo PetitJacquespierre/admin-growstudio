@@ -273,12 +273,27 @@
                     </div>
 
                 <div class="products-section">
-                    <h3 style="margin-top: 0;">Menú de Productos</h3>
+                    <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; margin-bottom: 15px;">
+                        <h3 style="margin: 0; display: flex; align-items: center; gap: 8px;">
+                            <span>🍔</span> Menú de Productos
+                        </h3>
+                        <div style="display: flex; gap: 10px; align-items: center;">
+                            <button id="btn-open-mass-price" class="btn-secondary btn-small" style="display: flex; align-items: center; gap: 6px; border: 1px solid var(--brand-orange); color: var(--brand-orange); padding: 6px 12px; font-weight: 600;" title="Ajustar precios por porcentaje o monto fijo">
+                                <span>⚡</span> Ajuste Masivo de Precios
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Pestañas de Filtro por Categoría -->
+                    <div id="product-category-filters" style="display: flex; gap: 6px; overflow-x: auto; padding-bottom: 8px; margin-bottom: 12px; scrollbar-width: thin;">
+                        <!-- Dinámico: Pestañas de categorías -->
+                    </div>
+
                     <div class="table-container">
                         <table id="products-table">
                             <thead>
                                 <tr>
-                                    <th>Imagen</th>
+                                    <th style="min-width: 140px;">Imagen</th>
                                     <th>Nombre</th>
                                     <th>Descripción</th>
                                     <th>Categoría</th>
@@ -689,6 +704,71 @@
                 <button id="btn-download-qr" class="btn-primary" style="flex: 1;">📥 Descargar</button>
             </div>
         </div>
+    </div>
+
+    <!-- MODAL AJUSTE MASIVO DE PRECIOS -->
+    <div id="modal-mass-price" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); z-index: 2000; justify-content: center; align-items: center;">
+        <div style="background: #18181b; padding: 25px; border-radius: 14px; border: 1px solid rgba(255,255,255,0.12); width: 92%; max-width: 440px; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.9);">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 18px;">
+                <h3 style="margin: 0; font-size: 17px; color: #f4f4f5; display: flex; align-items: center; gap: 8px;">
+                    <span style="color: var(--brand-orange);">⚡</span> Ajuste Masivo de Precios
+                </h3>
+                <button id="btn-close-mass-price" style="background: none; border: none; color: #a1a1aa; font-size: 20px; cursor: pointer;">&times;</button>
+            </div>
+
+            <p style="font-size: 13px; color: #a1a1aa; margin: 0 0 16px 0; line-height: 1.4;">
+                Modifica los precios de tus productos de forma automática aplicando un porcentaje o un monto fijo en dólares.
+            </p>
+
+            <div style="display: flex; flex-direction: column; gap: 14px;">
+                <div>
+                    <label style="font-size: 12px; color: #d4d4d8; font-weight: 500; display: block; margin-bottom: 6px;">Aplicar a:</label>
+                    <select id="mass-price-category" class="modern-select" style="width: 100%; padding: 8px 10px; font-size: 13px;">
+                        <option value="ALL">Todo el Menú (Todos los productos)</option>
+                        <!-- Dinámico: Categorías del cliente -->
+                    </select>
+                </div>
+
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+                    <div>
+                        <label style="font-size: 12px; color: #d4d4d8; font-weight: 500; display: block; margin-bottom: 6px;">Tipo de Ajuste:</label>
+                        <select id="mass-price-type" class="modern-select" style="width: 100%; padding: 8px 10px; font-size: 13px;">
+                            <option value="percent">Porcentaje (%)</option>
+                            <option value="fixed">Monto Fijo ($)</option>
+                        </select>
+                    </div>
+
+                    <div>
+                        <label style="font-size: 12px; color: #d4d4d8; font-weight: 500; display: block; margin-bottom: 6px;">Operación:</label>
+                        <select id="mass-price-operation" class="modern-select" style="width: 100%; padding: 8px 10px; font-size: 13px;">
+                            <option value="increase">Aumentar (+)</option>
+                            <option value="decrease">Descuento (-)</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div>
+                    <label style="font-size: 12px; color: #d4d4d8; font-weight: 500; display: block; margin-bottom: 6px;">Valor a aplicar:</label>
+                    <div style="position: relative;">
+                        <input type="number" id="mass-price-value" step="0.01" min="0" placeholder="ej. 10 para 10% o 1.50 para $1.50" class="input-modern" style="width: 100%; box-sizing: border-box; padding: 9px 12px; font-size: 14px;">
+                    </div>
+                </div>
+
+                <!-- Preview / Resumen explicativo -->
+                <div id="mass-price-preview" style="background: rgba(255,255,255,0.04); border: 1px dashed rgba(255,255,255,0.15); border-radius: 8px; padding: 10px 12px; font-size: 12px; color: #e4e4e7;">
+                    💡 Ejemplo: Un producto de $10.00 pasará a ser calculado con el valor ingresado.
+                </div>
+
+                <div style="display: flex; gap: 10px; margin-top: 6px;">
+                    <button id="btn-cancel-mass-price" class="btn-secondary" style="flex: 1; padding: 9px;">Cancelar</button>
+                    <button id="btn-apply-mass-price" class="btn-primary" style="flex: 1; padding: 9px; background: var(--brand-orange); border-color: var(--brand-orange); font-weight: 600;">
+                        Aplicar Ajuste
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- CONTENEDOR TOAST FLOTANTE -->
     <div id="toast-container" style="position: fixed; bottom: 24px; right: 24px; z-index: 9999; display: flex; flex-direction: column; gap: 10px; pointer-events: none;"></div>
 

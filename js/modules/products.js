@@ -84,6 +84,7 @@ window.openClientManager = async function(id, data, liElement) {
         }
     }
 
+    state.activeProductCategoryFilter = 'ALL';
     window.renderProducts(data.productos || []);
     window.renderPromos(data.promos);
     
@@ -239,85 +240,237 @@ DOM.btnVisitUrl.addEventListener('click', () => {
 });
 
 // Productos
+// ==========================================
+// FASE 2: GESTIÓN DE PRODUCTOS, MINIATURAS, FILTROS Y AJUSTE MASIVO
+// ==========================================
+state.activeProductCategoryFilter = 'ALL';
+
+// Helper: Resolver URL de imagen para preview (si es link web o archivo local)
+function resolveImagePreviewUrl(imgSrc) {
+    if (!imgSrc || imgSrc.trim() === '') {
+        return 'https://placehold.co/80x80/27272a/a1a1aa?text=Sin+Foto';
+    }
+    const trimmed = imgSrc.trim();
+    if (trimmed.startsWith('http://') || trimmed.startsWith('https://') || trimmed.startsWith('data:')) {
+        return trimmed;
+    }
+    // Si el cliente tiene URL de tienda, intentar resolver imagen relativa a su dominio
+    if (state.currentClientData && state.currentClientData.url) {
+        let domain = state.currentClientData.url.trim();
+        if (!domain.startsWith('http')) domain = `https://${domain}`;
+        domain = domain.replace(/\/$/, '');
+        return `${domain}/${trimmed}`;
+    }
+    return trimmed;
+}
+
+// Actualizar un campo específico de producto
 window.actualizarProducto = async function(index, campo, valor) {
-    if (!state.currentClientId) return;
+    if (!state.currentClientId || !state.currentClientData.productos) return;
     state.currentClientData.productos[index][campo] = valor;
     try {
         const { doc, updateDoc } = await import("https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js");
         await updateDoc(doc(db, "clientes", state.currentClientId), { productos: state.currentClientData.productos });
-        if (campo === 'imagen') window.renderProducts(state.currentClientData.productos); // Re-render solo si cambia la imagen para actualizar preview
-    } catch(e) { console.error(e); alert("Error guardando"); }
+        
+        // Si se editó imagen o categoría, re-renderizar para refrescar tabs o miniatura
+        if (campo === 'imagen' || campo === 'categoria') {
+            window.renderProducts(state.currentClientData.productos);
+        }
+    } catch(e) { 
+        console.error(e); 
+        if (window.showToast) window.showToast("Error al guardar cambios del producto", "error");
+        else alert("Error guardando"); 
+    }
 };
 
 window.agregarProductoRapido = async function() {
     if (!state.currentClientId) return;
-    const nombre = document.getElementById('new-prod-nombre').value;
-    if (!nombre) return;
+    const nombreInput = document.getElementById('new-prod-nombre');
+    const nombre = nombreInput ? nombreInput.value.trim() : '';
+    if (!nombre) {
+        if (window.showToast) window.showToast("Ingresa el nombre del producto", "warning");
+        return;
+    }
+
     const prod = {
         nombre: nombre,
-        descripcion: document.getElementById('new-prod-desc') ? document.getElementById('new-prod-desc').value : "",
-        imagen: document.getElementById('new-prod-imagen').value || 'hamburguesa.png',
-        categoria: document.getElementById('new-prod-categoria').value || 'General',
-        precio: parseFloat(document.getElementById('new-prod-precio').value) || 0,
+        descripcion: document.getElementById('new-prod-desc') ? document.getElementById('new-prod-desc').value.trim() : "",
+        imagen: (document.getElementById('new-prod-imagen') && document.getElementById('new-prod-imagen').value.trim()) ? document.getElementById('new-prod-imagen').value.trim() : 'hamburguesa.png',
+        categoria: (document.getElementById('new-prod-categoria') && document.getElementById('new-prod-categoria').value.trim()) ? document.getElementById('new-prod-categoria').value.trim() : (state.activeProductCategoryFilter !== 'ALL' ? state.activeProductCategoryFilter : 'General'),
+        precio: parseFloat(document.getElementById('new-prod-precio') ? document.getElementById('new-prod-precio').value : 0) || 0,
         activo: "SI"
     };
-    if(!state.currentClientData.productos) state.currentClientData.productos = [];
-    state.currentClientData.productos.push(prod);
+
+    if (!state.currentClientData.productos) state.currentClientData.productos = [];
+    state.currentClientData.productos.unshift(prod); // Agregar al inicio para verlo de inmediato
+
     try {
         const { doc, updateDoc } = await import("https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js");
         await updateDoc(doc(db, "clientes", state.currentClientId), { productos: state.currentClientData.productos });
+        
+        // Limpiar inputs
+        if (nombreInput) nombreInput.value = '';
+        if (document.getElementById('new-prod-desc')) document.getElementById('new-prod-desc').value = '';
+        if (document.getElementById('new-prod-imagen')) document.getElementById('new-prod-imagen').value = '';
+        if (document.getElementById('new-prod-precio')) document.getElementById('new-prod-precio').value = '';
+        
+        if (window.showToast) window.showToast(`Producto "${prod.nombre}" añadido`);
         window.renderProducts(state.currentClientData.productos);
-    } catch(e) { console.error(e); }
+    } catch(e) { 
+        console.error(e); 
+        if (window.showToast) window.showToast("Error al agregar producto", "error");
+    }
+};
+
+// Renderizado de pestañas de categorías
+window.renderCategoryFilterTabs = function(productos) {
+    const container = document.getElementById('product-category-filters');
+    if (!container) return;
+    container.innerHTML = '';
+
+    const categoriesSet = new Set();
+    (productos || []).forEach(p => {
+        const cat = (p.categoria || 'General').trim();
+        if (cat) categoriesSet.add(cat);
+    });
+    const categories = Array.from(categoriesSet).sort();
+
+    // Actualizar también el select del modal de ajuste masivo
+    const massSelect = document.getElementById('mass-price-category');
+    if (massSelect) {
+        massSelect.innerHTML = `<option value="ALL">Todo el Menú (${(productos || []).length} productos)</option>`;
+        categories.forEach(cat => {
+            const count = (productos || []).filter(p => (p.categoria || 'General').trim() === cat).length;
+            massSelect.innerHTML += `<option value="${cat}">${cat} (${count} productos)</option>`;
+        });
+    }
+
+    if (categories.length === 0) return;
+
+    // Botón "Todas"
+    const isAllActive = state.activeProductCategoryFilter === 'ALL';
+    const btnAll = document.createElement('button');
+    btnAll.type = 'button';
+    btnAll.className = 'btn-category-tab';
+    btnAll.style.cssText = `
+        padding: 5px 12px;
+        border-radius: 20px;
+        font-size: 12px;
+        font-weight: 600;
+        cursor: pointer;
+        border: 1px solid ${isAllActive ? 'var(--brand-orange)' : 'rgba(255,255,255,0.12)'};
+        background: ${isAllActive ? 'var(--brand-orange)' : 'rgba(255,255,255,0.05)'};
+        color: ${isAllActive ? '#000' : '#d4d4d8'};
+        transition: all 0.2s ease;
+        white-space: nowrap;
+    `;
+    btnAll.innerHTML = `Todas (${(productos || []).length})`;
+    btnAll.onclick = () => {
+        state.activeProductCategoryFilter = 'ALL';
+        window.renderProducts(state.currentClientData.productos || []);
+    };
+    container.appendChild(btnAll);
+
+    // Botones por categoría
+    categories.forEach(cat => {
+        const count = (productos || []).filter(p => (p.categoria || 'General').trim() === cat).length;
+        const isActive = state.activeProductCategoryFilter === cat;
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'btn-category-tab';
+        btn.style.cssText = `
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+            cursor: pointer;
+            border: 1px solid ${isActive ? 'var(--brand-orange)' : 'rgba(255,255,255,0.12)'};
+            background: ${isActive ? 'var(--brand-orange)' : 'rgba(255,255,255,0.05)'};
+            color: ${isActive ? '#000' : '#d4d4d8'};
+            transition: all 0.2s ease;
+            white-space: nowrap;
+        `;
+        btn.innerHTML = `${cat} (${count})`;
+        btn.onclick = () => {
+            state.activeProductCategoryFilter = cat;
+            window.renderProducts(state.currentClientData.productos || []);
+        };
+        container.appendChild(btn);
+    });
 };
 
 window.renderProducts = function(productos) {
     DOM.productsTbody.innerHTML = '';
     
+    // Renderizar pestañas de categorías arriba
+    window.renderCategoryFilterTabs(productos);
+
     // Fila para agregar rápido (Excel style)
     const newTr = document.createElement('tr');
     newTr.style.background = "rgba(16, 185, 129, 0.1)"; // Fondo verdecito
     newTr.innerHTML = `
-        <td><input type="text" id="new-prod-imagen" class="modern-select" placeholder="ej. pizza.jpg" style="width:100px; padding:4px;"></td>
-        <td><input type="text" id="new-prod-nombre" class="modern-select" placeholder="Nuevo Producto..." style="width:120px; padding:4px;"></td>
-        <td><input type="text" id="new-prod-desc" class="modern-select" placeholder="Descripción..." style="width:150px; padding:4px;"></td>
-        <td><input type="text" id="new-prod-categoria" class="modern-select" placeholder="Categoría" style="width:80px; padding:4px;"></td>
-        <td><input type="number" id="new-prod-precio" class="modern-select" placeholder="0" style="width:60px; padding:4px;"></td>
-        <td>-</td>
-        <td><button class="btn-primary btn-small" onclick="agregarProductoRapido()">+ Add</button></td>
+        <td>
+            <div style="display: flex; align-items: center; gap: 8px;">
+                <div style="width: 36px; height: 36px; border-radius: 6px; background: rgba(255,255,255,0.05); border: 1px dashed rgba(255,255,255,0.2); display: flex; align-items: center; justify-content: center; font-size: 14px; flex-shrink: 0;" title="Nueva imagen">🖼️</div>
+                <input type="text" id="new-prod-imagen" class="modern-select" placeholder="ej. pizza.jpg" style="width: 90px; padding: 4px; font-size: 11px;">
+            </div>
+        </td>
+        <td><input type="text" id="new-prod-nombre" class="modern-select" placeholder="Nuevo Producto..." style="width: 120px; padding: 4px;"></td>
+        <td><input type="text" id="new-prod-desc" class="modern-select" placeholder="Descripción..." style="width: 150px; padding: 4px;"></td>
+        <td><input type="text" id="new-prod-categoria" class="modern-select" placeholder="${state.activeProductCategoryFilter !== 'ALL' ? state.activeProductCategoryFilter : 'Categoría'}" style="width: 80px; padding: 4px;"></td>
+        <td><input type="number" step="0.01" id="new-prod-precio" class="modern-select" placeholder="0.00" style="width: 60px; padding: 4px;"></td>
+        <td><span style="font-size: 11px; color: #10b981;">Activo</span></td>
+        <td><button class="btn-primary btn-small" onclick="agregarProductoRapido()">+ Añadir</button></td>
     `;
     DOM.productsTbody.appendChild(newTr);
 
-    if (productos.length === 0) return;
+    if (!productos || productos.length === 0) return;
 
-    productos.forEach((p, index) => {
+    // Filtrar productos según la pestaña activa
+    const filteredProductsWithOriginalIndex = productos
+        .map((p, index) => ({ prod: p, originalIndex: index }))
+        .filter(item => {
+            if (state.activeProductCategoryFilter === 'ALL') return true;
+            return (item.prod.categoria || 'General').trim() === state.activeProductCategoryFilter;
+        });
+
+    filteredProductsWithOriginalIndex.forEach(({ prod: p, originalIndex }) => {
         const tr = document.createElement('tr');
         const isChecked = p.activo === 'SI' ? 'selected' : '';
         const isNotChecked = p.activo === 'NO' ? 'selected' : '';
+        const previewUrl = resolveImagePreviewUrl(p.imagen);
         
         tr.innerHTML = `
-            <td><input type="text" class="modern-select" value="${p.imagen || ''}" onchange="actualizarProducto(${index}, 'imagen', this.value)" style="width:100px; padding:4px;"></td>
-            <td><input type="text" class="modern-select" value="${p.nombre || ''}" onchange="actualizarProducto(${index}, 'nombre', this.value)" style="width:120px; padding:4px;"></td>
-            <td><input type="text" class="modern-select" value="${p.descripcion || ''}" onchange="actualizarProducto(${index}, 'descripcion', this.value)" style="width:150px; padding:4px;"></td>
-            <td><input type="text" class="modern-select" value="${p.categoria || ''}" onchange="actualizarProducto(${index}, 'categoria', this.value)" style="width:80px; padding:4px;"></td>
-            <td><input type="number" class="modern-select" value="${p.precio || 0}" onchange="actualizarProducto(${index}, 'precio', parseFloat(this.value))" style="width:60px; padding:4px;"></td>
             <td>
-                <select class="modern-select" style="padding:4px;" onchange="actualizarProducto(${index}, 'activo', this.value)">
+                <div style="display: flex; align-items: center; gap: 8px;">
+                    <a href="${previewUrl}" target="_blank" title="Clic para ver imagen grande" style="flex-shrink: 0; text-decoration: none;">
+                        <img src="${previewUrl}" alt="Preview" onerror="this.onerror=null; this.src='https://placehold.co/80x80/27272a/a1a1aa?text=No+Img';" style="width: 36px; height: 36px; object-fit: cover; border-radius: 6px; border: 1px solid rgba(255,255,255,0.15); background: #000; display: block; transition: transform 0.2s;" onmouseover="this.style.transform='scale(1.15)'" onmouseout="this.style.transform='scale(1)'">
+                    </a>
+                    <input type="text" class="modern-select" value="${p.imagen || ''}" onchange="actualizarProducto(${originalIndex}, 'imagen', this.value)" style="width: 90px; padding: 4px; font-size: 11px;" placeholder="URL o archivo">
+                </div>
+            </td>
+            <td><input type="text" class="modern-select" value="${p.nombre || ''}" onchange="actualizarProducto(${originalIndex}, 'nombre', this.value)" style="width: 120px; padding: 4px;"></td>
+            <td><input type="text" class="modern-select" value="${p.descripcion || ''}" onchange="actualizarProducto(${originalIndex}, 'descripcion', this.value)" style="width: 150px; padding: 4px;"></td>
+            <td><input type="text" class="modern-select" value="${p.categoria || ''}" onchange="actualizarProducto(${originalIndex}, 'categoria', this.value)" style="width: 80px; padding: 4px;"></td>
+            <td><input type="number" step="0.01" class="modern-select" value="${p.precio || 0}" onchange="actualizarProducto(${originalIndex}, 'precio', parseFloat(this.value))" style="width: 60px; padding: 4px;"></td>
+            <td>
+                <select class="modern-select" style="padding: 4px; font-size: 11px;" onchange="actualizarProducto(${originalIndex}, 'activo', this.value)">
                     <option value="SI" ${isChecked}>Activo</option>
                     <option value="NO" ${isNotChecked}>Oculto</option>
                 </select>
             </td>
             <td>
-                <button class="btn-secondary btn-small" style="padding: 2px 5px;" onclick="window.moveProduct(${index}, -1)" title="Subir fila">🔼</button>
-                <button class="btn-secondary btn-small" style="padding: 2px 5px;" onclick="window.moveProduct(${index}, 1)" title="Bajar fila">🔽</button>
-                <button class="btn-secondary btn-small" onclick="window.deleteProduct(${index})" title="Eliminar">❌</button>
+                <button class="btn-secondary btn-small" style="padding: 2px 5px;" onclick="window.moveProduct(${originalIndex}, -1)" title="Subir fila">🔼</button>
+                <button class="btn-secondary btn-small" style="padding: 2px 5px;" onclick="window.moveProduct(${originalIndex}, 1)" title="Bajar fila">🔽</button>
+                <button class="btn-secondary btn-small" onclick="window.deleteProduct(${originalIndex})" title="Eliminar">❌</button>
             </td>
         `;
         DOM.productsTbody.appendChild(tr);
     });
-}
+};
 
 window.moveProduct = async function(index, direction) {
-    if (!state.currentClientId) return;
+    if (!state.currentClientId || !state.currentClientData.productos) return;
     const newIndex = index + direction;
     
     // Evitar salir de los límites del array
@@ -336,20 +489,160 @@ window.moveProduct = async function(index, direction) {
         const { doc, updateDoc } = await import("https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js");
         await updateDoc(doc(db, "clientes", state.currentClientId), { productos: state.currentClientData.productos });
     } catch (e) {
-        alert("Error guardando el nuevo orden.");
+        if (window.showToast) window.showToast("Error al guardar orden en Firestore", "error");
+        else alert("Error guardando el nuevo orden.");
         console.error(e);
     }
 };
 
 window.deleteProduct = async function(index) {
-    if(!confirm("¿Eliminar este producto?")) return;
+    const prod = state.currentClientData.productos[index];
+    const nombre = prod ? prod.nombre : "este producto";
+    if(!confirm(`¿Eliminar "${nombre}"?`)) return;
     state.currentClientData.productos.splice(index, 1);
     try {
         const { doc, updateDoc } = await import("https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js");
         await updateDoc(doc(db, "clientes", state.currentClientId), { productos: state.currentClientData.productos });
+        if (window.showToast) window.showToast(`Producto "${nombre}" eliminado`);
         window.renderProducts(state.currentClientData.productos);
-    } catch (e) { alert("Error."); }
+    } catch (e) { 
+        if (window.showToast) window.showToast("Error al eliminar", "error");
+        else alert("Error."); 
+    }
 };
+
+// ==========================================
+// MODAL DE AJUSTE MASIVO DE PRECIOS (FASE 2.2)
+// ==========================================
+document.addEventListener('DOMContentLoaded', () => {
+    const modalMassPrice = document.getElementById('modal-mass-price');
+    const btnOpenMass = document.getElementById('btn-open-mass-price');
+    const btnCloseMass = document.getElementById('btn-close-mass-price');
+    const btnCancelMass = document.getElementById('btn-cancel-mass-price');
+    const btnApplyMass = document.getElementById('btn-apply-mass-price');
+
+    const selectCategory = document.getElementById('mass-price-category');
+    const selectType = document.getElementById('mass-price-type');
+    const selectOperation = document.getElementById('mass-price-operation');
+    const inputValue = document.getElementById('mass-price-value');
+    const previewBox = document.getElementById('mass-price-preview');
+
+    function updateMassPreview() {
+        if (!previewBox) return;
+        const type = selectType ? selectType.value : 'percent';
+        const op = selectOperation ? selectOperation.value : 'increase';
+        const val = parseFloat(inputValue ? inputValue.value : 0) || 0;
+        const cat = selectCategory ? selectCategory.value : 'ALL';
+        const targetText = cat === 'ALL' ? 'todos los productos' : `los productos de la categoría "${cat}"`;
+
+        let sampleOriginal = 10.00;
+        let sampleCalculated = sampleOriginal;
+
+        if (type === 'percent') {
+            if (op === 'increase') sampleCalculated = sampleOriginal * (1 + (val / 100));
+            else sampleCalculated = Math.max(0, sampleOriginal * (1 - (val / 100)));
+            previewBox.innerHTML = `💡 <strong>Simulación en ${targetText}:</strong><br>Un producto de <strong>$${sampleOriginal.toFixed(2)}</strong> pasará a costar <strong>$${sampleCalculated.toFixed(2)}</strong> (${op === 'increase' ? '+' : '-'}${val}%).`;
+        } else {
+            if (op === 'increase') sampleCalculated = sampleOriginal + val;
+            else sampleCalculated = Math.max(0, sampleOriginal - val);
+            previewBox.innerHTML = `💡 <strong>Simulación en ${targetText}:</strong><br>Un producto de <strong>$${sampleOriginal.toFixed(2)}</strong> pasará a costar <strong>$${sampleCalculated.toFixed(2)}</strong> (${op === 'increase' ? '+' : '-'}$${val.toFixed(2)}).`;
+        }
+    }
+
+    if (btnOpenMass && modalMassPrice) {
+        btnOpenMass.addEventListener('click', () => {
+            if (!state.currentClientId || !state.currentClientData || !state.currentClientData.productos || state.currentClientData.productos.length === 0) {
+                if (window.showToast) window.showToast("Este cliente no tiene productos cargados para ajustar", "warning");
+                else alert("No hay productos cargados.");
+                return;
+            }
+            if (inputValue) inputValue.value = '';
+            // Si hay un filtro de categoría activo, pre-seleccionarlo
+            if (selectCategory && state.activeProductCategoryFilter && state.activeProductCategoryFilter !== 'ALL') {
+                selectCategory.value = state.activeProductCategoryFilter;
+            }
+            updateMassPreview();
+            modalMassPrice.style.display = 'flex';
+        });
+    }
+
+    const closeModal = () => {
+        if (modalMassPrice) modalMassPrice.style.display = 'none';
+    };
+
+    if (btnCloseMass) btnCloseMass.addEventListener('click', closeModal);
+    if (btnCancelMass) btnCancelMass.addEventListener('click', closeModal);
+
+    if (selectCategory) selectCategory.addEventListener('change', updateMassPreview);
+    if (selectType) selectType.addEventListener('change', updateMassPreview);
+    if (selectOperation) selectOperation.addEventListener('change', updateMassPreview);
+    if (inputValue) inputValue.addEventListener('input', updateMassPreview);
+
+    if (btnApplyMass) {
+        btnApplyMass.addEventListener('click', async () => {
+            if (!state.currentClientId || !state.currentClientData.productos) return;
+            const val = parseFloat(inputValue ? inputValue.value : 0);
+            if (isNaN(val) || val <= 0) {
+                if (window.showToast) window.showToast("Ingresa un valor mayor a 0", "warning");
+                return;
+            }
+
+            const cat = selectCategory ? selectCategory.value : 'ALL';
+            const type = selectType ? selectType.value : 'percent';
+            const op = selectOperation ? selectOperation.value : 'increase';
+
+            const originalBtnText = btnApplyMass.innerText;
+            btnApplyMass.innerText = "Aplicando...";
+            btnApplyMass.disabled = true;
+
+            let modifiedCount = 0;
+            const updatedProducts = state.currentClientData.productos.map(p => {
+                const pCat = (p.categoria || 'General').trim();
+                if (cat !== 'ALL' && pCat !== cat) {
+                    return p;
+                }
+
+                let currentPrice = parseFloat(p.precio) || 0;
+                let newPrice = currentPrice;
+
+                if (type === 'percent') {
+                    if (op === 'increase') newPrice = currentPrice * (1 + (val / 100));
+                    else newPrice = Math.max(0, currentPrice * (1 - (val / 100)));
+                } else {
+                    if (op === 'increase') newPrice = currentPrice + val;
+                    else newPrice = Math.max(0, currentPrice - val);
+                }
+
+                // Redondear a 2 decimales
+                newPrice = Math.round(newPrice * 100) / 100;
+                modifiedCount++;
+
+                return {
+                    ...p,
+                    precio: newPrice
+                };
+            });
+
+            try {
+                const { doc, updateDoc } = await import("https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js");
+                await updateDoc(doc(db, "clientes", state.currentClientId), { productos: updatedProducts });
+                state.currentClientData.productos = updatedProducts;
+                window.renderProducts(updatedProducts);
+                
+                closeModal();
+                if (window.showToast) window.showToast(`⚡ ¡Listo! Se actualizaron los precios de ${modifiedCount} productos.`);
+                else alert(`Ajustados ${modifiedCount} productos.`);
+            } catch (err) {
+                console.error("Error al aplicar ajuste masivo:", err);
+                if (window.showToast) window.showToast("Error al guardar ajuste masivo: " + err.message, "error");
+                else alert("Error: " + err.message);
+            } finally {
+                btnApplyMass.innerText = originalBtnText;
+                btnApplyMass.disabled = false;
+            }
+        });
+    }
+});
 
 // Promociones
 

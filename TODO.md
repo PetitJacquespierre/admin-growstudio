@@ -21,11 +21,11 @@ Optimizaciones esenciales para agilizar el trabajo diario y eliminar fricción v
 ## 🍔 FASE 2: Operaciones de Menú y Edición Rápida
 Herramientas para ahorrar horas de trabajo al gestionar restaurantes grandes y actualizar precios.
 
-- [ ] **2.1 Previsualización de Imágenes en la Tabla**
+- [x] **2.1 Previsualización de Imágenes en la Tabla**
   - Miniatura visual interactiva (avatar de 36px) al lado del campo de imagen para confirmar que el enlace o archivo local carga correctamente.
-- [ ] **2.2 Ajuste Masivo de Precios**
+- [x] **2.2 Ajuste Masivo de Precios**
   - Botón para aplicar aumentos o descuentos por porcentaje (`+10%`, `+15%`) o por monto fijo (`+$1.00`) a una categoría específica o a todo el menú.
-- [ ] **2.3 Filtro de Productos por Categoría en el Admin**
+- [x] **2.3 Filtro de Productos por Categoría en el Admin**
   - Botones de pestañas arriba de la tabla de productos para ver solo *"Hamburguesas"*, *"Bebidas"*, etc., facilitando la edición en cartas extensas.
 
 ---
