@@ -124,19 +124,110 @@ window.generarReciboPDF = (clienteId, monto, fecha, referencia) => {
 
 
 
-window.enviarCobroWhatsApp = function() {
-    if (!state.currentClientData || !state.currentClientData.whatsapp) {
-        alert("El cliente no tiene un WhatsApp registrado.");
+// Helper para obtener tasa BCV oficial con fallback a caché o API
+window.obtenerTasaBCV = async function() {
+    const URL_API = "https://script.google.com/macros/s/AKfycbxdQlLO7lDOAvbhFqwVBs722T_i1KQ08z1gdf4NdqA6HvVcwGzRX4BZtHSd58piGL11/exec";
+    try {
+        const res = await fetch(URL_API);
+        const data = await res.json();
+        if (data && data.usd) {
+            const tasa = parseFloat(data.usd);
+            if (tasa > 0) {
+                localStorage.setItem("bcv_rate_cache", tasa.toString());
+                return tasa;
+            }
+        }
+    } catch (e) {
+        console.warn("Fallo consultando API BCV, usando caché local:", e);
+    }
+    const cached = localStorage.getItem("bcv_rate_cache");
+    return cached ? parseFloat(cached) : 870.00;
+};
+
+// Generador de Cobro por WhatsApp en 1 Clic (Fase 3.2)
+window.enviarCobroWhatsApp = async function() {
+    if (!state.currentClientData) {
+        if (window.showToast) window.showToast("Primero selecciona un cliente", "warning");
+        else alert("Selecciona un cliente.");
         return;
     }
-    const tel = state.currentClientData.whatsapp.replace(/\D/g, '');
-    const planStr = state.currentClientData.plan === 'ANUAL' ? 'Anual' : (state.currentClientData.plan === 'MENSUAL' ? 'Mensual' : 'de Prueba');
-    const msg = encodeURIComponent(`Hola 👋 Te escribimos de Grow Studio. Te recordamos que tu Plan ${planStr} para tu Menú Digital está próximo a vencer (o acaba de vencer). Para evitar interrupciones en tu servicio y seguir recibiendo pedidos sin comisiones, puedes realizar el pago aquí:
 
-[TUS DATOS DE PAGO AQUI]
+    const data = state.currentClientData;
+    const rawTel = (document.getElementById('client-whatsapp') && document.getElementById('client-whatsapp').value.trim()) || data.whatsapp || "";
+    const tel = rawTel.replace(/\D/g, '');
 
-¡Cualquier duda estamos a la orden!`);
-    window.open(`https://wa.me/${tel}?text=${msg}`, '_blank');
+    if (!tel) {
+        if (window.showToast) window.showToast("Este cliente no tiene número de WhatsApp registrado", "warning");
+        else alert("El cliente no tiene un WhatsApp registrado.");
+        return;
+    }
+
+    const btnCobro = document.getElementById('btn-whatsapp-cobro');
+    const originalText = btnCobro ? btnCobro.innerHTML : '';
+    if (btnCobro) {
+        btnCobro.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> Calculando...`;
+        btnCobro.disabled = true;
+    }
+
+    try {
+        const nombre = data.businessName || data.nombre || state.currentClientId || 'Estimado Cliente';
+        const plan = (data.plan || 'MENSUAL').toUpperCase();
+        const planNombre = plan === 'ANUAL' ? 'Anual ($50)' : (plan === 'MENSUAL' ? 'Mensual ($15)' : 'de Prueba (7 días)');
+        
+        let montoUSD = parseFloat(data.deuda || 0);
+        // Si no tiene deuda explícita anotada, sugerir el monto de renovación de su plan
+        if (montoUSD <= 0) {
+            montoUSD = plan === 'ANUAL' ? 50 : 15;
+        }
+
+        const fechaVenc = data.fechaVencimiento || 'Próximo corte';
+        let fechaFormateada = fechaVenc;
+        if (fechaVenc && fechaVenc.includes('-')) {
+            const partes = fechaVenc.split('-');
+            if (partes.length === 3) fechaFormateada = `${partes[2]}/${partes[1]}/${partes[0]}`;
+        }
+
+        // Obtener tasa BCV oficial
+        const tasaBCV = await window.obtenerTasaBCV();
+        const montoBs = (montoUSD * tasaBCV).toLocaleString('es-VE', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+        const tasaFormateada = tasaBCV.toLocaleString('es-VE', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+
+        const mensaje = 
+`¡Hola, *${nombre}*! 👋 Te saludamos cordialmente del equipo de *Grow Studio*.
+
+Te recordamos que tu suscripción del servicio de *Menú Digital SaaS* (${planNombre}) tiene fecha de corte programada para el *${fechaFormateada}*.
+
+💰 *Detalle de Facturación:*
+• *Total a Pagar:* $${montoUSD.toFixed(2)} USD
+• *Equivalente en Bolívares:* Bs. ${montoBs}
+• *Tasa Oficial BCV:* ${tasaFormateada} Bs/USD
+
+📱 *Datos para Pago Móvil:*
+• Banco: Banesco (0134)
+• Cédula: V-14.074.299
+• Teléfono: 0412-6804153
+
+*(Si prefieres transferir en USD vía Binance Pay, Zelle o Efectivo, indícanos por aquí).*
+
+Una vez realizado tu pago, por favor compártenos el comprobante por este medio para registrarlo y mantener tu tienda 100% activa sin interrupciones. 🚀
+
+¡Muchísimas gracias por confiar en Grow Studio!`;
+
+        const encodedMsg = encodeURIComponent(mensaje);
+        const waUrl = `https://wa.me/${tel}?text=${encodedMsg}`;
+        window.open(waUrl, '_blank');
+
+        if (window.showToast) window.showToast("WhatsApp abierto con mensaje y tasa BCV generados.");
+    } catch (err) {
+        console.error("Error al generar cobro por WhatsApp:", err);
+        if (window.showToast) window.showToast("Error al generar cobro: " + err.message, "error");
+        else alert("Error: " + err.message);
+    } finally {
+        if (btnCobro) {
+            btnCobro.innerHTML = originalText;
+            btnCobro.disabled = false;
+        }
+    }
 };
 
 

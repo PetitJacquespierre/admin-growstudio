@@ -33,9 +33,9 @@ Herramientas para ahorrar horas de trabajo al gestionar restaurantes grandes y a
 ## 💰 FASE 3: Cobranza y Finanzas SaaS Automatizadas
 Herramientas para garantizar el cobro puntual y flujo de caja constante del negocio.
 
-- [ ] **3.1 Filtro de Clientes por Estado de Pago**
+- [x] **3.1 Filtro de Clientes por Estado de Pago**
   - Pestañas rápidas en el sidebar: `[Todos]` | `[Por Vencer (7 días)]` | `[Morosos]`.
-- [ ] **3.2 Generador de Cobro por WhatsApp en 1 Clic**
+- [x] **3.2 Generador de Cobro por WhatsApp en 1 Clic**
   - Al pulsar el botón de cobro, abrir WhatsApp con un mensaje pre-redactado profesional con nombre del cliente, fecha de corte, monto en dólares y total calculado a la tasa oficial BCV del día.
 
 ---

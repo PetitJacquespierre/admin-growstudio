@@ -496,6 +496,20 @@ if (DOM.btnSaveBilling) {
             
             DOM.btnSaveBilling.innerText = "¡Guardado!";
             if (window.showToast) window.showToast("Datos de cobranza actualizados.");
+            
+            // Refrescar caché local y lista lateral para que los filtros de cobranza y badges se actualicen de inmediato
+            if (state.allClientsCache) {
+                const target = state.allClientsCache.find(c => c.id === state.currentClientId);
+                if (target) {
+                    target.data = { ...target.data, ...state.currentClientData };
+                }
+                if (typeof window.filterAndRenderClients === 'function') {
+                    window.filterAndRenderClients();
+                } else if (typeof window.renderClientsList === 'function') {
+                    window.renderClientsList(state.allClientsCache);
+                }
+            }
+
             setTimeout(() => {
                 DOM.btnSaveBilling.innerText = originalText;
                 DOM.btnSaveBilling.disabled = false;

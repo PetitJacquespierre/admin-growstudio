@@ -86,6 +86,8 @@ window.openClientManager = async function(id, data, liElement) {
             if (deudaInput) deudaInput.value = data.deuda || 0;
             
             const indicator = document.getElementById('billing-status-indicator');
+            const btnCobro = document.getElementById('btn-whatsapp-cobro');
+
             if (indicator) {
                 if (data.fechaVencimiento) {
                     const hoy = new Date();
@@ -97,6 +99,13 @@ window.openClientManager = async function(id, data, liElement) {
                 } else {
                     indicator.style.background = 'gray';
                 }
+            }
+
+            // Mostrar botón de Cobro por WhatsApp siempre que haya cliente seleccionado
+            if (btnCobro) {
+                btnCobro.style.display = 'inline-flex';
+                btnCobro.style.alignItems = 'center';
+                btnCobro.style.gap = '5px';
             }
         }
 

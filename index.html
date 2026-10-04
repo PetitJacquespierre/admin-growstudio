@@ -95,8 +95,15 @@
                     <span id="clients-count-badge" style="font-size: 11px; background: rgba(0, 210, 255, 0.15); color: var(--brand-cyan); padding: 2px 7px; border-radius: 10px; font-weight: bold;">0</span>
                 </div>
                 <!-- Buscador de Clientes en Vivo -->
-                <div style="margin-bottom: 10px;">
+                <div style="margin-bottom: 8px;">
                     <input type="text" id="clients-search-input" placeholder="🔍 Buscar cliente..." class="modern-select" style="width: 100%; font-size: 12px; padding: 6px 10px; border-radius: 8px; box-sizing: border-box; background: rgba(255,255,255,0.06);">
+                </div>
+
+                <!-- Pestañas de Filtro por Cobranza (Fase 3.1) -->
+                <div id="clients-billing-filters" style="display: flex; gap: 4px; margin-bottom: 10px; background: rgba(255,255,255,0.04); padding: 3px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.08);">
+                    <button type="button" class="btn-filter-billing active" data-filter="ALL" style="flex: 1; padding: 4px 2px; font-size: 10px; font-weight: 600; border-radius: 6px; border: none; cursor: pointer; background: var(--brand-cyan); color: #000; transition: all 0.2s;">Todos</button>
+                    <button type="button" class="btn-filter-billing" data-filter="EXPIRING" style="flex: 1; padding: 4px 2px; font-size: 10px; font-weight: 600; border-radius: 6px; border: none; cursor: pointer; background: transparent; color: #a1a1aa; transition: all 0.2s;" title="Por vencer en 7 días o menos">⏰ Vence</button>
+                    <button type="button" class="btn-filter-billing" data-filter="DEBTORS" style="flex: 1; padding: 4px 2px; font-size: 10px; font-weight: 600; border-radius: 6px; border: none; cursor: pointer; background: transparent; color: #a1a1aa; transition: all 0.2s;" title="Clientes con deuda o vencidos">⚠️ Morosos</button>
                 </div>
                 <ul id="clients-ul" class="menu-list">
                     <!-- Dinámico -->

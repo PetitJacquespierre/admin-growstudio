@@ -128,28 +128,90 @@ window.loadClients = async function() {
 };
 
 // ==========================================
-// BUSCADOR EN VIVO EN EL SIDEBAR
+// BUSCADOR EN VIVO Y FILTROS DE COBRANZA EN EL SIDEBAR (FASE 1.2 Y 3.1)
 // ==========================================
-const searchInput = document.getElementById('clients-search-input');
-if (searchInput) {
-    searchInput.addEventListener('input', (e) => {
-        const query = e.target.value.toLowerCase().trim();
-        if (!query) {
-            window.renderClientsList(state.allClientsCache);
-            return;
-        }
+state.activeBillingFilter = 'ALL';
 
-        const filtered = state.allClientsCache.filter(item => {
+window.filterAndRenderClients = function() {
+    const searchEl = document.getElementById('clients-search-input');
+    const query = searchEl ? searchEl.value.toLowerCase().trim() : '';
+    const activeFilter = state.activeBillingFilter || 'ALL';
+    const hoy = new Date();
+
+    let filtered = state.allClientsCache || [];
+
+    // 1. Aplicar filtro de cobranza
+    if (activeFilter !== 'ALL') {
+        filtered = filtered.filter(item => {
+            const data = item.data || {};
+            const deuda = parseFloat(data.deuda || 0);
+            const vencStr = data.fechaVencimiento;
+            let diffDays = 999;
+            
+            if (vencStr) {
+                const fechaV = new Date(vencStr + 'T00:00:00');
+                diffDays = Math.ceil((fechaV - hoy) / (1000 * 60 * 60 * 24));
+            }
+
+            if (activeFilter === 'EXPIRING') {
+                // Por vencer en 7 días o menos, o recién vencido en los últimos 3 días
+                return diffDays >= -3 && diffDays <= 7;
+            } else if (activeFilter === 'DEBTORS') {
+                // Clientes con deuda pendiente > 0 o vencidos (diffDays < 0) o suspendidos
+                return deuda > 0 || diffDays < 0 || data.estado === 'SUSPENDIDO' || data.estado === 'INACTIVO';
+            }
+            return true;
+        });
+    }
+
+    // 2. Aplicar búsqueda de texto
+    if (query) {
+        filtered = filtered.filter(item => {
             const name = (item.data.businessName || item.data.nombre || '').toLowerCase();
             const id = item.id.toLowerCase();
             const plan = (item.data.plan || '').toLowerCase();
             const cedula = (item.data.cedula || '').toLowerCase();
             return name.includes(query) || id.includes(query) || plan.includes(query) || cedula.includes(query);
         });
+    }
 
-        window.renderClientsList(filtered);
-    });
+    // Actualizar badge con el número de clientes filtrados vs total
+    const badge = document.getElementById('clients-count-badge');
+    if (badge) {
+        if (activeFilter === 'ALL' && !query) {
+            badge.innerText = state.allClientsCache.length.toString();
+        } else {
+            badge.innerText = `${filtered.length}/${state.allClientsCache.length}`;
+        }
+    }
+
+    window.renderClientsList(filtered);
 }
+
+const searchInput = document.getElementById('clients-search-input');
+if (searchInput) {
+    searchInput.addEventListener('input', () => filterAndRenderClients());
+}
+
+// Inicializar botones de filtro de cobranza
+document.addEventListener('DOMContentLoaded', () => {
+    const filterButtons = document.querySelectorAll('.btn-filter-billing');
+    filterButtons.forEach(btn => {
+        btn.addEventListener('click', () => {
+            filterButtons.forEach(b => {
+                b.classList.remove('active');
+                b.style.background = 'transparent';
+                b.style.color = '#a1a1aa';
+            });
+            btn.classList.add('active');
+            btn.style.background = 'var(--brand-cyan)';
+            btn.style.color = '#000';
+
+            state.activeBillingFilter = btn.getAttribute('data-filter') || 'ALL';
+            filterAndRenderClients();
+        });
+    });
+});
 
 // ==========================================
 // MODAL MODERNO DE "+ NUEVO CLIENTE"
