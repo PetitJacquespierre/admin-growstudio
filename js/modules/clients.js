@@ -120,6 +120,11 @@ window.loadClients = async function() {
         if (badge) badge.innerText = state.allClientsCache.length.toString();
 
         window.renderClientsList(state.allClientsCache);
+
+        // Actualizar KPIs Globales del Dashboard Ejecutivo (Fase 4.1)
+        if (typeof window.renderDashboardKPIs === 'function') {
+            window.renderDashboardKPIs();
+        }
     } catch (error) {
         console.error("Error cargando clientes:", error);
         DOM.clientsUl.innerHTML = '<li style="color:#ef4444; padding: 10px; font-size: 12px;">Error de conexión con Firebase</li>';

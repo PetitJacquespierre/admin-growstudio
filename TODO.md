@@ -43,7 +43,7 @@ Herramientas para garantizar el cobro puntual y flujo de caja constante del nego
 ## 📊 FASE 4: Dashboard Ejecutivo & Monitoreo Global
 Convertir la pantalla de inicio en un panel de control empresarial con métricas clave.
 
-- [ ] **4.1 KPIs Globales en Pantalla de Bienvenida**
+- [x] **4.1 KPIs Globales en Pantalla de Bienvenida**
   - Tarjetas de resumen en tiempo real: Clientes Activos, Ingresos Recurrentes Estimados (MRR en USD), y Tráfico Total de visitas del mes acumulado en todos los locales.
-- [ ] **4.2 Indicador Central de Tasa BCV en la Barra Superior**
+- [x] **4.2 Indicador Central de Tasa BCV en la Barra Superior**
   - Widget en el encabezado que muestra la tasa oficial del día en vivo y permite verificar el estado de la conexión.

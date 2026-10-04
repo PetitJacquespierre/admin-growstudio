@@ -23,6 +23,137 @@ window.generarReporteWhatsapp = function() {
 };
 
 
+// ==========================================
+// FASE 4: DASHBOARD EJECUTIVO & MONITOR BCV EN VIVO
+// ==========================================
+
+// Helper para obtener tasa BCV oficial
+async function fetchCurrentBCVRate() {
+    const URL_API = "https://script.google.com/macros/s/AKfycbxdQlLO7lDOAvbhFqwVBs722T_i1KQ08z1gdf4NdqA6HvVcwGzRX4BZtHSd58piGL11/exec";
+    try {
+        const res = await fetch(URL_API);
+        const data = await res.json();
+        if (data && data.usd) {
+            const tasa = parseFloat(data.usd);
+            if (tasa > 0) {
+                localStorage.setItem("bcv_rate_cache", tasa.toString());
+                localStorage.setItem("bcv_rate_timestamp", new Date().toLocaleTimeString('es-VE', { hour: '2-digit', minute: '2-digit' }));
+                return { tasa, time: localStorage.getItem("bcv_rate_timestamp"), ok: true };
+            }
+        }
+    } catch (e) {
+        console.warn("Fallo consultando API BCV en vivo:", e);
+    }
+    const cached = localStorage.getItem("bcv_rate_cache");
+    const cachedTime = localStorage.getItem("bcv_rate_timestamp") || 'Caché';
+    return { tasa: cached ? parseFloat(cached) : 871.37, time: cachedTime, ok: false };
+}
+
+// Cargar y mostrar la tasa oficial BCV en el Header Superior Global (Fase 4.2)
+window.cargarTasaBCVHeader = async function(isManualRefresh = false) {
+    const rateEl = document.getElementById('bcv-header-rate');
+    const dotEl = document.getElementById('bcv-status-dot');
+    const updatedEl = document.getElementById('bcv-header-updated');
+
+    if (!rateEl) return;
+
+    if (isManualRefresh) {
+        rateEl.innerText = "Consultando...";
+        if (dotEl) {
+            dotEl.style.background = "#f59e0b";
+            dotEl.style.boxShadow = "0 0 8px #f59e0b";
+        }
+    }
+
+    const { tasa, time, ok } = await fetchCurrentBCVRate();
+
+    rateEl.innerText = tasa.toLocaleString('es-VE', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    if (updatedEl) updatedEl.innerText = `(${time})`;
+
+    if (dotEl) {
+        if (ok) {
+            dotEl.style.background = "#10b981";
+            dotEl.style.boxShadow = "0 0 8px #10b981";
+        } else {
+            dotEl.style.background = "#f59e0b";
+            dotEl.style.boxShadow = "0 0 8px #f59e0b";
+        }
+    }
+
+    if (isManualRefresh && window.showToast) {
+        window.showToast(`Tasa BCV actualizada: ${tasa.toFixed(2)} Bs`, ok ? "success" : "warning");
+    }
+
+    // Refrescar equivalencias en KPIs si el dashboard está visible
+    window.renderDashboardKPIs && window.renderDashboardKPIs(tasa);
+};
+
+// Renderizar KPIs globales en la pantalla de bienvenida / dashboard (Fase 4.1)
+window.renderDashboardKPIs = function(tasaParam) {
+    const clients = state.allClientsCache || [];
+
+    const activeClientsEl = document.getElementById('kpi-active-clients');
+    const totalClientsEl = document.getElementById('kpi-total-clients');
+    const mrrUsdEl = document.getElementById('kpi-mrr-usd');
+    const mrrBsEl = document.getElementById('kpi-mrr-bs');
+    const totalViewsEl = document.getElementById('kpi-total-views');
+    const totalDebtEl = document.getElementById('kpi-total-debt');
+    const debtBsEl = document.getElementById('kpi-debt-bs');
+    const debtorsBadgeEl = document.getElementById('kpi-debtors-badge');
+
+    if (!activeClientsEl) return; // Si no estamos en esa pantalla, salir
+
+    const cachedTasa = parseFloat(localStorage.getItem("bcv_rate_cache")) || 871.37;
+    const tasa = tasaParam || cachedTasa;
+
+    let activeCount = 0;
+    let totalMRR = 0;
+    let totalViews = 0;
+    let totalDebt = 0;
+    let debtorClientsCount = 0;
+
+    clients.forEach(c => {
+        const data = c.data || {};
+        const isActive = (data.estado === 'ACTIVO');
+        if (isActive) activeCount++;
+
+        // Cálculo de MRR estimado según el plan de los clientes activos
+        const plan = (data.plan || 'MENSUAL').toUpperCase();
+        if (isActive) {
+            if (plan.includes('ANUAL')) totalMRR += (50 / 12); // Ponderado mensual
+            else if (plan.includes('MENSUAL')) totalMRR += 15;
+            else if (data.mensualidad) totalMRR += parseFloat(data.mensualidad) || 0;
+        }
+
+        // Tráfico acumulado
+        totalViews += parseInt(data.visitas || 0, 10);
+
+        // Deuda acumulada
+        const deuda = parseFloat(data.deuda || 0);
+        if (deuda > 0) {
+            totalDebt += deuda;
+            debtorClientsCount++;
+        }
+    });
+
+    activeClientsEl.innerText = activeCount.toString();
+    if (totalClientsEl) totalClientsEl.innerText = `${clients.length} restaurantes registrados`;
+
+    if (mrrUsdEl) mrrUsdEl.innerText = `$${Math.round(totalMRR).toLocaleString('es-VE')}`;
+    if (mrrBsEl) mrrBsEl.innerText = `≈ ${(totalMRR * tasa).toLocaleString('es-VE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} Bs/mes`;
+
+    if (totalViewsEl) totalViewsEl.innerText = totalViews.toLocaleString('es-VE');
+
+    if (totalDebtEl) totalDebtEl.innerText = `$${totalDebt.toLocaleString('es-VE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+    if (debtBsEl) debtBsEl.innerText = `≈ ${(totalDebt * tasa).toLocaleString('es-VE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} Bs`;
+    if (debtorsBadgeEl) debtorsBadgeEl.innerText = `${debtorClientsCount} con deuda`;
+};
+
+// Cargar tasa automáticamente al iniciar
+document.addEventListener('DOMContentLoaded', () => {
+    window.cargarTasaBCVHeader();
+});
+
 // Robot Cobrador (Llamado en auth)
 window.correrRobotCobrador = async function() {
     console.log("Corriendo Robot Automático...");

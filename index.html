@@ -72,7 +72,7 @@
         <!-- SIDEBAR IZQUIERDO -->
         <aside class="sidebar">
             <div class="sidebar-logo">
-                <img src="img/growlogo.png" alt="Grow Studio" width="180" style="cursor: pointer;" onclick="document.querySelectorAll('#dashboard-screen > main > section').forEach(sec => sec.style.display = 'none'); document.getElementById('welcome-screen').style.display='flex'; document.querySelectorAll('.menu-btn, .menu-list li').forEach(el => el.classList.remove('active'));">
+                <img src="img/growlogo.png" alt="Grow Studio" width="180" style="cursor: pointer;" onclick="document.querySelectorAll('#dashboard-screen > main > section').forEach(sec => sec.style.display = 'none'); document.getElementById('welcome-screen').style.display='flex'; document.querySelectorAll('.menu-btn, .menu-list li').forEach(el => el.classList.remove('active')); window.renderDashboardKPIs && window.renderDashboardKPIs();">
             </div>
             
             <div class="sidebar-menu">
@@ -120,11 +120,96 @@
         <!-- CONTENIDO PRINCIPAL -->
         <main class="main-content">
             
-            <!-- PANTALLA DE BIENVENIDA (Mostrada por defecto) -->
-            <section id="welcome-screen" style="display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%; text-align: center; padding: 40px;">
-                <img src="img/growisotipo.png" alt="Grow Studio SaaS" style="width: 250px; margin-bottom: 30px; animation: floatOrb 6s infinite alternate;">
-                <h1 style="font-size: 2.5rem; margin-bottom: 10px; background: linear-gradient(90deg, var(--brand-cyan), var(--brand-orange)); -webkit-background-clip: text; color: transparent;">Bienvenido al Modo Dios</h1>
-                <p style="font-size: 1.1rem; color: #a1a1aa; max-width: 500px; margin-bottom: 30px;">Selecciona un cliente en el menú lateral izquierdo para gestionar su menú, configurar su WhatsApp, o crea un nuevo cliente desde cero con Inteligencia Artificial.</p>
+            <!-- HEADER SUPERIOR GLOBAL: BRANDING & TASA OFICIAL BCV EN VIVO (Fase 4.2) -->
+            <header id="global-top-header" style="display: flex; justify-content: space-between; align-items: center; padding: 12px 25px; border-bottom: 1px solid rgba(255,255,255,0.08); background: rgba(18, 18, 24, 0.4); backdrop-filter: blur(10px); flex-shrink: 0; flex-wrap: wrap; gap: 10px;">
+                <div style="display: flex; align-items: center; gap: 10px;">
+                    <span style="font-size: 11px; text-transform: uppercase; letter-spacing: 1px; color: #a1a1aa; font-weight: 700;">Modo Dios 2.0</span>
+                    <span style="font-size: 11px; background: rgba(0, 210, 255, 0.1); color: var(--brand-cyan); padding: 2px 8px; border-radius: 12px; font-weight: 600; border: 1px solid rgba(0, 210, 255, 0.2);">SaaS Cloud</span>
+                </div>
+
+                <!-- WIDGET CENTRAL TASA BCV OFICIAL EN VIVO -->
+                <div id="bcv-top-widget" style="display: flex; align-items: center; gap: 10px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.12); padding: 5px 14px; border-radius: 20px; cursor: pointer; transition: all 0.2s;" title="Clic para forzar actualización de tasa BCV" onclick="window.cargarTasaBCVHeader && window.cargarTasaBCVHeader(true)">
+                    <span style="display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: #10b981; box-shadow: 0 0 8px #10b981;" id="bcv-status-dot"></span>
+                    <i class="fa-solid fa-money-bill-trend-up" style="color: #f59e0b; font-size: 13px;"></i>
+                    <span style="font-size: 12px; color: #a1a1aa; font-weight: 600;">BCV Oficial:</span>
+                    <span id="bcv-header-rate" style="font-size: 13px; font-weight: 800; color: #fff; font-family: monospace;">Cargando...</span>
+                    <span style="font-size: 11px; color: #10b981; font-weight: bold;">Bs</span>
+                    <span style="font-size: 10px; color: #71717a; margin-left: 2px;" id="bcv-header-updated"></span>
+                </div>
+            </header>
+            
+            <!-- PANTALLA DE BIENVENIDA / DASHBOARD EJECUTIVO (Fase 4.1) -->
+            <section id="welcome-screen" style="display: flex; flex-direction: column; height: 100%; padding: 30px; box-sizing: border-box; overflow-y: auto;">
+                <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 15px; margin-bottom: 25px; border-bottom: 1px solid rgba(255,255,255,0.08); padding-bottom: 20px;">
+                    <div>
+                        <h1 style="font-size: 2rem; margin: 0 0 5px 0; background: linear-gradient(90deg, var(--brand-cyan), var(--brand-orange)); -webkit-background-clip: text; color: transparent; display: flex; align-items: center; gap: 10px;">
+                            <span>⚡</span> Dashboard Ejecutivo SaaS
+                        </h1>
+                        <p style="font-size: 13px; color: #a1a1aa; margin: 0;">Métricas consolidadas de restaurantes, ingresos recurrentes y tráfico en vivo.</p>
+                    </div>
+                    <div style="display: flex; gap: 10px; align-items: center;">
+                        <button type="button" onclick="window.renderDashboardKPIs && window.renderDashboardKPIs()" class="btn-secondary btn-small" style="display: flex; align-items: center; gap: 6px; border: 1px solid rgba(255,255,255,0.15); font-size: 12px; padding: 7px 12px;" title="Refrescar métricas">
+                            <span>🔄</span> Actualizar KPIs
+                        </button>
+                    </div>
+                </div>
+
+                <!-- GRID DE TARJETAS KPI GLOBALES -->
+                <div class="stats-grid" style="grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 18px; margin-bottom: 30px;">
+                    <!-- KPI 1: Clientes Activos -->
+                    <div class="stat-card" style="background: rgba(16, 185, 129, 0.08); border: 1px solid rgba(16, 185, 129, 0.3); padding: 18px; border-radius: 12px;">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                            <span style="font-size: 11px; text-transform: uppercase; letter-spacing: 1px; color: #a1a1aa; font-weight: 600;">Clientes Activos</span>
+                            <span style="background: rgba(16, 185, 129, 0.2); color: #10b981; padding: 3px 8px; border-radius: 20px; font-size: 11px; font-weight: bold;">🟢 En Línea</span>
+                        </div>
+                        <h2 id="kpi-active-clients" style="font-size: 32px; margin: 0 0 5px 0; color: #10b981; font-weight: 800;">0</h2>
+                        <span id="kpi-total-clients" style="font-size: 11px; color: #71717a;">0 restaurantes registrados</span>
+                    </div>
+
+                    <!-- KPI 2: MRR Estimado (Ingresos Mensuales Recurrentes) -->
+                    <div class="stat-card" style="background: rgba(0, 210, 255, 0.08); border: 1px solid rgba(0, 210, 255, 0.3); padding: 18px; border-radius: 12px;">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                            <span style="font-size: 11px; text-transform: uppercase; letter-spacing: 1px; color: #a1a1aa; font-weight: 600;">MRR Recurrente</span>
+                            <span style="background: rgba(0, 210, 255, 0.2); color: var(--brand-cyan); padding: 3px 8px; border-radius: 20px; font-size: 11px; font-weight: bold;">💎 USD</span>
+                        </div>
+                        <h2 id="kpi-mrr-usd" style="font-size: 32px; margin: 0 0 5px 0; color: var(--brand-cyan); font-weight: 800;">$0</h2>
+                        <span id="kpi-mrr-bs" style="font-size: 11px; color: #71717a;">≈ 0.00 Bs (Tasa BCV)</span>
+                    </div>
+
+                    <!-- KPI 3: Tráfico Global Acumulado (Visitas) -->
+                    <div class="stat-card" style="background: rgba(255, 77, 0, 0.08); border: 1px solid rgba(255, 77, 0, 0.3); padding: 18px; border-radius: 12px;">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                            <span style="font-size: 11px; text-transform: uppercase; letter-spacing: 1px; color: #a1a1aa; font-weight: 600;">Visitas Totales</span>
+                            <span style="background: rgba(255, 77, 0, 0.2); color: var(--brand-orange); padding: 3px 8px; border-radius: 20px; font-size: 11px; font-weight: bold;">🚀 Impacto</span>
+                        </div>
+                        <h2 id="kpi-total-views" style="font-size: 32px; margin: 0 0 5px 0; color: var(--brand-orange); font-weight: 800;">0</h2>
+                        <span style="font-size: 11px; color: #71717a;">Visitas a menús digitales</span>
+                    </div>
+
+                    <!-- KPI 4: Deuda / Cuentas por Cobrar -->
+                    <div class="stat-card" style="background: rgba(239, 68, 68, 0.08); border: 1px solid rgba(239, 68, 68, 0.3); padding: 18px; border-radius: 12px;">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                            <span style="font-size: 11px; text-transform: uppercase; letter-spacing: 1px; color: #a1a1aa; font-weight: 600;">Por Cobrar</span>
+                            <span id="kpi-debtors-badge" style="background: rgba(239, 68, 68, 0.2); color: #ef4444; padding: 3px 8px; border-radius: 20px; font-size: 11px; font-weight: bold;">0 Clientes</span>
+                        </div>
+                        <h2 id="kpi-total-debt" style="font-size: 32px; margin: 0 0 5px 0; color: #ef4444; font-weight: 800;">$0</h2>
+                        <span id="kpi-debt-bs" style="font-size: 11px; color: #71717a;">Saldo pendiente acumulado</span>
+                    </div>
+                </div>
+
+                <!-- ACCESO RÁPIDO Y BIENVENIDA -->
+                <div style="background: rgba(255,255,255,0.02); border: 1px dashed rgba(255,255,255,0.12); border-radius: 16px; padding: 35px 25px; text-align: center; margin-top: auto; margin-bottom: auto;">
+                    <img src="img/growisotipo.png" alt="Grow Studio SaaS" style="width: 130px; margin-bottom: 15px; animation: floatOrb 6s infinite alternate;">
+                    <h3 style="font-size: 1.3rem; margin: 0 0 10px 0; color: #fff;">Centro de Control Grow Studio</h3>
+                    <p style="font-size: 13px; color: #a1a1aa; max-width: 580px; margin: 0 auto 20px auto; line-height: 1.5;">
+                        Selecciona cualquier cliente en la barra lateral para editar productos, precios, banners y ajustes. O usa las pestañas de cobranza para revisar cuentas por vencer.
+                    </p>
+                    <div style="display: flex; gap: 12px; justify-content: center; flex-wrap: wrap;">
+                        <button type="button" onclick="document.getElementById('btn-new-client').click()" class="btn-primary btn-small" style="padding: 8px 18px; font-size: 12px;">+ Nuevo Cliente SaaS</button>
+                        <button type="button" onclick="document.getElementById('btn-view-payments').click()" class="btn-secondary btn-small" style="padding: 8px 18px; font-size: 12px; border: 1px solid rgba(255,255,255,0.2);">💰 Ver Pagos Recibidos</button>
+                        <button type="button" onclick="window.openSandiaScreen && window.openSandiaScreen()" class="btn-secondary btn-small" style="padding: 8px 18px; font-size: 12px; border: 1px solid rgba(230, 32, 53, 0.4); color: #ff4d61;">🍉 Sandía Production</button>
+                    </div>
+                </div>
             </section>
 
             <!-- PANTALLA DE PAGOS -->
