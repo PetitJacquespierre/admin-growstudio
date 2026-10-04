@@ -31,13 +31,20 @@ let currentAliadoId = null;
 
 // Función para resolver rutas de imágenes sin romper el entorno ni entrar en loops
 export function resolveSandiaImgPath(img) {
-    if (!img || typeof img !== 'string') return '../Sandia Production/img/Isotipo.png';
+    if (!img || typeof img !== 'string') return 'https://www.sandiaproduction.com/img/Isotipo.png';
     const trimmed = img.trim();
-    if (!trimmed) return '../Sandia Production/img/Isotipo.png';
+    if (!trimmed) return 'https://www.sandiaproduction.com/img/Isotipo.png';
     if (trimmed.startsWith('http://') || trimmed.startsWith('https://') || trimmed.startsWith('data:')) {
         return trimmed;
     }
     const clean = trimmed.replace(/^img\//, '').replace(/^\.\.\/Sandia Production\/img\//, '');
+    
+    // Si estamos corriendo en un servidor local (localhost / 127.0.0.1) o en la nube (Vercel)
+    // donde ../Sandia Production/ no es accesible por el navegador, usar la URL oficial en vivo
+    if (window.location.protocol === 'http:' || window.location.protocol === 'https:') {
+        return `https://www.sandiaproduction.com/img/${clean}`;
+    }
+    // Si se abre directo como archivo local file:///
     return `../Sandia Production/img/${clean}`;
 }
 

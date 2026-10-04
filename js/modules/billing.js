@@ -128,6 +128,8 @@ const paymentsTbody = document.getElementById('payments-tbody');
 if(btnViewPayments) btnViewPayments.addEventListener('click', () => {
     DOM.clientManager.style.display = 'none';
     document.getElementById('welcome-screen').style.display = 'none';
+    const sandiaScreen = document.getElementById('sandia-screen');
+    if (sandiaScreen) sandiaScreen.style.display = 'none';
     paymentsScreen.style.display = 'flex';
     
     document.querySelectorAll('.menu-list li').forEach(li => li.classList.remove('active'));

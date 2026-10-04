@@ -14,6 +14,9 @@ window.openClientManager = async function(id, data, liElement) {
     if (document.getElementById('payments-screen')) {
         document.getElementById('payments-screen').style.display = 'none';
     }
+    if (document.getElementById('sandia-screen')) {
+        document.getElementById('sandia-screen').style.display = 'none';
+    }
 
     // Titulo y Link
     const titleText = document.createTextNode(`Menú de: ${data.nombre || data.nombre || data.businessName || id} `);
@@ -245,7 +248,7 @@ DOM.btnVisitUrl.addEventListener('click', () => {
 // ==========================================
 state.activeProductCategoryFilter = 'ALL';
 
-// Helper: Resolver URL de imagen para preview (si es link web o archivo local)
+// Helper: Resolver URL de imagen para preview (web o archivo local de cada cliente)
 function resolveImagePreviewUrl(imgSrc) {
     if (!imgSrc || imgSrc.trim() === '') {
         return 'https://placehold.co/80x80/27272a/a1a1aa?text=Sin+Foto';
@@ -254,14 +257,57 @@ function resolveImagePreviewUrl(imgSrc) {
     if (trimmed.startsWith('http://') || trimmed.startsWith('https://') || trimmed.startsWith('data:')) {
         return trimmed;
     }
-    // Si el cliente tiene URL de tienda, intentar resolver imagen relativa a su dominio
+
+    const cleanFile = trimmed.replace(/^img\//, '');
+
+    // Mapeo conocido de carpetas locales de clientes para vista en localhost/archivo
+    const clientFolderMap = {
+        'neneburger_rock': '../Burguer Rock Metal/img/',
+        'burger_rock': '../Burguer Rock Metal/img/',
+        'burger rock metal': '../Burguer Rock Metal/img/',
+        'la_flaca': '../Pasteles La Flaca/img/',
+        'pasteles_la_flaca': '../Pasteles La Flaca/img/',
+        'pasteles la flaca': '../Pasteles La Flaca/img/',
+        'foodpoint': '../The Food Point/img/',
+        'the_food_point': '../The Food Point/img/',
+        'the food point': '../The Food Point/img/',
+        'grow_studio_demo': '../Demo_Menu_Digital/img/',
+        'demo_grow_studio': '../Demo_Menu_Digital/img/',
+        'demo_menu': '../Demo_Menu_Digital/img/',
+        'demo grow studio': '../Demo_Menu_Digital/img/',
+        'cactus_empanadas': '../Cactus Empanadas/img/',
+        'mi_lechuga': '../Mi Lechuga/img/'
+    };
+
+    const currentId = (state.currentClientId || '').toLowerCase();
+    const currentName = (state.currentClientData && (state.currentClientData.businessName || state.currentClientData.nombre) || '').toLowerCase();
+
+    // 1. Coincidencia por ID o Nombre comercial
+    let matchedFolder = clientFolderMap[currentId] || clientFolderMap[currentName];
+
+    // 2. Búsqueda por subcadena
+    if (!matchedFolder) {
+        if (currentId.includes('rock') || currentName.includes('rock')) matchedFolder = '../Burguer Rock Metal/img/';
+        else if (currentId.includes('flaca') || currentName.includes('flaca')) matchedFolder = '../Pasteles La Flaca/img/';
+        else if (currentId.includes('food') || currentName.includes('food')) matchedFolder = '../The Food Point/img/';
+        else if (currentId.includes('demo') || currentName.includes('demo') || currentId.includes('grow')) matchedFolder = '../Demo_Menu_Digital/img/';
+        else if (currentId.includes('cactus')) matchedFolder = '../Cactus Empanadas/img/';
+        else if (currentId.includes('lechuga')) matchedFolder = '../Mi Lechuga/img/';
+    }
+
+    if (matchedFolder) {
+        return `${matchedFolder}${cleanFile}`;
+    }
+
+    // 3. Si el cliente tiene URL de tienda en vivo (ej: .vercel.app), cargar desde su web
     if (state.currentClientData && state.currentClientData.url) {
         let domain = state.currentClientData.url.trim();
         if (!domain.startsWith('http')) domain = `https://${domain}`;
         domain = domain.replace(/\/$/, '');
-        return `${domain}/${trimmed}`;
+        return `${domain}/img/${cleanFile}`;
     }
-    return trimmed;
+
+    return `img/${cleanFile}`;
 }
 
 // Actualizar un campo específico de producto
@@ -648,11 +694,14 @@ document.addEventListener('DOMContentLoaded', () => {
 
 
 window.actualizarPromo = async function(index, campo, valor) {
-    if (!state.currentClientId) return;
+    if (!state.currentClientId || !state.currentClientData.promos) return;
     state.currentClientData.promos[index][campo] = valor;
     try {
         const { doc, updateDoc } = await import("https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js");
         await updateDoc(doc(db, "clientes", state.currentClientId), { promos: state.currentClientData.promos });
+        if (campo === 'imagen') {
+            window.renderPromos(state.currentClientData.promos);
+        }
     } catch(e) { console.error(e); }
 };
 
@@ -664,16 +713,22 @@ window.renderPromos = function(promos) {
         const tr = document.createElement('tr');
         const isChecked = p.activo === 'SI' ? 'selected' : '';
         const isNotChecked = p.activo === 'NO' ? 'selected' : '';
+        const previewUrl = resolveImagePreviewUrl(p.imagen);
         
         tr.innerHTML = `
             <td>
-                <input type="text" class="modern-select" value="${p.imagen || ''}" onchange="actualizarPromo(${index}, 'imagen', this.value)" style="width:100px; padding:4px;" placeholder="promo1.jpg">
+                <div style="display: flex; align-items: center; gap: 8px;">
+                    <a href="${previewUrl}" target="_blank" title="Clic para ver promo grande" style="flex-shrink: 0; text-decoration: none;">
+                        <img src="${previewUrl}" alt="Promo" onerror="this.onerror=null; this.src='https://placehold.co/80x80/27272a/a1a1aa?text=Sin+Foto';" style="width: 36px; height: 36px; object-fit: cover; border-radius: 6px; border: 1px solid rgba(255,255,255,0.15); background: #000; display: block; transition: transform 0.2s;" onmouseover="this.style.transform='scale(1.15)'" onmouseout="this.style.transform='scale(1)'">
+                    </a>
+                    <input type="text" class="modern-select" value="${p.imagen || ''}" onchange="actualizarPromo(${index}, 'imagen', this.value)" style="width: 90px; padding: 4px; font-size: 11px;" placeholder="promo1.jpg">
+                </div>
             </td>
-            <td><input type="text" class="modern-select" value="${p.nombre || ''}" onchange="actualizarPromo(${index}, 'nombre', this.value)" style="width:120px; padding:4px;" placeholder="Ej. Promo Chori"></td>
-            <td><input type="text" class="modern-select" value="${p.descripcion || ''}" onchange="actualizarPromo(${index}, 'descripcion', this.value)" style="width:150px; padding:4px;" placeholder="Detalles de la promo"></td>
-            <td><input type="number" class="modern-select" value="${p.precio || 0}" onchange="actualizarPromo(${index}, 'precio', parseFloat(this.value))" style="width:60px; padding:4px;"></td>
+            <td><input type="text" class="modern-select" value="${p.nombre || ''}" onchange="actualizarPromo(${index}, 'nombre', this.value)" style="width: 120px; padding: 4px;" placeholder="Ej. Promo Chori"></td>
+            <td><input type="text" class="modern-select" value="${p.descripcion || ''}" onchange="actualizarPromo(${index}, 'descripcion', this.value)" style="width: 150px; padding: 4px;" placeholder="Detalles de la promo"></td>
+            <td><input type="number" step="0.01" class="modern-select" value="${p.precio || 0}" onchange="actualizarPromo(${index}, 'precio', parseFloat(this.value))" style="width: 60px; padding: 4px;"></td>
             <td>
-                <select class="modern-select" style="padding:4px;" onchange="actualizarPromo(${index}, 'activo', this.value)">
+                <select class="modern-select" style="padding: 4px; font-size: 11px;" onchange="actualizarPromo(${index}, 'activo', this.value)">
                     <option value="SI" ${isChecked}>SI (Prendido)</option>
                     <option value="NO" ${isNotChecked}>NO (Apagado)</option>
                 </select>
