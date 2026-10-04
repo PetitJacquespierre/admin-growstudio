@@ -16,9 +16,11 @@ document.addEventListener('DOMContentLoaded', () => {
                 });
                 state.currentClientData.headerMedia = url;
                 btnSaveHero.innerText = '¡Guardado!';
+                if (window.showToast) window.showToast("Portada Hero guardada con éxito.");
                 setTimeout(() => btnSaveHero.innerText = 'Guardar Portada', 2000);
             } catch(e) {
-                alert('Error al guardar: ' + e.message);
+                if (window.showToast) window.showToast('Error al guardar portada: ' + e.message, 'error');
+                else alert('Error al guardar: ' + e.message);
                 btnSaveHero.innerText = 'Guardar Portada';
             }
         });

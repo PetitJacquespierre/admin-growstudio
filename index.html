@@ -89,8 +89,15 @@
                 <button id="btn-nav-sandia" class="menu-btn" onclick="window.openSandiaScreen && window.openSandiaScreen()" style="border: 1px solid rgba(230, 32, 53, 0.4); background: rgba(230, 32, 53, 0.12); color: #ff4d61; font-weight: bold;">🍉 Sandía Production</button>
             </div>
 
-            <div class="sidebar-menu" style="flex: 1; overflow-y: auto; margin-top: 20px;">
-                <p class="menu-label" style="font-weight: bold; color: white;">CLIENTES SAAS</p>
+            <div class="sidebar-menu" style="flex: 1; overflow-y: auto; margin-top: 15px;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                    <p class="menu-label" style="font-weight: bold; color: white; margin: 0;">CLIENTES SAAS</p>
+                    <span id="clients-count-badge" style="font-size: 11px; background: rgba(0, 210, 255, 0.15); color: var(--brand-cyan); padding: 2px 7px; border-radius: 10px; font-weight: bold;">0</span>
+                </div>
+                <!-- Buscador de Clientes en Vivo -->
+                <div style="margin-bottom: 10px;">
+                    <input type="text" id="clients-search-input" placeholder="🔍 Buscar cliente..." class="modern-select" style="width: 100%; font-size: 12px; padding: 6px 10px; border-radius: 8px; box-sizing: border-box; background: rgba(255,255,255,0.06);">
+                </div>
                 <ul id="clients-ul" class="menu-list">
                     <!-- Dinámico -->
                 </ul>
@@ -429,6 +436,68 @@
                 </div>
             </section>
         </main>
+    <!-- MODAL NUEVO CLIENTE SAAS (MODERNO) -->
+    <div id="modal-new-client" class="screen" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); z-index: 2000; justify-content: center; align-items: center; padding: 15px;">
+        <div class="login-card" style="max-width: 480px; width: 95%; max-height: 88vh; overflow-y: auto; text-align: left; background: #121826; border: 1px solid rgba(0, 210, 255, 0.4); border-radius: 14px; padding: 22px; box-shadow: 0 15px 40px rgba(0,0,0,0.8);">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                <h3 style="margin: 0; color: var(--brand-cyan); font-size: 1.2rem; display: flex; align-items: center; gap: 8px;">
+                    🚀 Nuevo Cliente SaaS
+                </h3>
+                <button type="button" id="btn-close-new-client" style="background: none; border: none; color: #aaa; font-size: 24px; cursor: pointer; line-height: 1;">&times;</button>
+            </div>
+
+            <form id="form-new-client">
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 12px;">
+                    <div class="input-group" style="margin-bottom: 0;">
+                        <label style="font-size: 11px; color: #ccc;">ID Único en Firebase *</label>
+                        <input type="text" id="nc-id" class="modern-select" placeholder="ej: burger_rock" required style="width: 100%; box-sizing: border-box; padding: 8px; font-size: 12px; font-family: monospace;">
+                        <span style="font-size: 10px; color: #71717a;">Sin espacios ni acentos</span>
+                    </div>
+                    <div class="input-group" style="margin-bottom: 0;">
+                        <label style="font-size: 11px; color: #ccc;">Nombre Comercial *</label>
+                        <input type="text" id="nc-name" class="modern-select" placeholder="ej: Burger Rock Metal" required style="width: 100%; box-sizing: border-box; padding: 8px; font-size: 12px;">
+                    </div>
+                </div>
+
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 12px;">
+                    <div class="input-group" style="margin-bottom: 0;">
+                        <label style="font-size: 11px; color: #ccc;">WhatsApp Pedidos *</label>
+                        <input type="text" id="nc-whatsapp" class="modern-select" placeholder="ej: 584146992629" required style="width: 100%; box-sizing: border-box; padding: 8px; font-size: 12px;">
+                    </div>
+                    <div class="input-group" style="margin-bottom: 0;">
+                        <label style="font-size: 11px; color: #ccc;">Usuario / Cédula</label>
+                        <input type="text" id="nc-cedula" class="modern-select" placeholder="ej: difoodpoint" style="width: 100%; box-sizing: border-box; padding: 8px; font-size: 12px;">
+                    </div>
+                </div>
+
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 12px;">
+                    <div class="input-group" style="margin-bottom: 0;">
+                        <label style="font-size: 11px; color: #ccc;">Plan Inicial</label>
+                        <select id="nc-plan" class="modern-select" style="width: 100%; padding: 8px; font-size: 12px;">
+                            <option value="PRUEBA">🎁 Prueba 7 Días ($0)</option>
+                            <option value="MENSUAL">💳 Mensual ($15/mes)</option>
+                            <option value="ANUAL" selected>⭐ Anual VIP ($50/año)</option>
+                        </select>
+                    </div>
+                    <div class="input-group" style="margin-bottom: 0;">
+                        <label style="font-size: 11px; color: #ccc;">Instagram (Opcional)</label>
+                        <input type="text" id="nc-instagram" class="modern-select" placeholder="@burgerrock" style="width: 100%; box-sizing: border-box; padding: 8px; font-size: 12px;">
+                    </div>
+                </div>
+
+                <div class="input-group" style="margin-bottom: 15px;">
+                    <label style="font-size: 11px; color: #ccc;">URL de Tienda en Vercel (Opcional)</label>
+                    <input type="text" id="nc-url" class="modern-select" placeholder="https://burgerrock.vercel.app" style="width: 100%; box-sizing: border-box; padding: 8px; font-size: 12px;">
+                </div>
+
+                <div id="nc-error" style="display: none; color: #ef4444; font-size: 12px; margin-bottom: 12px; background: rgba(239, 68, 68, 0.1); padding: 8px; border-radius: 6px; border: 1px solid rgba(239, 68, 68, 0.3);"></div>
+
+                <div style="display: flex; gap: 10px; margin-top: 15px;">
+                    <button type="button" id="btn-cancel-new-client" class="btn-secondary btn-small" style="flex: 1;">Cancelar</button>
+                    <button type="submit" id="btn-submit-new-client" class="btn-primary btn-small" style="flex: 1;">🚀 Crear Cliente</button>
+                </div>
+            </form>
+        </div>
     </div>
 
     <!-- MODAL CREAR/EDITAR EVENTO SANDÍA (COMPACTO Y MODERNO) -->
@@ -620,8 +689,9 @@
                 <button id="btn-download-qr" class="btn-primary" style="flex: 1;">📥 Descargar</button>
             </div>
         </div>
-    </div>
-    
+    <!-- CONTENEDOR TOAST FLOTANTE -->
+    <div id="toast-container" style="position: fixed; bottom: 24px; right: 24px; z-index: 9999; display: flex; flex-direction: column; gap: 10px; pointer-events: none;"></div>
+
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
     <script type="module" src="js/modules/firebase-init.js"></script>

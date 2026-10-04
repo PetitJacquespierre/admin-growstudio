@@ -493,12 +493,14 @@ if (DOM.btnSaveBilling) {
             }
             
             DOM.btnSaveBilling.innerText = "¡Guardado!";
+            if (window.showToast) window.showToast("Datos de cobranza actualizados.");
             setTimeout(() => {
                 DOM.btnSaveBilling.innerText = originalText;
                 DOM.btnSaveBilling.disabled = false;
             }, 2000);
         } catch (error) {
-            alert("Error: " + error.message);
+            if (window.showToast) window.showToast("Error al guardar cobranza: " + error.message, "error");
+            else alert("Error: " + error.message);
             DOM.btnSaveBilling.innerText = originalText;
             DOM.btnSaveBilling.disabled = false;
         }

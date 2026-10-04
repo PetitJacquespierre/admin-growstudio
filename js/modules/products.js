@@ -152,9 +152,11 @@ DOM.btnSaveWhatsapp.addEventListener('click', async () => {
         await updateDoc(doc(db, "clientes", state.currentClientId), {
             whatsapp: DOM.clientWhatsapp.value.trim()
         });
-        alert("Número de WhatsApp guardado en la nube.");
+        if (window.showToast) window.showToast("Número de WhatsApp guardado en la nube.");
+        else alert("Número de WhatsApp guardado en la nube.");
     } catch (error) {
-        alert("Error al guardar WhatsApp.");
+        if (window.showToast) window.showToast("Error al guardar WhatsApp.", "error");
+        else alert("Error al guardar WhatsApp.");
     }
 });
 
@@ -166,9 +168,11 @@ DOM.btnSaveInstagram.addEventListener('click', async () => {
         await updateDoc(doc(db, "clientes", state.currentClientId), {
             instagram: DOM.clientInstagram.value.trim()
         });
-        alert("Instagram guardado en la nube.");
+        if (window.showToast) window.showToast("Instagram guardado en la nube.");
+        else alert("Instagram guardado en la nube.");
     } catch (error) {
-        alert("Error al guardar Instagram.");
+        if (window.showToast) window.showToast("Error al guardar Instagram.", "error");
+        else alert("Error al guardar Instagram.");
     }
 });
 
@@ -190,9 +194,11 @@ DOM.btnSaveUrl.addEventListener('click', async () => {
             DOM.clientLink.style.display = 'none';
         }
         
-        alert("URL guardada en la nube. ¡Ya puedes hacer clic en el link ÃƒÂ°Ã…Â¸Ã¢â‚¬Â Ã¢â‚¬â€  junto al título!");
+        if (window.showToast) window.showToast("URL de la tienda actualizada con éxito.");
+        else alert("URL guardada en la nube.");
     } catch (error) {
-        alert("Error al guardar URL.");
+        if (window.showToast) window.showToast("Error al guardar URL.", "error");
+        else alert("Error al guardar URL.");
     }
 });
 
@@ -210,9 +216,12 @@ if (btnSaveHero) {
                 headerMedia: newHero
             });
             
-            alert(newHero === '' ? "Portada eliminada (se usará el diseño normal)" : "Portada guardada exitosamente.");
+            const msg = newHero === '' ? "Portada eliminada (se usará el diseño normal)" : "Portada guardada exitosamente.";
+            if (window.showToast) window.showToast(msg);
+            else alert(msg);
         } catch (error) {
-            alert("Error al guardar la portada: " + error.message);
+            if (window.showToast) window.showToast("Error al guardar la portada: " + error.message, "error");
+            else alert("Error al guardar la portada: " + error.message);
         }
     });
 }
@@ -224,7 +233,8 @@ DOM.btnVisitUrl.addEventListener('click', () => {
         const fullUrl = url.startsWith('http') ? url : `https://${url}`;
         window.open(fullUrl, '_blank');
     } else {
-        alert('Por favor ingresa un link de tienda primero.');
+        if (window.showToast) window.showToast("Ingresa primero un link de tienda.", "warning");
+        else alert('Por favor ingresa un link de tienda primero.');
     }
 });
 
