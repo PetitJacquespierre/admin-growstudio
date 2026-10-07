@@ -26,6 +26,7 @@ export const sandiaImagesList = [
 
 let unsubscribeEventos = null;
 let unsubscribeAliados = null;
+let unsubscribeCupones = null;
 let currentEventId = null;
 let currentAliadoId = null;
 
@@ -287,6 +288,72 @@ export function initSandiaAdmin() {
     if (btnSeedData) {
         btnSeedData.addEventListener('click', seedInitialSandiaData);
     }
+
+    // --- GESTIÓN DE CUPONES DE CORTESÍA / SORTEO ---
+    const btnQuickRunfree = document.getElementById('btn-quick-habilitar-runfree');
+    const btnNuevoCupon = document.getElementById('btn-nuevo-cupon-sandia');
+    const boxCrearCupon = document.getElementById('box-crear-cupon-sandia');
+    const btnGuardarCupon = document.getElementById('btn-guardar-nuevo-cupon');
+    const btnCancelarCupon = document.getElementById('btn-cancelar-nuevo-cupon');
+    const inputCuponCodigo = document.getElementById('input-nuevo-cupon-codigo');
+
+    if (btnNuevoCupon && boxCrearCupon) {
+        btnNuevoCupon.addEventListener('click', () => {
+            boxCrearCupon.style.display = boxCrearCupon.style.display === 'none' ? 'block' : 'none';
+            if (inputCuponCodigo) inputCuponCodigo.focus();
+        });
+    }
+
+    if (btnCancelarCupon && boxCrearCupon) {
+        btnCancelarCupon.addEventListener('click', () => {
+            boxCrearCupon.style.display = 'none';
+            if (inputCuponCodigo) inputCuponCodigo.value = '';
+        });
+    }
+
+    if (btnGuardarCupon) {
+        btnGuardarCupon.addEventListener('click', async () => {
+            const rawCodigo = inputCuponCodigo ? inputCuponCodigo.value.trim().toUpperCase() : '';
+            if (!rawCodigo) {
+                alert("Por favor ingresa un código para el cupón (ej: RUNFREE1).");
+                return;
+            }
+            await habilitarCuponEnFirestore(rawCodigo);
+            if (inputCuponCodigo) inputCuponCodigo.value = '';
+            if (boxCrearCupon) boxCrearCupon.style.display = 'none';
+        });
+    }
+
+    if (btnQuickRunfree) {
+        btnQuickRunfree.addEventListener('click', async () => {
+            btnQuickRunfree.disabled = true;
+            btnQuickRunfree.innerText = "Calculando...";
+            try {
+                // Obtener todos los cupones actuales para calcular el siguiente número
+                const snap = await getDocs(collection(db, "sandia_cupones_horror"));
+                let maxNum = 0;
+                snap.forEach(d => {
+                    const match = d.id.match(/^RUNFREE(\d+)$/i);
+                    if (match) {
+                        const num = parseInt(match[1], 10);
+                        if (num > maxNum) maxNum = num;
+                    }
+                });
+                const nextNum = maxNum + 1;
+                const nextCodigo = `RUNFREE${nextNum}`;
+
+                if (confirm(`¿Deseas habilitar el cupón ${nextCodigo} para el sorteo de Kelmit?`)) {
+                    await habilitarCuponEnFirestore(nextCodigo);
+                }
+            } catch (err) {
+                console.error("Error al habilitar RUNFREE:", err);
+                alert("Error: " + err.message);
+            } finally {
+                btnQuickRunfree.disabled = false;
+                btnQuickRunfree.innerText = "⚡ Habilitar Siguiente RUNFREE";
+            }
+        });
+    }
 }
 
 // Cargar Datos en Tiempo Real
@@ -410,6 +477,125 @@ export function loadSandiaData() {
             tableAliadosBody.appendChild(tr);
         });
     });
+
+    // Cupones de Cortesía (5K Horror Story / Sorteos)
+    const tableCuponesBody = document.getElementById('sandia-cupones-tbody');
+    if (unsubscribeCupones) unsubscribeCupones();
+    const qCupones = query(collection(db, "sandia_cupones_horror"));
+    unsubscribeCupones = onSnapshot(qCupones, (snapshot) => {
+        if (!tableCuponesBody) return;
+        tableCuponesBody.innerHTML = '';
+
+        if (snapshot.empty) {
+            tableCuponesBody.innerHTML = `<tr><td colspan="6" style="text-align:center; padding: 20px; color: #888;">No hay cupones registrados. Haz clic en '+ Personalizado' o '⚡ Habilitar Siguiente RUNFREE'.</td></tr>`;
+            return;
+        }
+
+        const cupones = [];
+        snapshot.forEach(d => cupones.push({ id: d.id, ...d.data() }));
+
+        // Ordenar alfabéticamente/numéricamente
+        cupones.sort((a, b) => {
+            const numA = parseInt((a.id.match(/\d+/) || [0])[0], 10);
+            const numB = parseInt((b.id.match(/\d+/) || [0])[0], 10);
+            if (numA && numB) return numA - numB;
+            return a.id.localeCompare(b.id);
+        });
+
+        cupones.forEach(c => {
+            const id = c.id;
+            const estaUsado = (c.estado === 'USADO') || (!!c.usadoEn && !c.habilitado);
+            const estaHabilitado = c.estado === 'HABILITADO' || (c.habilitado === true && !c.usadoEn);
+
+            let badge = '';
+            if (estaUsado) {
+                badge = `<span style="background: rgba(239, 68, 68, 0.2); color: #ef4444; padding: 4px 8px; border-radius: 6px; font-weight: bold; font-size: 11px;">🔒 Canjeado (Quemado)</span>`;
+            } else if (estaHabilitado) {
+                badge = `<span style="background: rgba(46, 204, 113, 0.2); color: #2ecc71; padding: 4px 8px; border-radius: 6px; font-weight: bold; font-size: 11px;">🟢 Habilitado (Disponible)</span>`;
+            } else {
+                badge = `<span style="background: rgba(149, 165, 166, 0.2); color: #95a5a6; padding: 4px 8px; border-radius: 6px; font-weight: bold; font-size: 11px;">⏸️ En Espera</span>`;
+            }
+
+            const fechaCrea = c.fechaCreacion ? new Date(c.fechaCreacion).toLocaleDateString('es-VE') : '-';
+            const fechaUso = c.usadoEn ? new Date(c.usadoEn).toLocaleString('es-VE') : '-';
+            const atletaInfo = c.atleta ? `${c.atleta.nombre || ''} <span style="font-size:10px; color:#888;">(C.I. ${c.atleta.cedula || 'N/A'})</span>` : (estaUsado ? 'Canjeado' : '<span style="color:#666;">-</span>');
+
+            const linkVIP = `https://www.sandiaproduction.com/paraguanahorror.html?cupon=${id}`;
+
+            const tr = document.createElement('tr');
+            tr.innerHTML = `
+                <td><strong style="color: var(--brand-orange); font-family: monospace; font-size: 13px;">${id}</strong></td>
+                <td>${badge}</td>
+                <td style="font-size: 11px; color: #888;">${fechaCrea}</td>
+                <td style="font-size: 12px;">${atletaInfo}</td>
+                <td style="font-size: 11px; color: #888;">${fechaUso}</td>
+                <td style="text-align: right; white-space: nowrap;">
+                    <button class="btn-secondary btn-small btn-copiar-vip" title="Copiar enlace VIP para entregar al ganador" style="margin-right: 5px; font-size: 11px; border-color: var(--brand-cyan); color: var(--brand-cyan);">📋 Copiar Link</button>
+                    ${!estaUsado ? `
+                        <button class="btn-secondary btn-small btn-deshabilitar-cupon" style="margin-right: 5px; font-size: 11px; color: #f39c12; border-color: rgba(243, 156, 18, 0.4);">${estaHabilitado ? 'Pausar' : 'Habilitar'}</button>
+                    ` : ''}
+                    <button class="btn-secondary btn-small btn-del-cupon" style="color: #ef4444; border-color: rgba(239, 68, 68, 0.3); font-size: 11px;">🗑️</button>
+                </td>
+            `;
+
+            tr.querySelector('.btn-copiar-vip').addEventListener('click', () => {
+                navigator.clipboard.writeText(linkVIP).then(() => {
+                    alert(`¡Enlace VIP copiado para entregar al ganador!\n\n${linkVIP}`);
+                });
+            });
+
+            const btnToggle = tr.querySelector('.btn-deshabilitar-cupon');
+            if (btnToggle) {
+                btnToggle.addEventListener('click', async () => {
+                    await toggleEstadoCupon(id, estaHabilitado);
+                });
+            }
+
+            tr.querySelector('.btn-del-cupon').addEventListener('click', () => {
+                eliminarCupon(id);
+            });
+
+            tableCuponesBody.appendChild(tr);
+        });
+    });
+}
+
+async function habilitarCuponEnFirestore(codigo) {
+    try {
+        const idSanitizado = codigo.trim().toUpperCase();
+        await setDoc(doc(db, "sandia_cupones_horror", idSanitizado), {
+            codigo: idSanitizado,
+            estado: 'HABILITADO',
+            habilitado: true,
+            fechaCreacion: new Date().toISOString(),
+            evento: '5K Paraguaná Horror Story'
+        }, { merge: true });
+        alert(`✔ Cupón ${idSanitizado} habilitado exitosamente.`);
+    } catch (e) {
+        console.error("Error al habilitar cupón:", e);
+        alert("Error al habilitar cupón: " + e.message);
+    }
+}
+
+async function toggleEstadoCupon(id, estaHabilitado) {
+    try {
+        await updateDoc(doc(db, "sandia_cupones_horror", id), {
+            estado: estaHabilitado ? 'PAUSADO' : 'HABILITADO',
+            habilitado: !estaHabilitado
+        });
+    } catch (e) {
+        alert("Error: " + e.message);
+    }
+}
+
+async function eliminarCupon(id) {
+    if (confirm(`¿Estás seguro de eliminar el cupón ${id}?`)) {
+        try {
+            await deleteDoc(doc(db, "sandia_cupones_horror", id));
+        } catch (e) {
+            alert("Error al eliminar: " + e.message);
+        }
+    }
 }
 
 function editEvent(id, ev) {

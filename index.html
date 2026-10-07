@@ -519,7 +519,7 @@
                 </div>
 
                 <!-- TABLA DE ALIADOS COMERCIALES -->
-                <div>
+                <div style="margin-bottom: 35px;">
                     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
                         <h3 style="color: white; margin: 0; font-size: 1.15rem;">🤝 Aliados Comerciales (Patrocinantes)</h3>
                         <span style="font-size: 11px; color: #aaa;">Alimenta el carrusel de marcas en el Index</span>
@@ -536,6 +536,57 @@
                                 </tr>
                             </thead>
                             <tbody id="sandia-aliados-tbody">
+                                <!-- Dinámico -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- GESTIÓN DE CUPONES DE CORTESÍA / SORTEOS (5K HORROR STORY & RUNFREE) -->
+                <div style="margin-bottom: 35px;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; flex-wrap: wrap; gap: 10px;">
+                        <div>
+                            <h3 style="color: white; margin: 0; font-size: 1.15rem; display: flex; align-items: center; gap: 8px;">
+                                🎟️ Cupones de Cortesía / Sorteos (100% Free)
+                            </h3>
+                            <span style="font-size: 11px; color: #aaa;">Control exclusivo para habilitar RUNFREE1, RUNFREE2... o cupones especiales</span>
+                        </div>
+                        <div style="display: flex; gap: 8px;">
+                            <button id="btn-quick-habilitar-runfree" class="btn-primary btn-small" style="background: #e62035; border-color: #e62035; font-size: 11px; font-weight: bold;">
+                                ⚡ Habilitar Siguiente RUNFREE
+                            </button>
+                            <button id="btn-nuevo-cupon-sandia" class="btn-secondary btn-small" style="font-size: 11px; border-color: var(--brand-cyan); color: var(--brand-cyan);">
+                                + Personalizado
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- CAJA CREAR CUPÓN PERSONALIZADO (INLINE OCULTABLE) -->
+                    <div id="box-crear-cupon-sandia" style="display: none; background: rgba(0, 210, 255, 0.05); border: 1px dashed rgba(0, 210, 255, 0.3); border-radius: 10px; padding: 12px 15px; margin-bottom: 15px;">
+                        <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
+                            <input type="text" id="input-nuevo-cupon-codigo" placeholder="Ej. RUNFREE1 o VIPMARATON" class="input-modern" style="text-transform: uppercase; font-weight: bold; width: 220px; padding: 8px; font-size: 12px;">
+                            <button id="btn-guardar-nuevo-cupon" class="btn-primary btn-small" style="background: var(--brand-cyan); color: #000; font-weight: bold; font-size: 12px; padding: 8px 16px;">
+                                Habilitar Código
+                            </button>
+                            <button id="btn-cancelar-nuevo-cupon" class="btn-secondary btn-small" style="font-size: 12px; padding: 8px 14px;">
+                                Cancelar
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="table-container" style="background: var(--bg-card); border-radius: 12px; border: 1px solid var(--border); overflow: hidden;">
+                        <table style="width: 100%; border-collapse: collapse;">
+                            <thead>
+                                <tr style="background: rgba(255,255,255,0.03); border-bottom: 1px solid var(--border); text-align: left;">
+                                    <th style="padding: 12px 15px;">Código</th>
+                                    <th style="padding: 12px 15px;">Estado</th>
+                                    <th style="padding: 12px 15px;">Fecha Creación</th>
+                                    <th style="padding: 12px 15px;">Canjeado Por</th>
+                                    <th style="padding: 12px 15px;">Fecha Canje</th>
+                                    <th style="padding: 12px 15px; text-align: right;">Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody id="sandia-cupones-tbody">
                                 <!-- Dinámico -->
                             </tbody>
                         </table>
