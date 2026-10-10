@@ -597,9 +597,278 @@ th{background:var(--dark);color:white;padding:10px;text-align:left;font-size:11p
     ventana.document.close();
 };
 
+// ==========================================
+// MODO SUPERDIOS: 1. BACKUP & RESTAURACIÓN EN LA NUBE (SNAPSHOT JSON)
+// ==========================================
+window.abrirModalBackup = function() {
+    const modal = document.getElementById('modal-backup');
+    if (modal) modal.style.display = 'flex';
+};
+
+window.descargarBackupFirestore = async function() {
+    if (window.showToast) window.showToast("Generando snapshot de respaldo de Firestore... ⏳");
+    try {
+        const collectionsToBackup = ["clientes", "pagos", "sandia_eventos", "sandia_aliados", "sandia_cupones"];
+        const backupData = {
+            metadata: {
+                version: "2.0-superdios",
+                app: "Grow Studio Admin",
+                fechaExportacion: new Date().toISOString(),
+                totalColecciones: collectionsToBackup.length
+            },
+            data: {}
+        };
+
+        for (const colName of collectionsToBackup) {
+            try {
+                const snap = await getDocs(collection(db, colName));
+                backupData.data[colName] = [];
+                snap.forEach(d => {
+                    backupData.data[colName].push({
+                        _id: d.id,
+                        ...d.data()
+                    });
+                });
+            } catch (errCol) {
+                console.warn(`Colección opcional ${colName} no encontrada o vacía:`, errCol);
+                backupData.data[colName] = [];
+            }
+        }
+
+        const jsonString = JSON.stringify(backupData, null, 2);
+        const blob = new Blob([jsonString], { type: "application/json" });
+        const url = URL.createObjectURL(blob);
+        
+        const fechaStr = new Date().toISOString().split('T')[0];
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `backup_grow_studio_${fechaStr}.json`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+
+        if (window.showToast) window.showToast("¡Respaldo descargado exitosamente! 💾", "success");
+    } catch (e) {
+        console.error("Error al exportar backup:", e);
+        if (window.showToast) window.showToast("Error al exportar respaldo: " + e.message, "error");
+        else alert("Error: " + e.message);
+    }
+};
+
+window.restaurarBackupFirestore = async function() {
+    const fileInput = document.getElementById('input-backup-file');
+    if (!fileInput || !fileInput.files || fileInput.files.length === 0) {
+        if (window.showToast) window.showToast("Por favor selecciona un archivo .json de respaldo", "warning");
+        else alert("Selecciona un archivo .json");
+        return;
+    }
+
+    const file = fileInput.files[0];
+    if (!confirm(`⚠️ ATENCIÓN: Estás a punto de restaurar datos a Firebase desde "${file.name}".\n\n¿Deseas continuar?`)) {
+        return;
+    }
+
+    if (window.showToast) window.showToast("Leyendo y restaurando datos hacia Firebase... ⏳");
+
+    try {
+        const reader = new FileReader();
+        reader.onload = async (event) => {
+            try {
+                const parsed = JSON.parse(event.target.result);
+                if (!parsed || !parsed.data) {
+                    throw new Error("Estructura de respaldo no válida.");
+                }
+
+                let totalRestaurados = 0;
+                for (const colName in parsed.data) {
+                    const docsList = parsed.data[colName];
+                    if (Array.isArray(docsList)) {
+                        for (const item of docsList) {
+                            const docId = item._id;
+                            if (docId) {
+                                const cleanItem = { ...item };
+                                delete cleanItem._id;
+                                await setDoc(doc(db, colName, docId), cleanItem, { merge: true });
+                                totalRestaurados++;
+                            }
+                        }
+                    }
+                }
+
+                if (window.showToast) window.showToast(`¡Restauración exitosa! ${totalRestaurados} documentos actualizados.`, "success");
+                else alert(`Restauración completada: ${totalRestaurados} documentos.`);
+
+                const modal = document.getElementById('modal-backup');
+                if (modal) modal.style.display = 'none';
+
+                if (typeof window.loadClients === 'function') await window.loadClients();
+                if (typeof window.renderDashboardKPIs === 'function') window.renderDashboardKPIs();
+
+            } catch (errInner) {
+                console.error("Error procesando JSON de respaldo:", errInner);
+                if (window.showToast) window.showToast("Error en el archivo JSON: " + errInner.message, "error");
+                else alert("Error en JSON: " + errInner.message);
+            }
+        };
+        reader.readAsText(file);
+    } catch (e) {
+        console.error("Error leyendo archivo:", e);
+        if (window.showToast) window.showToast("Error al leer archivo: " + e.message, "error");
+    }
+};
+
+// ==========================================
+// MODO SUPERDIOS: 2. AUDITORÍA DE ENLACES & MENÚS EN VIVO (AUTO-PING)
+// ==========================================
+window.auditarEnlacesMenus = async function() {
+    const modal = document.getElementById('modal-auditor');
+    const container = document.getElementById('auditor-results-list');
+    if (modal) modal.style.display = 'flex';
+    if (!container) return;
+
+    const clients = state.allClientsCache || [];
+    if (clients.length === 0) {
+        container.innerHTML = '<p style="color: #a1a1aa; font-size: 12px; text-align: center;">No hay clientes registrados para auditar.</p>';
+        return;
+    }
+
+    container.innerHTML = '<div style="color: #c084fc; font-size: 13px; text-align: center; padding: 20px;">Auditoría en proceso: probando conexión y menús... ⏳</div>';
+
+    const results = [];
+
+    for (const c of clients) {
+        const d = c.data || {};
+        const name = d.businessName || d.nombre || c.id;
+        let url = d.url || '';
+        if (url && !url.startsWith('http://') && !url.startsWith('https://')) {
+            url = 'https://' + url;
+        }
+
+        let statusText = 'En Línea';
+        let statusColor = '#10b981';
+        let icon = '🟢';
+        let note = 'Despliegue verificado';
+
+        if (!url) {
+            statusText = 'Sin URL';
+            statusColor = '#f59e0b';
+            icon = '⚠️';
+            note = 'No tiene link de tienda asignado';
+        } else {
+            try {
+                // Realizar ping con timeout corto en modo no-cors para verificar conectividad
+                const controller = new AbortController();
+                const timeoutId = setTimeout(() => controller.abort(), 4000);
+                
+                await fetch(url, { method: 'HEAD', mode: 'no-cors', signal: controller.signal });
+                clearTimeout(timeoutId);
+                statusText = 'Activo & Accesible';
+                statusColor = '#10b981';
+                icon = '🟢';
+                note = 'Responde correctamente vía HTTPS';
+            } catch (errFetch) {
+                statusText = 'Verificar Conexión';
+                statusColor = '#f59e0b';
+                icon = '🟡';
+                note = 'Posible bloqueo CORS o demora en responder';
+            }
+        }
+
+        const totalProductos = (d.productos && Array.isArray(d.productos)) ? d.productos.length : 0;
+
+        results.push({
+            id: c.id,
+            name,
+            url,
+            statusText,
+            statusColor,
+            icon,
+            note,
+            totalProductos
+        });
+    }
+
+    container.innerHTML = results.map(r => `
+        <div style="display: flex; justify-content: space-between; align-items: center; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.06); padding: 12px 14px; border-radius: 10px; gap: 10px;">
+            <div style="min-width: 0; flex: 1;">
+                <div style="display: flex; align-items: center; gap: 8px;">
+                    <span style="font-size: 13px; font-weight: 700; color: #fff;">${r.name}</span>
+                    <span style="font-size: 10px; background: ${r.statusColor}22; color: ${r.statusColor}; padding: 2px 7px; border-radius: 10px; font-weight: 700; border: 1px solid ${r.statusColor}44;">
+                        ${r.icon} ${r.statusText}
+                    </span>
+                </div>
+                <div style="font-size: 11px; color: #71717a; margin-top: 3px; display: flex; gap: 10px; flex-wrap: wrap;">
+                    <span>${r.totalProductos} productos</span>
+                    <span>•</span>
+                    <span>${r.note}</span>
+                </div>
+            </div>
+            <div>
+                ${r.url ? `<a href="${r.url}" target="_blank" class="btn-secondary btn-small" style="text-decoration: none; padding: 5px 10px; font-size: 11px; display: inline-flex; align-items: center; gap: 4px; border: 1px solid rgba(255,255,255,0.2);" title="Abrir tienda en pestaña">🔗 Abrir</a>` : '<span style="font-size: 11px; color: #71717a;">Sin link</span>'}
+            </div>
+        </div>
+    `).join('');
+};
+
+// ==========================================
+// MODO SUPERDIOS: 4. SIMULADOR FINANCIERO & PROYECCIÓN MRR / ARR
+// ==========================================
+window.actualizarSimuladorFinanciero = function() {
+    const rangeEl = document.getElementById('sim-clients-range');
+    const labelVal = document.getElementById('sim-clients-val');
+    const pctMensualEl = document.getElementById('sim-pct-mensual');
+    const pctAnualEl = document.getElementById('sim-pct-anual');
+
+    const resMrrUsd = document.getElementById('sim-res-mrr-usd');
+    const resMrrBs = document.getElementById('sim-res-mrr-bs');
+    const resArrUsd = document.getElementById('sim-res-arr-usd');
+    const resArrBs = document.getElementById('sim-res-arr-bs');
+    const resArpu = document.getElementById('sim-res-arpu');
+
+    if (!rangeEl || !labelVal) return;
+
+    const totalClients = parseInt(rangeEl.value, 10) || 15;
+    labelVal.innerText = totalClients.toString();
+
+    let pctMensual = parseFloat(pctMensualEl ? pctMensualEl.value : 70) || 0;
+    let pctAnual = parseFloat(pctAnualEl ? pctAnualEl.value : 30) || 0;
+
+    const totalPct = pctMensual + pctAnual;
+    if (totalPct > 0) {
+        pctMensual = (pctMensual / totalPct);
+        pctAnual = (pctAnual / totalPct);
+    } else {
+        pctMensual = 0.7;
+        pctAnual = 0.3;
+    }
+
+    const clientsMensual = totalClients * pctMensual;
+    const clientsAnual = totalClients * pctAnual;
+
+    // Plan Mensual: $15/mes
+    // Plan Anual: $50/año -> $4.17/mes
+    const mrrMensual = clientsMensual * 15;
+    const mrrAnualPonderado = clientsAnual * (50 / 12);
+    const mrrTotal = mrrMensual + mrrAnualPonderado;
+    const arrTotal = mrrTotal * 12;
+    const arpu = totalClients > 0 ? (mrrTotal / totalClients) : 0;
+
+    const cachedTasa = parseFloat(localStorage.getItem("bcv_rate_cache")) || 871.37;
+
+    if (resMrrUsd) resMrrUsd.innerText = `$${Math.round(mrrTotal).toLocaleString('es-VE')}`;
+    if (resMrrBs) resMrrBs.innerText = `≈ ${(mrrTotal * cachedTasa).toLocaleString('es-VE', { minimumFractionDigits: 0, maximumFractionDigits: 0 })} Bs/mes`;
+
+    if (resArrUsd) resArrUsd.innerText = `$${Math.round(arrTotal).toLocaleString('es-VE')}`;
+    if (resArrBs) resArrBs.innerText = `≈ ${(arrTotal * cachedTasa).toLocaleString('es-VE', { minimumFractionDigits: 0, maximumFractionDigits: 0 })} Bs/año`;
+
+    if (resArpu) resArpu.innerText = `$${arpu.toFixed(1)}`;
+};
+
 // Cargar tasa automáticamente al iniciar
 document.addEventListener('DOMContentLoaded', () => {
     window.cargarTasaBCVHeader();
+    window.actualizarSimuladorFinanciero();
 });
 
 // Robot Cobrador (Llamado en auth)

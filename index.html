@@ -197,20 +197,26 @@
                     </div>
                 </div>
 
-                <!-- BARRA DE ACCIONES RÁPIDAS GLOBALES (Opción 4) -->
-                <div style="display: flex; gap: 12px; margin-bottom: 25px; flex-wrap: wrap; align-items: center; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08); padding: 12px 18px; border-radius: 12px;">
+                <!-- BARRA DE ACCIONES RÁPIDAS GLOBALES (Opción 4 + Modo Superdios) -->
+                <div style="display: flex; gap: 10px; margin-bottom: 25px; flex-wrap: wrap; align-items: center; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08); padding: 12px 18px; border-radius: 12px;">
                     <div style="display: flex; align-items: center; gap: 8px; margin-right: auto;">
                         <span style="font-size: 14px;">⚡</span>
                         <span style="font-size: 12px; font-weight: 700; color: #fff; text-transform: uppercase; letter-spacing: 0.5px;">Acciones Rápidas:</span>
                     </div>
-                    <button type="button" onclick="window.sincronizarTodo && window.sincronizarTodo()" class="btn-secondary btn-small" style="display: flex; align-items: center; gap: 6px; border: 1px solid rgba(0, 210, 255, 0.4); color: var(--brand-cyan); font-size: 12px; padding: 7px 14px; background: rgba(0, 210, 255, 0.05);" title="Sincronizar clientes, BCV y métricas">
-                        <span>🔄</span> Sincronizar Todo
+                    <button type="button" onclick="window.sincronizarTodo && window.sincronizarTodo()" class="btn-secondary btn-small" style="display: flex; align-items: center; gap: 6px; border: 1px solid rgba(0, 210, 255, 0.4); color: var(--brand-cyan); font-size: 12px; padding: 7px 12px; background: rgba(0, 210, 255, 0.05);" title="Sincronizar clientes, BCV y métricas">
+                        <span>🔄</span> Sincronizar
                     </button>
-                    <button type="button" onclick="window.abrirAjusteMasivoDashboard && window.abrirAjusteMasivoDashboard()" class="btn-secondary btn-small" style="display: flex; align-items: center; gap: 6px; border: 1px solid rgba(255, 77, 0, 0.4); color: var(--brand-orange); font-size: 12px; padding: 7px 14px; background: rgba(255, 77, 0, 0.05);" title="Ajuste general de precios sugerido">
-                        <span>🏷️</span> Ajuste de Precios
+                    <button type="button" onclick="window.abrirAjusteMasivoDashboard && window.abrirAjusteMasivoDashboard()" class="btn-secondary btn-small" style="display: flex; align-items: center; gap: 6px; border: 1px solid rgba(255, 77, 0, 0.4); color: var(--brand-orange); font-size: 12px; padding: 7px 12px; background: rgba(255, 77, 0, 0.05);" title="Ajuste general de precios sugerido">
+                        <span>🏷️</span> Ajuste Precios
+                    </button>
+                    <button type="button" onclick="window.abrirModalBackup && window.abrirModalBackup()" class="btn-secondary btn-small" style="display: flex; align-items: center; gap: 6px; border: 1px solid rgba(16, 185, 129, 0.4); color: #10b981; font-size: 12px; padding: 7px 12px; background: rgba(16, 185, 129, 0.05);" title="Descargar o restaurar copia de seguridad de la base de datos">
+                        <span>🛡️</span> Backup & Restore
+                    </button>
+                    <button type="button" onclick="window.auditarEnlacesMenus && window.auditarEnlacesMenus()" class="btn-secondary btn-small" style="display: flex; align-items: center; gap: 6px; border: 1px solid rgba(168, 85, 247, 0.4); color: #c084fc; font-size: 12px; padding: 7px 12px; background: rgba(168, 85, 247, 0.05);" title="Comprobar estado en vivo de todas las tiendas de clientes">
+                        <span>🌐</span> Auditar Enlaces
                     </button>
                     <button type="button" onclick="window.generarReporteEjecutivoGlobalPDF && window.generarReporteEjecutivoGlobalPDF()" class="btn-primary btn-small" style="display: flex; align-items: center; gap: 6px; font-size: 12px; padding: 7px 14px; background: linear-gradient(135deg, #00d2ff, #0088cc); color: #000; font-weight: 700;" title="Descargar resumen ejecutivo de Grow Studio">
-                        <span>📥</span> Exportar Resumen PDF
+                        <span>📥</span> Exportar PDF
                     </button>
                 </div>
 
@@ -288,6 +294,67 @@
                         </div>
                     </div>
 
+                <!-- SIMULADOR FINANCIERO & PROYECCIÓN MRR / ARR (Opción 4) -->
+                <div class="stat-card" style="background: rgba(18, 18, 24, 0.85); border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 14px; padding: 22px; margin-bottom: 25px;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; margin-bottom: 18px; border-bottom: 1px solid rgba(255,255,255,0.06); padding-bottom: 12px;">
+                        <div>
+                            <h3 style="margin: 0; font-size: 15px; color: #fff; display: flex; align-items: center; gap: 8px;">
+                                <span>📈</span> Simulador Financiero & Proyección de Crecimiento
+                            </h3>
+                            <span style="font-size: 11px; color: #71717a;">Calcula ingresos futuros de Grow Studio ajustando volumen de restaurantes y planes</span>
+                        </div>
+                        <span style="font-size: 11px; background: rgba(16, 185, 129, 0.15); color: #10b981; padding: 3px 10px; border-radius: 20px; font-weight: 700; border: 1px solid rgba(16, 185, 129, 0.3);">
+                            💼 Modo Estratégico
+                        </span>
+                    </div>
+
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 20px; align-items: center;">
+                        <!-- Controles de Simulación -->
+                        <div style="display: flex; flex-direction: column; gap: 14px; background: rgba(255,255,255,0.02); padding: 16px; border-radius: 10px; border: 1px solid rgba(255,255,255,0.05);">
+                            <div>
+                                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+                                    <label style="font-size: 12px; color: #d4d4d8; font-weight: 600;">Meta de Restaurantes Activos:</label>
+                                    <span id="sim-clients-val" style="font-size: 13px; font-weight: 800; color: var(--brand-cyan);">15</span>
+                                </div>
+                                <input type="range" id="sim-clients-range" min="1" max="100" value="15" style="width: 100%; accent-color: var(--brand-cyan); cursor: pointer;" oninput="window.actualizarSimuladorFinanciero && window.actualizarSimuladorFinanciero()">
+                            </div>
+
+                            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+                                <div>
+                                    <label style="font-size: 11px; color: #a1a1aa; display: block; margin-bottom: 4px;">% Plan Mensual ($15):</label>
+                                    <input type="number" id="sim-pct-mensual" value="70" min="0" max="100" step="5" class="input-modern" style="padding: 6px 10px; font-size: 12px; width: 100%; box-sizing: border-box;" oninput="window.actualizarSimuladorFinanciero && window.actualizarSimuladorFinanciero()">
+                                </div>
+                                <div>
+                                    <label style="font-size: 11px; color: #a1a1aa; display: block; margin-bottom: 4px;">% Plan Anual ($50):</label>
+                                    <input type="number" id="sim-pct-anual" value="30" min="0" max="100" step="5" class="input-modern" style="padding: 6px 10px; font-size: 12px; width: 100%; box-sizing: border-box;" oninput="window.actualizarSimuladorFinanciero && window.actualizarSimuladorFinanciero()">
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Resultados de Proyección -->
+                        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 12px;">
+                            <!-- MRR Proyectado -->
+                            <div style="background: rgba(0, 210, 255, 0.08); border: 1px solid rgba(0, 210, 255, 0.3); border-radius: 10px; padding: 14px; text-align: center;">
+                                <span style="font-size: 10px; text-transform: uppercase; color: #a1a1aa; letter-spacing: 0.5px; font-weight: 700;">MRR Proyectado</span>
+                                <h3 id="sim-res-mrr-usd" style="margin: 6px 0 2px 0; font-size: 24px; color: var(--brand-cyan); font-weight: 800;">$0</h3>
+                                <span id="sim-res-mrr-bs" style="font-size: 10px; color: #71717a;">≈ 0 Bs/mes</span>
+                            </div>
+
+                            <!-- ARR Anual Proyectado -->
+                            <div style="background: rgba(16, 185, 129, 0.08); border: 1px solid rgba(16, 185, 129, 0.3); border-radius: 10px; padding: 14px; text-align: center;">
+                                <span style="font-size: 10px; text-transform: uppercase; color: #a1a1aa; letter-spacing: 0.5px; font-weight: 700;">ARR Anual (Run-Rate)</span>
+                                <h3 id="sim-res-arr-usd" style="margin: 6px 0 2px 0; font-size: 24px; color: #10b981; font-weight: 800;">$0</h3>
+                                <span id="sim-res-arr-bs" style="font-size: 10px; color: #71717a;">≈ 0 Bs/año</span>
+                            </div>
+
+                            <!-- Ticket Promedio por Cliente (ARPU) -->
+                            <div style="background: rgba(255, 77, 0, 0.08); border: 1px solid rgba(255, 77, 0, 0.3); border-radius: 10px; padding: 14px; text-align: center;">
+                                <span style="font-size: 10px; text-transform: uppercase; color: #a1a1aa; letter-spacing: 0.5px; font-weight: 700;">Ticket Promedio</span>
+                                <h3 id="sim-res-arpu" style="margin: 6px 0 2px 0; font-size: 24px; color: var(--brand-orange); font-weight: 800;">$11.8</h3>
+                                <span style="font-size: 10px; color: #71717a;">Ingreso medio/cliente</span>
+                            </div>
+                        </div>
+                    </div>
                 </div>
 
                 <!-- ACCESO RÁPIDO Y BIENVENIDA -->
@@ -1019,6 +1086,78 @@
                         Aplicar Ajuste
                     </button>
                 </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL DE BACKUP & RESTAURACIÓN EN LA NUBE (Opción 1) -->
+    <div id="modal-backup" style="display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.8); z-index: 2500; align-items: center; justify-content: center; backdrop-filter: blur(8px);">
+        <div style="background: var(--bg-card); border: 1px solid var(--border); border-radius: 14px; width: 92%; max-width: 520px; padding: 25px; box-shadow: 0 20px 50px rgba(0,0,0,0.8);">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                <h3 style="margin: 0; font-size: 1.15rem; color: #fff; display: flex; align-items: center; gap: 8px;">
+                    <span>🛡️</span> Centro de Respaldo & Restauración
+                </h3>
+                <button type="button" onclick="document.getElementById('modal-backup').style.display='none'" style="background: none; border: none; color: #a1a1aa; font-size: 18px; cursor: pointer;">✕</button>
+            </div>
+            
+            <p style="font-size: 13px; color: #a1a1aa; margin: 0 0 18px 0; line-height: 1.4;">
+                Crea snapshots completos de Firestore en formato JSON seguro o restaura copias previas ante cualquier contingencia.
+            </p>
+
+            <!-- Sección Descargar Respaldo -->
+            <div style="background: rgba(16, 185, 129, 0.05); border: 1px solid rgba(16, 185, 129, 0.2); border-radius: 10px; padding: 15px; margin-bottom: 16px;">
+                <h4 style="margin: 0 0 6px 0; font-size: 13px; color: #10b981; display: flex; align-items: center; gap: 6px;">
+                    <span>📥</span> Generar Copia de Seguridad Inmediata
+                </h4>
+                <p style="font-size: 11px; color: #a1a1aa; margin: 0 0 12px 0;">
+                    Incluye todos los clientes, productos, promociones, visitas, finanzas y configuración general.
+                </p>
+                <button type="button" onclick="window.descargarBackupFirestore && window.descargarBackupFirestore()" class="btn-primary" style="background: #10b981; border-color: #10b981; width: 100%; font-weight: 700; padding: 10px; font-size: 13px;">
+                    ⬇️ Descargar Snapshot JSON Completo
+                </button>
+            </div>
+
+            <!-- Sección Restaurar Respaldo -->
+            <div style="background: rgba(239, 68, 68, 0.05); border: 1px solid rgba(239, 68, 68, 0.2); border-radius: 10px; padding: 15px;">
+                <h4 style="margin: 0 0 6px 0; font-size: 13px; color: #ef4444; display: flex; align-items: center; gap: 6px;">
+                    <span>⚠️</span> Restaurar desde Archivo Backup (.json)
+                </h4>
+                <p style="font-size: 11px; color: #a1a1aa; margin: 0 0 10px 0;">
+                    Selecciona un archivo JSON generado previamente por este panel para sincronizarlo hacia Firebase.
+                </p>
+                <input type="file" id="input-backup-file" accept=".json" class="input-modern" style="width: 100%; box-sizing: border-box; font-size: 11px; padding: 8px; margin-bottom: 10px;">
+                <button type="button" onclick="window.restaurarBackupFirestore && window.restaurarBackupFirestore()" class="btn-secondary" style="width: 100%; border-color: #ef4444; color: #ef4444; font-weight: 700; padding: 8px; font-size: 12px;">
+                    🔄 Restaurar a Firestore
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL AUDITORÍA DE ENLACES & MENÚS EN VIVO (Opción 2) -->
+    <div id="modal-auditor" style="display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.8); z-index: 2500; align-items: center; justify-content: center; backdrop-filter: blur(8px);">
+        <div style="background: var(--bg-card); border: 1px solid var(--border); border-radius: 14px; width: 92%; max-width: 600px; padding: 25px; box-shadow: 0 20px 50px rgba(0,0,0,0.8); max-height: 85vh; display: flex; flex-direction: column;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                <h3 style="margin: 0; font-size: 1.15rem; color: #fff; display: flex; align-items: center; gap: 8px;">
+                    <span>🌐</span> Auditoría de Menús & Enlaces en Vivo
+                </h3>
+                <button type="button" onclick="document.getElementById('modal-auditor').style.display='none'" style="background: none; border: none; color: #a1a1aa; font-size: 18px; cursor: pointer;">✕</button>
+            </div>
+            
+            <p style="font-size: 13px; color: #a1a1aa; margin: 0 0 14px 0; line-height: 1.4;">
+                Verificación en tiempo real de URLs, despliegues de Vercel y menús digitales asociados a cada restaurante.
+            </p>
+
+            <div id="auditor-results-list" style="overflow-y: auto; flex: 1; display: flex; flex-direction: column; gap: 10px; padding-right: 5px;">
+                <!-- Dinámico -->
+            </div>
+
+            <div style="display: flex; gap: 10px; margin-top: 18px; border-top: 1px solid rgba(255,255,255,0.06); padding-top: 14px;">
+                <button type="button" onclick="window.auditarEnlacesMenus && window.auditarEnlacesMenus()" class="btn-primary" style="flex: 1; padding: 10px; font-size: 13px; background: #c084fc; border-color: #c084fc; color: #000; font-weight: 700;">
+                    🔄 Re-auditar Ahora
+                </button>
+                <button type="button" onclick="document.getElementById('modal-auditor').style.display='none'" class="btn-secondary" style="padding: 10px 18px; font-size: 13px;">
+                    Cerrar
+                </button>
             </div>
         </div>
     </div>
