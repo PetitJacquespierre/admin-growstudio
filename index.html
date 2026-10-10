@@ -197,17 +197,112 @@
                     </div>
                 </div>
 
+                <!-- BARRA DE ACCIONES RÁPIDAS GLOBALES (Opción 4) -->
+                <div style="display: flex; gap: 12px; margin-bottom: 25px; flex-wrap: wrap; align-items: center; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08); padding: 12px 18px; border-radius: 12px;">
+                    <div style="display: flex; align-items: center; gap: 8px; margin-right: auto;">
+                        <span style="font-size: 14px;">⚡</span>
+                        <span style="font-size: 12px; font-weight: 700; color: #fff; text-transform: uppercase; letter-spacing: 0.5px;">Acciones Rápidas:</span>
+                    </div>
+                    <button type="button" onclick="window.sincronizarTodo && window.sincronizarTodo()" class="btn-secondary btn-small" style="display: flex; align-items: center; gap: 6px; border: 1px solid rgba(0, 210, 255, 0.4); color: var(--brand-cyan); font-size: 12px; padding: 7px 14px; background: rgba(0, 210, 255, 0.05);" title="Sincronizar clientes, BCV y métricas">
+                        <span>🔄</span> Sincronizar Todo
+                    </button>
+                    <button type="button" onclick="window.abrirAjusteMasivoDashboard && window.abrirAjusteMasivoDashboard()" class="btn-secondary btn-small" style="display: flex; align-items: center; gap: 6px; border: 1px solid rgba(255, 77, 0, 0.4); color: var(--brand-orange); font-size: 12px; padding: 7px 14px; background: rgba(255, 77, 0, 0.05);" title="Ajuste general de precios sugerido">
+                        <span>🏷️</span> Ajuste de Precios
+                    </button>
+                    <button type="button" onclick="window.generarReporteEjecutivoGlobalPDF && window.generarReporteEjecutivoGlobalPDF()" class="btn-primary btn-small" style="display: flex; align-items: center; gap: 6px; font-size: 12px; padding: 7px 14px; background: linear-gradient(135deg, #00d2ff, #0088cc); color: #000; font-weight: 700;" title="Descargar resumen ejecutivo de Grow Studio">
+                        <span>📥</span> Exportar Resumen PDF
+                    </button>
+                </div>
+
+                <!-- SECCIÓN DASHBOARD INTERACTIVO: GRÁFICO (Opción 2) + SALUD & ALERTAS (Opción 3) -->
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(360px, 1fr)); gap: 20px; margin-bottom: 30px;">
+                    
+                    <!-- COLUMNA IZQUIERDA: GRÁFICO VISUAL DE RENDIMIENTO Y TRÁFICO (Opción 2) -->
+                    <div class="stat-card" style="background: rgba(18, 18, 24, 0.85); border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 14px; padding: 20px; display: flex; flex-direction: column;">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; border-bottom: 1px solid rgba(255,255,255,0.06); padding-bottom: 10px;">
+                            <div>
+                                <h3 style="margin: 0; font-size: 14px; color: #fff; display: flex; align-items: center; gap: 8px;">
+                                    <span>📊</span> Tráfico de Menús por Restaurante
+                                </h3>
+                                <span style="font-size: 11px; color: #71717a;">Visitas activas registradas en cada menú</span>
+                            </div>
+                            <span id="chart-total-label" style="font-size: 11px; background: rgba(0, 210, 255, 0.15); color: var(--brand-cyan); padding: 3px 8px; border-radius: 6px; font-weight: 700;">En Vivo</span>
+                        </div>
+                        <div style="position: relative; flex: 1; min-height: 240px; display: flex; align-items: center; justify-content: center;">
+                            <canvas id="traffic-chart" style="max-height: 260px; width: 100%;"></canvas>
+                        </div>
+                    </div>
+
+                    <!-- COLUMNA DERECHA: MONITOR DE SALUD & ALERTAS DE COBRO (Opción 3) -->
+                    <div style="display: flex; flex-direction: column; gap: 18px;">
+                        
+                        <!-- MONITOR DE SALUD DEL SERVICIO (Semáforo en vivo) -->
+                        <div class="stat-card" style="background: rgba(18, 18, 24, 0.85); border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 14px; padding: 18px;">
+                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+                                <h3 style="margin: 0; font-size: 13px; color: #fff; display: flex; align-items: center; gap: 6px;">
+                                    <span>🚦</span> Estado del Sistema & Servicios
+                                </h3>
+                                <span style="font-size: 10px; color: #10b981; font-weight: 700; text-transform: uppercase;">100% Operativo</span>
+                            </div>
+                            <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px;">
+                                <!-- Firebase Firestore -->
+                                <div style="background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.06); border-radius: 8px; padding: 10px; text-align: center;">
+                                    <div style="display: flex; align-items: center; justify-content: center; gap: 6px; margin-bottom: 4px;">
+                                        <span id="health-dot-firebase" style="width: 8px; height: 8px; border-radius: 50%; background: #10b981; box-shadow: 0 0 6px #10b981; display: inline-block;"></span>
+                                        <span style="font-size: 11px; font-weight: 700; color: #e4e4e7;">Firebase</span>
+                                    </div>
+                                    <span style="font-size: 10px; color: #71717a;">Base de Datos</span>
+                                </div>
+                                <!-- API BCV -->
+                                <div style="background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.06); border-radius: 8px; padding: 10px; text-align: center;">
+                                    <div style="display: flex; align-items: center; justify-content: center; gap: 6px; margin-bottom: 4px;">
+                                        <span id="health-dot-bcv" style="width: 8px; height: 8px; border-radius: 50%; background: #10b981; box-shadow: 0 0 6px #10b981; display: inline-block;"></span>
+                                        <span style="font-size: 11px; font-weight: 700; color: #e4e4e7;">API BCV</span>
+                                    </div>
+                                    <span style="font-size: 10px; color: #71717a;">Tasa en Vivo</span>
+                                </div>
+                                <!-- Vercel Edge CDN -->
+                                <div style="background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.06); border-radius: 8px; padding: 10px; text-align: center;">
+                                    <div style="display: flex; align-items: center; justify-content: center; gap: 6px; margin-bottom: 4px;">
+                                        <span id="health-dot-vercel" style="width: 8px; height: 8px; border-radius: 50%; background: #10b981; box-shadow: 0 0 6px #10b981; display: inline-block;"></span>
+                                        <span style="font-size: 11px; font-weight: 700; color: #e4e4e7;">Vercel</span>
+                                    </div>
+                                    <span style="font-size: 10px; color: #71717a;">Hosting Menús</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- LISTA DE ALERTAS RÁPIDAS DE COBRO / VENCIMIENTO CON BOTÓN WHATSAPP DIRECTO -->
+                        <div class="stat-card" style="background: rgba(18, 18, 24, 0.85); border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 14px; padding: 18px; flex: 1;">
+                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; border-bottom: 1px solid rgba(255,255,255,0.06); padding-bottom: 8px;">
+                                <h3 style="margin: 0; font-size: 13px; color: #fff; display: flex; align-items: center; gap: 6px;">
+                                    <span>🔔</span> Alertas de Cobranza & Vencimiento
+                                </h3>
+                                <span id="alerts-count-badge" style="font-size: 10px; background: rgba(239, 68, 68, 0.15); color: #ef4444; padding: 2px 7px; border-radius: 10px; font-weight: 700;">0 pendientes</span>
+                            </div>
+                            <div id="urgent-alerts-list" style="display: flex; flex-direction: column; gap: 8px; max-height: 200px; overflow-y: auto;">
+                                <div style="text-align: center; color: #71717a; font-size: 12px; padding: 15px;">
+                                    Analizando estados de clientes... ⏳
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+
                 <!-- ACCESO RÁPIDO Y BIENVENIDA -->
-                <div style="background: rgba(255,255,255,0.02); border: 1px dashed rgba(255,255,255,0.12); border-radius: 16px; padding: 35px 25px; text-align: center; margin-top: auto; margin-bottom: auto;">
-                    <img src="img/growisotipo.png" alt="Grow Studio SaaS" style="width: 130px; margin-bottom: 15px; animation: floatOrb 6s infinite alternate;">
-                    <h3 style="font-size: 1.3rem; margin: 0 0 10px 0; color: #fff;">Centro de Control Grow Studio</h3>
-                    <p style="font-size: 13px; color: #a1a1aa; max-width: 580px; margin: 0 auto 20px auto; line-height: 1.5;">
-                        Selecciona cualquier cliente en la barra lateral para editar productos, precios, banners y ajustes. O usa las pestañas de cobranza para revisar cuentas por vencer.
-                    </p>
-                    <div style="display: flex; gap: 12px; justify-content: center; flex-wrap: wrap;">
-                        <button type="button" onclick="document.getElementById('btn-new-client').click()" class="btn-primary btn-small" style="padding: 8px 18px; font-size: 12px;">+ Nuevo Cliente SaaS</button>
-                        <button type="button" onclick="document.getElementById('btn-view-payments').click()" class="btn-secondary btn-small" style="padding: 8px 18px; font-size: 12px; border: 1px solid rgba(255,255,255,0.2);">💰 Ver Pagos Recibidos</button>
-                        <button type="button" onclick="window.openSandiaScreen && window.openSandiaScreen()" class="btn-secondary btn-small" style="padding: 8px 18px; font-size: 12px; border: 1px solid rgba(230, 32, 53, 0.4); color: #ff4d61;">🍉 Sandía Production</button>
+                <div style="background: rgba(255,255,255,0.02); border: 1px dashed rgba(255,255,255,0.12); border-radius: 16px; padding: 25px; text-align: center; margin-top: auto;">
+                    <div style="display: flex; align-items: center; justify-content: center; gap: 15px; flex-wrap: wrap;">
+                        <img src="img/growisotipo.png" alt="Grow Studio SaaS" style="width: 48px; animation: floatOrb 6s infinite alternate;">
+                        <div style="text-align: left;">
+                            <h4 style="margin: 0; color: #fff; font-size: 14px;">Centro de Control Grow Studio</h4>
+                            <p style="margin: 2px 0 0 0; font-size: 12px; color: #a1a1aa;">Gestiona productos, listas de precios y banners seleccionando un cliente del menú lateral.</p>
+                        </div>
+                        <div style="display: flex; gap: 10px; margin-left: auto; flex-wrap: wrap;">
+                            <button type="button" onclick="document.getElementById('btn-new-client').click()" class="btn-primary btn-small" style="padding: 7px 14px; font-size: 12px;">+ Nuevo Cliente</button>
+                            <button type="button" onclick="document.getElementById('btn-view-payments').click()" class="btn-secondary btn-small" style="padding: 7px 14px; font-size: 12px; border: 1px solid rgba(255,255,255,0.2);">💰 Pagos</button>
+                            <button type="button" onclick="window.openSandiaScreen && window.openSandiaScreen()" class="btn-secondary btn-small" style="padding: 7px 14px; font-size: 12px; border: 1px solid rgba(230, 32, 53, 0.4); color: #ff4d61;">🍉 Sandía</button>
+                        </div>
                     </div>
                 </div>
             </section>
@@ -933,6 +1028,7 @@
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.2/dist/chart.umd.min.js"></script>
     <script type="module" src="js/modules/firebase-init.js"></script>
     <script type="module" src="js/modules/state.js"></script>
     <script type="module" src="js/modules/auth.js"></script>

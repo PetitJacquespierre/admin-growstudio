@@ -147,6 +147,454 @@ window.renderDashboardKPIs = function(tasaParam) {
     if (totalDebtEl) totalDebtEl.innerText = `$${totalDebt.toLocaleString('es-VE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
     if (debtBsEl) debtBsEl.innerText = `≈ ${(totalDebt * tasa).toLocaleString('es-VE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} Bs`;
     if (debtorsBadgeEl) debtorsBadgeEl.innerText = `${debtorClientsCount} con deuda`;
+
+    // Renderizar Gráfico de Rendimiento (Opción 2)
+    renderDashboardChart(clients);
+
+    // Renderizar Monitor de Salud y Alertas Rápidas de Cobro (Opción 3)
+    renderServiceHealthAndAlerts(clients, tasa);
+};
+
+// Variable global para la instancia del gráfico Chart.js
+let dashboardChartInstance = null;
+
+// RENDERIZAR GRÁFICO VISUAL DE RENDIMIENTO Y TRÁFICO (Opción 2)
+function renderDashboardChart(clients) {
+    const canvas = document.getElementById('traffic-chart');
+    if (!canvas || typeof Chart === 'undefined') return;
+
+    // Extraer restaurantes y sus visitas ordenados por visitas descendente
+    const chartData = (clients || [])
+        .map(c => ({
+            name: c.data.businessName || c.data.nombre || c.id,
+            visitas: parseInt(c.data.visitas || 0, 10),
+            estado: c.data.estado || 'ACTIVO'
+        }))
+        .sort((a, b) => b.visitas - a.visitas)
+        .slice(0, 8); // Top 8 para legibilidad en pantalla
+
+    const labels = chartData.map(d => d.name.length > 14 ? d.name.substring(0, 13) + '…' : d.name);
+    const dataValues = chartData.map(d => d.visitas);
+
+    const totalViews = dataValues.reduce((sum, v) => sum + v, 0);
+    const chartTotalLabel = document.getElementById('chart-total-label');
+    if (chartTotalLabel) {
+        chartTotalLabel.innerText = `${totalViews.toLocaleString('es-VE')} visitas`;
+    }
+
+    // Si ya existe instancia previa, destruirla para evitar parpadeos
+    if (dashboardChartInstance) {
+        dashboardChartInstance.destroy();
+        dashboardChartInstance = null;
+    }
+
+    const ctx = canvas.getContext('2d');
+    
+    // Crear gradiente estilizado para las barras
+    const gradient = ctx.createLinearGradient(0, 0, 0, 240);
+    gradient.addColorStop(0, '#00d2ff');
+    gradient.addColorStop(1, 'rgba(0, 210, 255, 0.15)');
+
+    const borderColors = chartData.map((d, i) => i === 0 ? '#ff4d00' : '#00d2ff');
+    const bgColors = chartData.map((d, i) => {
+        if (i === 0) {
+            const gLead = ctx.createLinearGradient(0, 0, 0, 240);
+            gLead.addColorStop(0, '#ff4d00');
+            gLead.addColorStop(1, 'rgba(255, 77, 0, 0.2)');
+            return gLead;
+        }
+        return gradient;
+    });
+
+    dashboardChartInstance = new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels: labels,
+            datasets: [{
+                label: 'Visitas Acumuladas',
+                data: dataValues,
+                backgroundColor: bgColors,
+                borderColor: borderColors,
+                borderWidth: 1.5,
+                borderRadius: 6,
+                maxBarThickness: 36
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            animation: { duration: 600 },
+            plugins: {
+                legend: { display: false },
+                tooltip: {
+                    backgroundColor: 'rgba(18, 18, 24, 0.95)',
+                    titleColor: '#00d2ff',
+                    bodyColor: '#fff',
+                    borderColor: 'rgba(255, 255, 255, 0.1)',
+                    borderWidth: 1,
+                    padding: 10,
+                    callbacks: {
+                        label: (ctx) => ` ${ctx.parsed.y.toLocaleString('es-VE')} visitas al menú`
+                    }
+                }
+            },
+            scales: {
+                x: {
+                    grid: { display: false },
+                    ticks: {
+                        color: '#a1a1aa',
+                        font: { size: 11 }
+                    }
+                },
+                y: {
+                    beginAtZero: true,
+                    grid: {
+                        color: 'rgba(255, 255, 255, 0.05)'
+                    },
+                    ticks: {
+                        color: '#71717a',
+                        font: { size: 10 },
+                        precision: 0
+                    }
+                }
+            }
+        }
+    });
+}
+
+// MONITOR DE SALUD DEL SERVICIO & ALERTAS DE COBRO INMEDIATO (Opción 3)
+function renderServiceHealthAndAlerts(clients, tasa) {
+    // 1. Semáforo de Servicios
+    const dotFirebase = document.getElementById('health-dot-firebase');
+    const dotBcv = document.getElementById('health-dot-bcv');
+    const dotVercel = document.getElementById('health-dot-vercel');
+
+    if (dotFirebase) {
+        dotFirebase.style.background = '#10b981';
+        dotFirebase.style.boxShadow = '0 0 8px #10b981';
+    }
+    if (dotVercel) {
+        dotVercel.style.background = '#10b981';
+        dotVercel.style.boxShadow = '0 0 8px #10b981';
+    }
+    if (dotBcv) {
+        const cachedTime = localStorage.getItem("bcv_rate_timestamp");
+        if (cachedTime) {
+            dotBcv.style.background = '#10b981';
+            dotBcv.style.boxShadow = '0 0 8px #10b981';
+        } else {
+            dotBcv.style.background = '#f59e0b';
+            dotBcv.style.boxShadow = '0 0 8px #f59e0b';
+        }
+    }
+
+    // 2. Alertas Rápidas de Cobranza (Próximos a vencer en <= 7 días o morosos con deuda)
+    const alertsContainer = document.getElementById('urgent-alerts-list');
+    const badgeEl = document.getElementById('alerts-count-badge');
+    if (!alertsContainer) return;
+
+    const hoy = new Date();
+    const urgentClients = [];
+
+    (clients || []).forEach(c => {
+        const data = c.data || {};
+        let diffDays = null;
+        let esVencido = false;
+        let esProximo = false;
+
+        if (data.fechaVencimiento) {
+            const fv = new Date(data.fechaVencimiento + 'T00:00:00');
+            diffDays = Math.ceil((fv - hoy) / (1000 * 60 * 60 * 24));
+            if (diffDays < 0) esVencido = true;
+            else if (diffDays <= 7) esProximo = true;
+        }
+
+        const tieneDeuda = parseFloat(data.deuda || 0) > 0;
+        const esMoroso = (data.estado === 'MOROSO' || data.estado === 'SUSPENDIDO');
+
+        if (esVencido || esProximo || tieneDeuda || esMoroso) {
+            urgentClients.push({
+                id: c.id,
+                name: data.businessName || data.nombre || c.id,
+                whatsapp: data.whatsapp || '',
+                plan: data.plan || 'MENSUAL',
+                deuda: parseFloat(data.deuda || 0),
+                fechaVencimiento: data.fechaVencimiento || '',
+                diffDays: diffDays,
+                esVencido: esVencido,
+                esProximo: esProximo
+            });
+        }
+    });
+
+    // Ordenar: primero los más atrasados / menor cantidad de días
+    urgentClients.sort((a, b) => {
+        const dA = a.diffDays !== null ? a.diffDays : 999;
+        const dB = b.diffDays !== null ? b.diffDays : 999;
+        return dA - dB;
+    });
+
+    if (badgeEl) {
+        badgeEl.innerText = `${urgentClients.length} ${urgentClients.length === 1 ? 'pendiente' : 'pendientes'}`;
+        if (urgentClients.length === 0) {
+            badgeEl.style.background = 'rgba(16, 185, 129, 0.15)';
+            badgeEl.style.color = '#10b981';
+            badgeEl.innerText = 'Todo al día';
+        } else {
+            badgeEl.style.background = 'rgba(239, 68, 68, 0.15)';
+            badgeEl.style.color = '#ef4444';
+        }
+    }
+
+    if (urgentClients.length === 0) {
+        alertsContainer.innerHTML = `
+            <div style="text-align: center; color: #10b981; font-size: 12px; padding: 18px; background: rgba(16,185,129,0.05); border-radius: 8px; border: 1px dashed rgba(16,185,129,0.2);">
+                🎉 ¡Excelente! No hay cuentas vencidas ni por vencer en los próximos 7 días.
+            </div>
+        `;
+        return;
+    }
+
+    alertsContainer.innerHTML = urgentClients.map(c => {
+        let tagHtml = '';
+        if (c.esVencido) {
+            tagHtml = `<span style="font-size: 10px; background: rgba(239, 68, 68, 0.2); color: #ef4444; padding: 2px 6px; border-radius: 4px; font-weight: 700;">Vencido hace ${Math.abs(c.diffDays)}d</span>`;
+        } else if (c.diffDays === 0) {
+            tagHtml = `<span style="font-size: 10px; background: rgba(245, 158, 11, 0.2); color: #f59e0b; padding: 2px 6px; border-radius: 4px; font-weight: 700;">¡Vence Hoy!</span>`;
+        } else if (c.esProximo) {
+            tagHtml = `<span style="font-size: 10px; background: rgba(245, 158, 11, 0.15); color: #f59e0b; padding: 2px 6px; border-radius: 4px; font-weight: 600;">Vence en ${c.diffDays}d</span>`;
+        } else {
+            tagHtml = `<span style="font-size: 10px; background: rgba(239, 68, 68, 0.15); color: #ef4444; padding: 2px 6px; border-radius: 4px; font-weight: 600;">Deuda pendiente</span>`;
+        }
+
+        const montoPagar = c.deuda > 0 ? c.deuda : (c.plan === 'ANUAL' ? 50 : 15);
+
+        return `
+            <div style="display: flex; align-items: center; justify-content: space-between; gap: 8px; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.06); padding: 8px 12px; border-radius: 8px; transition: background 0.2s;">
+                <div style="min-width: 0; flex: 1;">
+                    <div style="display: flex; align-items: center; gap: 6px; flex-wrap: wrap;">
+                        <span style="font-size: 12px; font-weight: 700; color: #fff; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 150px;">${c.name}</span>
+                        ${tagHtml}
+                    </div>
+                    <div style="font-size: 11px; color: #71717a; margin-top: 2px;">
+                        ${c.plan} • <strong style="color: ${c.deuda > 0 ? '#ef4444' : '#e4e4e7'}">$${montoPagar}</strong>
+                    </div>
+                </div>
+                <div style="display: flex; gap: 6px; align-items: center;">
+                    <button type="button" onclick="window.cobrarClienteDesdeDashboard('${c.id}')" class="btn-primary btn-small" style="background: #25D366; border-color: #25D366; padding: 5px 10px; font-size: 11px; display: flex; align-items: center; gap: 4px; font-weight: 700;" title="Enviar recordatorio de cobro por WhatsApp">
+                        <span>📲</span> Cobrar
+                    </button>
+                    <button type="button" onclick="window.abrirClienteDesdeDashboard('${c.id}')" class="btn-secondary btn-small" style="padding: 5px 8px; font-size: 11px; border: 1px solid rgba(255,255,255,0.15);" title="Ver cliente">
+                        👁️
+                    </button>
+                </div>
+            </div>
+        `;
+    }).join('');
+}
+
+// ABRIR CLIENTE DESDE DASHBOARD
+window.abrirClienteDesdeDashboard = function(clienteId) {
+    const clients = state.allClientsCache || [];
+    const client = clients.find(c => c.id === clienteId);
+    if (!client) {
+        if (window.showToast) window.showToast("No se encontró el cliente seleccionado", "warning");
+        return;
+    }
+    const li = Array.from(document.querySelectorAll('#clients-ul li')).find(el => el.innerText.includes(client.data.businessName || client.id));
+    window.openClientManager(client.id, client.data, li || null);
+};
+
+// COBRAR DIRECTO POR WHATSAPP DESDE LA TARJETA DE ALERTA DEL DASHBOARD
+window.cobrarClienteDesdeDashboard = async function(clienteId) {
+    const clients = state.allClientsCache || [];
+    const client = clients.find(c => c.id === clienteId);
+    if (!client) return;
+
+    state.currentClientId = client.id;
+    state.currentClientData = client.data;
+
+    // Usar la función global de cobro con los datos de este cliente
+    if (typeof window.enviarCobroWhatsApp === 'function') {
+        await window.enviarCobroWhatsApp();
+    } else {
+        alert("Generador de cobro no disponible.");
+    }
+};
+
+// ACCIÓN RÁPIDA: SINCRONIZAR TODO (Opción 4)
+window.sincronizarTodo = async function() {
+    if (window.showToast) window.showToast("Sincronizando clientes, tasa BCV y métricas... 🔄");
+    try {
+        if (typeof window.cargarTasaBCVHeader === 'function') {
+            await window.cargarTasaBCVHeader(true);
+        }
+        if (typeof window.loadClients === 'function') {
+            await window.loadClients();
+        }
+        if (window.showToast) window.showToast("¡Dashboard 100% sincronizado en la nube! 🚀", "success");
+    } catch (e) {
+        console.error("Error al sincronizar todo:", e);
+        if (window.showToast) window.showToast("Error en sincronización: " + e.message, "error");
+    }
+};
+
+// ACCIÓN RÁPIDA: AJUSTE MASIVO DESDE DASHBOARD (Opción 4)
+window.abrirAjusteMasivoDashboard = function() {
+    const clients = state.allClientsCache || [];
+    if (!clients || clients.length === 0) {
+        if (window.showToast) window.showToast("No hay clientes registrados en la plataforma.", "warning");
+        return;
+    }
+
+    // Si ya hay un cliente seleccionado, abrir su modal de ajuste directamente
+    if (state.currentClientId && state.currentClientData) {
+        const btnOpen = document.getElementById('btn-open-mass-price');
+        if (btnOpen) {
+            btnOpen.click();
+            return;
+        }
+    }
+
+    // Si está en el dashboard, ofrecer abrir el primer cliente o seleccionar uno
+    const primerConProductos = clients.find(c => c.data && c.data.productos && c.data.productos.length > 0);
+    if (primerConProductos) {
+        window.abrirClienteDesdeDashboard(primerConProductos.id);
+        setTimeout(() => {
+            const btnOpen = document.getElementById('btn-open-mass-price');
+            if (btnOpen) btnOpen.click();
+        }, 300);
+    } else {
+        if (window.showToast) window.showToast("Selecciona primero un restaurante en la barra lateral para ajustar sus precios.", "info");
+    }
+};
+
+// ACCIÓN RÁPIDA: EXPORTAR RESUMEN EJECUTIVO GLOBAL A PDF (Opción 4)
+window.generarReporteEjecutivoGlobalPDF = function() {
+    const clients = state.allClientsCache || [];
+    const cachedTasa = parseFloat(localStorage.getItem("bcv_rate_cache")) || 871.37;
+    const fechaGenerado = new Date().toLocaleDateString('es-VE', { day:'2-digit', month:'long', year:'numeric' });
+
+    let activeCount = 0;
+    let totalMRR = 0;
+    let totalViews = 0;
+    let totalDebt = 0;
+
+    const rows = clients.map(c => {
+        const d = c.data || {};
+        const isActive = (d.estado === 'ACTIVO');
+        if (isActive) activeCount++;
+
+        const plan = (d.plan || 'MENSUAL').toUpperCase();
+        let planMRR = 0;
+        if (isActive) {
+            if (plan.includes('ANUAL')) planMRR = (50 / 12);
+            else if (plan.includes('MENSUAL')) planMRR = 15;
+            else if (d.mensualidad) planMRR = parseFloat(d.mensualidad) || 0;
+        }
+        totalMRR += planMRR;
+
+        const visitas = parseInt(d.visitas || 0, 10);
+        totalViews += visitas;
+
+        const deuda = parseFloat(d.deuda || 0);
+        totalDebt += deuda;
+
+        const name = d.businessName || d.nombre || c.id;
+        const statusColor = isActive ? '#10b981' : '#ef4444';
+
+        return `
+            <tr style="border-bottom: 1px solid #eee;">
+                <td style="padding: 10px; font-weight: 600; color: #1a1a2e;">${name}</td>
+                <td style="padding: 10px; text-transform: uppercase; font-size: 11px; letter-spacing: 0.5px;">${plan}</td>
+                <td style="padding: 10px; text-align: center;">
+                    <span style="background: ${statusColor}18; color: ${statusColor}; padding: 3px 8px; border-radius: 12px; font-size: 11px; font-weight: 700;">
+                        ${d.estado || 'INACTIVO'}
+                    </span>
+                </td>
+                <td style="padding: 10px; text-align: right; font-family: monospace;">${visitas.toLocaleString('es-VE')}</td>
+                <td style="padding: 10px; text-align: right; font-weight: 600; color: ${deuda > 0 ? '#ef4444' : '#10b981'}; font-family: monospace;">
+                    $${deuda.toFixed(2)}
+                </td>
+            </tr>
+        `;
+    }).join('');
+
+    const html = `<!DOCTYPE html>
+<html lang="es"><head><meta charset="UTF-8"><title>Resumen Ejecutivo SaaS – Grow Studio</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;800;900&family=Roboto+Mono:wght@500&display=swap');
+:root{--cyan:#00c6eb;--orange:#f25c27;--dark:#1a1a2e;--gray:#f5f6fa}
+body{font-family:'Montserrat',sans-serif;color:#333;margin:0;padding:40px;background:#eef2f5;display:flex;justify-content:center}
+@media print{body{background:white;padding:0}.report-container{box-shadow:none!important;max-width:100%!important}.no-print{display:none!important}}
+.report-container{background:white;width:100%;max-width:850px;margin:0 auto;padding:45px;border-top:8px solid var(--cyan);border-bottom:8px solid var(--orange);border-radius:4px;box-shadow:0 15px 35px rgba(0,0,0,.1);box-sizing:border-box}
+.header{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:30px}
+.summary-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:30px}
+.summary-card{background:var(--gray);padding:14px;border-radius:8px;text-align:center}
+.summary-card .val{font-size:22px;font-weight:800;color:var(--dark);font-family:'Roboto Mono',monospace}
+.summary-card .lbl{font-size:10px;color:#777;text-transform:uppercase;letter-spacing:0.5px;margin-top:4px}
+table{width:100%;border-collapse:collapse;margin-bottom:30px;font-size:12px}
+th{background:var(--dark);color:white;padding:10px;text-align:left;font-size:11px;text-transform:uppercase;letter-spacing:1px}
+.footer{text-align:center;margin-top:30px;font-size:12px;color:#777;border-top:1px solid #eee;padding-top:15px}
+.print-btn{position:fixed;bottom:30px;right:30px;background:var(--cyan);color:white;border:none;padding:12px 22px;font-size:14px;font-weight:600;border-radius:50px;cursor:pointer;box-shadow:0 4px 15px rgba(0,198,235,.4);z-index:100}
+</style></head><body>
+<div class="report-container">
+  <div class="header">
+    <div>
+      <h2 style="margin:0;font-weight:900;letter-spacing:1px;color:var(--dark);font-size:24px;">GROW STUDIO</h2>
+      <span style="font-size:12px;color:var(--cyan);font-weight:700;letter-spacing:2px;text-transform:uppercase;">Panel Central SaaS</span>
+    </div>
+    <div style="text-align:right;">
+      <h3 style="margin:0;font-size:18px;color:var(--dark);">Resumen Ejecutivo Global</h3>
+      <p style="margin:3px 0;font-size:12px;color:#777;">Generado: ${fechaGenerado}</p>
+      <p style="margin:2px 0;font-size:11px;color:var(--orange);font-weight:600;">Tasa BCV: ${cachedTasa.toLocaleString('es-VE', {minimumFractionDigits:2})} Bs/USD</p>
+    </div>
+  </div>
+
+  <div class="summary-grid">
+    <div class="summary-card">
+      <div class="val" style="color:#10b981;">${activeCount} / ${clients.length}</div>
+      <div class="lbl">Restaurantes Activos</div>
+    </div>
+    <div class="summary-card">
+      <div class="val" style="color:var(--cyan);">$${Math.round(totalMRR)}</div>
+      <div class="lbl">MRR Estimado (USD)</div>
+    </div>
+    <div class="summary-card">
+      <div class="val" style="color:var(--orange);">${totalViews.toLocaleString('es-VE')}</div>
+      <div class="lbl">Visitas Totales</div>
+    </div>
+    <div class="summary-card">
+      <div class="val" style="color:#ef4444;">$${totalDebt.toFixed(2)}</div>
+      <div class="lbl">Por Cobrar Total</div>
+    </div>
+  </div>
+
+  <table>
+    <thead>
+      <tr>
+        <th>Restaurante</th>
+        <th>Plan</th>
+        <th style="text-align:center;">Estado</th>
+        <th style="text-align:right;">Visitas</th>
+        <th style="text-align:right;">Deuda ($)</th>
+      </tr>
+    </thead>
+    <tbody>
+      ${rows}
+    </tbody>
+  </table>
+
+  <div class="footer">
+    <p>Reporte Oficial Consolidado · <strong>GROW STUDIO SAAS</strong></p>
+  </div>
+</div>
+<button class="print-btn no-print" onclick="window.print()">🖨️ Imprimir / Guardar PDF</button>
+</body></html>`;
+
+    const ventana = window.open('', '_blank', 'width=950,height=750');
+    ventana.document.write(html);
+    ventana.document.close();
 };
 
 // Cargar tasa automáticamente al iniciar
