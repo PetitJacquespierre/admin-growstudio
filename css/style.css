@@ -341,13 +341,17 @@ input:checked + .slider:before {
     100% { transform: translateY(-20px); }
 }
 
-/* ESTILOS PARA LA TABLA DE PAGOS */
+/* ESTILOS PARA LA TABLA DE PAGOS Y TABLAS GENERALES */
 .table-container {
     background: #111;
     border-radius: 12px;
     border: 1px solid rgba(255, 255, 255, 0.1);
-    overflow: hidden;
+    overflow-x: auto !important;
     overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    width: 100%;
+    max-width: 100%;
+    display: block;
 }
 #payments-table {
     width: 100%;

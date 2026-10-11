@@ -487,30 +487,35 @@ export function loadSandiaData() {
     });
 
     // Cupones de Cortesía (5K Horror Story / Sorteos)
+    // Cupones de Cortesía (5K Horror Story / Sorteos)
     const tableCuponesBody = document.getElementById('sandia-cupones-tbody');
-    if (unsubscribeCupones) unsubscribeCupones();
-    const qCupones = query(collection(db, "sandia_cupones_horror"));
-    unsubscribeCupones = onSnapshot(qCupones, (snapshot) => {
+    const inputSearchCupones = document.getElementById('input-search-cupones');
+    const badgeCountCupones = document.getElementById('cupones-count-badge');
+    let allCuponesCache = [];
+
+    function renderCuponesFiltrados() {
         if (!tableCuponesBody) return;
         tableCuponesBody.innerHTML = '';
 
-        if (snapshot.empty) {
-            tableCuponesBody.innerHTML = `<tr><td colspan="6" style="text-align:center; padding: 20px; color: #888;">No hay cupones registrados. Haz clic en '+ Personalizado' o '⚡ Habilitar Siguiente RUNFREE'.</td></tr>`;
+        const filterQuery = (inputSearchCupones ? inputSearchCupones.value.trim().toLowerCase() : '');
+        const filtrados = allCuponesCache.filter(c => {
+            if (!filterQuery) return true;
+            const cod = (c.id || '').toLowerCase();
+            const atletaNombre = (c.atleta && c.atleta.nombre ? c.atleta.nombre : '').toLowerCase();
+            const atletaCedula = (c.atleta && c.atleta.cedula ? c.atleta.cedula : '').toLowerCase();
+            return cod.includes(filterQuery) || atletaNombre.includes(filterQuery) || atletaCedula.includes(filterQuery);
+        });
+
+        if (badgeCountCupones) {
+            badgeCountCupones.innerText = `${filtrados.length} / ${allCuponesCache.length} cupones`;
+        }
+
+        if (filtrados.length === 0) {
+            tableCuponesBody.innerHTML = `<tr><td colspan="6" style="text-align:center; padding: 20px; color: #888;">No se encontraron cupones con ese criterio.</td></tr>`;
             return;
         }
 
-        const cupones = [];
-        snapshot.forEach(d => cupones.push({ id: d.id, ...d.data() }));
-
-        // Ordenar alfabéticamente/numéricamente
-        cupones.sort((a, b) => {
-            const numA = parseInt((a.id.match(/\d+/) || [0])[0], 10);
-            const numB = parseInt((b.id.match(/\d+/) || [0])[0], 10);
-            if (numA && numB) return numA - numB;
-            return a.id.localeCompare(b.id);
-        });
-
-        cupones.forEach(c => {
+        filtrados.forEach(c => {
             const id = c.id;
             const esReutilizable = c.tipo !== 'UN_SOLO_USO';
             const precioUSD = (c.precioUSD !== undefined) ? Number(c.precioUSD) : 0;
@@ -545,24 +550,36 @@ export function loadSandiaData() {
 
             const tr = document.createElement('tr');
             tr.innerHTML = `
-                <td><strong style="color: var(--brand-orange); font-family: monospace; font-size: 13px;">${id}</strong></td>
-                <td>${badgePrecio}</td>
-                <td>${badgeTipo}</td>
-                <td>${badge}</td>
-                <td style="font-size: 12px;">${atletasRegistradosText}</td>
-                <td style="text-align: right; white-space: nowrap;">
-                    <button class="btn-secondary btn-small btn-copiar-vip" title="Copiar enlace VIP para participantes" style="margin-right: 5px; font-size: 11px; border-color: var(--brand-cyan); color: var(--brand-cyan);">📋 Copiar Link</button>
-                    <button class="btn-secondary btn-small btn-deshabilitar-cupon" style="margin-right: 5px; font-size: 11px; color: ${estaHabilitado ? '#f39c12' : '#2ecc71'}; border-color: ${estaHabilitado ? 'rgba(243, 156, 18, 0.4)' : 'rgba(46, 204, 113, 0.4)'};">
+                <td style="padding: 10px 14px;"><strong style="color: var(--brand-orange); font-family: monospace; font-size: 13px;">${id}</strong></td>
+                <td style="padding: 10px 14px;">${badgePrecio}</td>
+                <td style="padding: 10px 14px;">${badgeTipo}</td>
+                <td style="padding: 10px 14px;">${badge}</td>
+                <td style="padding: 10px 14px; font-size: 12px;">${atletasRegistradosText}</td>
+                <td style="padding: 10px 14px; text-align: right; white-space: nowrap;">
+                    <button class="btn-secondary btn-small btn-copiar-vip" title="Copiar enlace VIP para participantes" style="margin-right: 4px; font-size: 11px; border-color: var(--brand-cyan); color: var(--brand-cyan); padding: 5px 9px;">📋 Link</button>
+                    <button class="btn-secondary btn-small btn-edit-cupon" title="Editar precio o modalidad del cupón" style="margin-right: 4px; font-size: 11px; border-color: rgba(255,255,255,0.25); padding: 5px 8px;">✏️</button>
+                    <button class="btn-secondary btn-small btn-deshabilitar-cupon" style="margin-right: 4px; font-size: 11px; color: ${estaHabilitado ? '#f39c12' : '#2ecc71'}; border-color: ${estaHabilitado ? 'rgba(243, 156, 18, 0.4)' : 'rgba(46, 204, 113, 0.4)'}; padding: 5px 9px;">
                         ${estaHabilitado ? 'Pausar' : 'Activar'}
                     </button>
-                    <button class="btn-secondary btn-small btn-del-cupon" style="color: #ef4444; border-color: rgba(239, 68, 68, 0.3); font-size: 11px;">🗑️</button>
+                    <button class="btn-secondary btn-small btn-del-cupon" style="color: #ef4444; border-color: rgba(239, 68, 68, 0.3); font-size: 11px; padding: 5px 8px;">🗑️</button>
                 </td>
             `;
 
             tr.querySelector('.btn-copiar-vip').addEventListener('click', () => {
-                navigator.clipboard.writeText(linkVIP).then(() => {
-                    alert(`¡Enlace VIP copiado!\n\n${linkVIP}`);
-                });
+                if (navigator.clipboard && navigator.clipboard.writeText) {
+                    navigator.clipboard.writeText(linkVIP).then(() => {
+                        if (window.showToast) window.showToast(`¡Enlace VIP copiado! 📋 ${linkVIP}`);
+                        else alert(`¡Enlace VIP copiado!\n\n${linkVIP}`);
+                    }).catch(() => {
+                        copiarTextoFallback(linkVIP);
+                    });
+                } else {
+                    copiarTextoFallback(linkVIP);
+                }
+            });
+
+            tr.querySelector('.btn-edit-cupon').addEventListener('click', () => {
+                abrirModalEditarCupon(c);
             });
 
             tr.querySelector('.btn-deshabilitar-cupon').addEventListener('click', async () => {
@@ -575,6 +592,84 @@ export function loadSandiaData() {
 
             tableCuponesBody.appendChild(tr);
         });
+    }
+
+    if (inputSearchCupones) {
+        inputSearchCupones.addEventListener('input', () => {
+            renderCuponesFiltrados();
+        });
+    }
+
+    if (unsubscribeCupones) unsubscribeCupones();
+    const qCupones = query(collection(db, "sandia_cupones_horror"));
+    unsubscribeCupones = onSnapshot(qCupones, (snapshot) => {
+        allCuponesCache = [];
+        snapshot.forEach(d => allCuponesCache.push({ id: d.id, ...d.data() }));
+
+        // Ordenar alfabéticamente/numéricamente
+        allCuponesCache.sort((a, b) => {
+            const numA = parseInt((a.id.match(/\d+/) || [0])[0], 10);
+            const numB = parseInt((b.id.match(/\d+/) || [0])[0], 10);
+            if (numA && numB) return numA - numB;
+            return a.id.localeCompare(b.id);
+        });
+
+        renderCuponesFiltrados();
+    });
+}
+
+function copiarTextoFallback(texto) {
+    const tempInput = document.createElement("input");
+    tempInput.value = texto;
+    document.body.appendChild(tempInput);
+    tempInput.select();
+    try {
+        document.execCommand("copy");
+        if (window.showToast) window.showToast(`¡Enlace VIP copiado! 📋`);
+        else alert(`¡Enlace VIP copiado!\n\n${texto}`);
+    } catch (e) {
+        prompt("Copia manualmente este enlace VIP:", texto);
+    }
+    document.body.removeChild(tempInput);
+}
+
+function abrirModalEditarCupon(cupon) {
+    const modal = document.getElementById('modal-editar-cupon');
+    const inputId = document.getElementById('edit-cupon-id');
+    const inputCodigo = document.getElementById('edit-cupon-codigo');
+    const inputPrecio = document.getElementById('edit-cupon-precio');
+    const selectTipo = document.getElementById('edit-cupon-tipo');
+
+    if (!modal) return;
+    if (inputId) inputId.value = cupon.id;
+    if (inputCodigo) inputCodigo.value = cupon.id;
+    if (inputPrecio) inputPrecio.value = cupon.precioUSD !== undefined ? cupon.precioUSD : 0;
+    if (selectTipo) selectTipo.value = cupon.tipo || 'REUTILIZABLE';
+
+    modal.style.display = 'flex';
+}
+
+const formEditarCupon = document.getElementById('form-editar-cupon');
+if (formEditarCupon) {
+    formEditarCupon.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const id = document.getElementById('edit-cupon-id').value;
+        const precioUSD = Math.max(0, parseFloat(document.getElementById('edit-cupon-precio').value) || 0);
+        const tipo = document.getElementById('edit-cupon-tipo').value;
+
+        try {
+            await updateDoc(doc(db, "sandia_cupones_horror", id), {
+                precioUSD: Number(precioUSD),
+                tipo: tipo,
+                fechaActualizacion: new Date().toISOString()
+            });
+            if (window.showToast) window.showToast(`Cupón ${id} actualizado ($${precioUSD} USD - ${tipo})`);
+            else alert(`Cupón ${id} actualizado.`);
+            document.getElementById('modal-editar-cupon').style.display = 'none';
+        } catch (err) {
+            console.error("Error al actualizar cupón:", err);
+            alert("Error al actualizar cupón: " + err.message);
+        }
     });
 }
 
@@ -590,7 +685,8 @@ async function habilitarCuponEnFirestore(codigo, precioUSD = 0, tipo = 'REUTILIZ
             fechaCreacion: new Date().toISOString(),
             evento: '5K Paraguaná Horror Story'
         }, { merge: true });
-        alert(`✔ Cupón ${idSanitizado} guardado y habilitado exitosamente ($${precioUSD} USD - ${tipo}).`);
+        if (window.showToast) window.showToast(`✔ Cupón ${idSanitizado} guardado y habilitado ($${precioUSD} USD - ${tipo})`);
+        else alert(`✔ Cupón ${idSanitizado} guardado y habilitado exitosamente ($${precioUSD} USD - ${tipo}).`);
     } catch (e) {
         console.error("Error al habilitar cupón:", e);
         alert("Error al habilitar cupón: " + e.message);
