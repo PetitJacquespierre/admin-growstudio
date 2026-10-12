@@ -23,7 +23,8 @@ const DEFAULT_LEADS = [
         service: 'Menú Digital QR & Delivery',
         text: 'Hola, necesito confeccionar una página web o menú digital para una hamburguesería con pedidos directos al WhatsApp. Presupuesto disponible para empezar de una.',
         urgency: 'Inmediata',
-        status: 'NUEVO'
+        status: 'NUEVO',
+        directUrl: 'https://reddit.com/r/forhire/search/?q=website&sort=new'
     },
     {
         id: 'lead-102',
@@ -38,7 +39,8 @@ const DEFAULT_LEADS = [
         service: 'Landing Page de Eventos / Atletas',
         text: 'I need website urgently 300$ for a sports event agency. Must include countdown, registration form and athlete list. Looking for professional agency.',
         urgency: 'Inmediata (24-48h)',
-        status: 'NUEVO'
+        status: 'NUEVO',
+        directUrl: 'https://www.upwork.com/nx/search/jobs/?q=landing%20page&sort=recency'
     },
     {
         id: 'lead-103',
@@ -53,7 +55,8 @@ const DEFAULT_LEADS = [
         service: 'SaaS Dashboard / App Web',
         text: 'Preciso de um desenvolvedor para criar um painel administrativo moderno para franquias com visual escuro premium e métricas em tempo real.',
         urgency: 'Media (Este mes)',
-        status: 'NUEVO'
+        status: 'NUEVO',
+        directUrl: 'https://twitter.com/search?q=%22preciso%20desenvolvedor%22%20web&f=live'
     },
     {
         id: 'lead-104',
@@ -68,7 +71,8 @@ const DEFAULT_LEADS = [
         service: 'Rediseño Web Rápido',
         text: 'Any modern web agency who can rebuild my boutique landing page with modern animations, video hero and clean mobile view? Please DM portfolios.',
         urgency: 'Esta semana',
-        status: 'NUEVO'
+        status: 'NUEVO',
+        directUrl: 'https://reddit.com/r/freelance_forhire/search/?q=web&sort=new'
     },
     {
         id: 'lead-105',
@@ -83,7 +87,8 @@ const DEFAULT_LEADS = [
         service: 'Catálogo Interactivo de Ventas',
         text: 'Buenas tardes, busco quién me desarrolle una página catálogo para tienda de perfumes y ropa con botón directo a WhatsApp. Pago al contado.',
         urgency: 'Alta',
-        status: 'NUEVO'
+        status: 'NUEVO',
+        directUrl: 'https://wa.me/?text=Hola%20Carlos!%20Te%20contacto%20desde%20Grow%20Studio'
     }
 ];
 
@@ -282,6 +287,9 @@ export class GrowStudioHunterEngine {
                             <button type="button" class="btn-primary btn-small" onclick="window.growHunter.abrirModalPitch('${lead.id}')" style="background: linear-gradient(135deg, var(--brand-cyan), #0077b6); border: none; color: #000; font-weight: 700; font-size: 11px; padding: 6px 10px; display: flex; align-items: center; gap: 4px;" title="Generar propuesta personalizada en su idioma con IA">
                                 <span>⚡</span> Pitch IA
                             </button>
+                            <a href="${lead.directUrl || '#'}" target="_blank" rel="noopener noreferrer" class="btn-secondary btn-small" style="padding: 6px 8px; font-size: 11px; display: inline-flex; align-items: center; text-decoration: none; border-color: rgba(0, 210, 255, 0.4); color: var(--brand-cyan);" title="Abrir publicación o chat directo del cliente">
+                                <span>🔗</span> Ir
+                            </a>
                             <button type="button" class="btn-secondary btn-small" onclick="window.growHunter.toggleStatusLead('${lead.id}')" style="padding: 6px 8px; font-size: 11px;" title="Marcar como contactado">
                                 ${lead.status === 'CONTACTADO' ? '↺' : '✓'}
                             </button>
@@ -413,6 +421,11 @@ export class GrowStudioHunterEngine {
         document.getElementById('pitch-lead-author').textContent = `${lead.author} (${lead.langLabel})`;
         document.getElementById('pitch-lead-service').textContent = `${lead.service} • Presupuesto: ${lead.budget}`;
         document.getElementById('pitch-textarea').value = pitchText;
+
+        const btnDirect = document.getElementById('btn-pitch-direct-channel');
+        if (btnDirect) {
+            btnDirect.href = lead.directUrl || '#';
+        }
 
         modal.style.display = 'flex';
     }
