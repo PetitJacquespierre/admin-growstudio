@@ -403,57 +403,92 @@ input:checked + .slider:before {
 @media (max-width: 768px) {
     #dashboard-screen {
         flex-direction: column !important;
-        height: auto !important;
-        min-height: 100vh;
+        height: 100vh !important;
+        position: relative;
+        overflow: hidden;
     }
-    
+
+    #btn-toggle-sidebar-mobile {
+        display: inline-flex !important;
+        align-items: center;
+        gap: 6px;
+    }
+
+    #btn-close-sidebar-mobile {
+        display: block !important;
+    }
+
+    /* Sidebar móvil como cajón deslizante off-canvas */
     .sidebar {
-        width: 100%;
-        max-height: none; /* Que ocupe lo que necesite, sin cortar */
-        overflow-y: visible; 
-        border-right: none;
-        border-bottom: 2px solid var(--brand-orange); /* Separador claro */
-        padding: 15px;
+        position: fixed !important;
+        top: 0;
+        left: -320px;
+        width: 290px !important;
+        height: 100% !important;
+        max-height: 100vh !important;
+        z-index: 2000 !important;
+        background-color: rgba(14, 14, 18, 0.98) !important;
+        border-right: 1px solid var(--border) !important;
+        border-bottom: none !important;
+        box-shadow: 10px 0 30px rgba(0,0,0,0.8);
+        transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+        overflow-y: auto !important;
+        padding: 20px 15px !important;
     }
-    
+
+    .sidebar.open {
+        transform: translateX(320px);
+    }
+
     .sidebar-logo {
-        margin-bottom: 10px;
+        margin-bottom: 15px;
         display: flex;
-        justify-content: center;
+        justify-content: space-between;
+        align-items: center;
     }
-    
+
     .sidebar-logo img {
         width: 140px; 
         height: auto;
     }
-    
+
+    /* Contenido principal ocupa la pantalla completa de inmediato (El Dashboard sale de primero) */
     .main-content {
-        width: 100%;
-        flex: none; /* Evitar comportamientos extraños de flex en móvil */
-        overflow-y: visible; /* Que la página entera haga scroll, no solo este div */
-        padding-bottom: 50px;
+        width: 100% !important;
+        height: 100vh !important;
+        flex: 1 !important;
+        overflow-y: auto !important;
+        -webkit-overflow-scrolling: touch;
+        padding-bottom: 60px;
     }
-    
+
+    #global-top-header {
+        position: sticky;
+        top: 0;
+        z-index: 1000;
+        padding: 10px 15px !important;
+    }
+
     .top-bar {
         padding: 15px;
         flex-direction: column;
         align-items: flex-start !important;
         gap: 10px;
     }
-    
+
     .top-bar h2 {
         font-size: 20px;
     }
-    
+
     .client-manager {
         padding: 15px;
     }
-    
+
     .stats-grid {
         grid-template-columns: 1fr; /* Una sola columna en móvil */
         gap: 15px;
     }
-    
+
     .products-section {
         padding: 15px;
         width: 100%;
@@ -463,25 +498,25 @@ input:checked + .slider:before {
     .table-container {
         width: 100%;
         max-width: 100vw;
-        overflow-x: auto; /* Permite hacer scroll horizontal en la tabla de productos */
-        -webkit-overflow-scrolling: touch; /* Scroll suave en iOS */
+        overflow-x: auto !important;
+        -webkit-overflow-scrolling: touch;
     }
-    
+
     table {
-        min-width: 800px; /* Obliga a la tabla a mantener su ancho real y generar scroll */
+        min-width: 720px;
     }
 
     th, td {
-        white-space: nowrap; /* Evita que el texto de la tabla se rompa feo en móvil */
+        white-space: nowrap;
     }
-    
+
     #welcome-screen {
-        padding: 20px !important;
+        padding: 16px !important;
     }
     #welcome-screen img {
-        width: 150px !important;
+        width: 120px !important;
     }
     #welcome-screen h1 {
-        font-size: 1.8rem !important;
+        font-size: 1.5rem !important;
     }
 }

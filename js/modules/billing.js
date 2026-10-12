@@ -136,6 +136,10 @@ if(btnViewPayments) btnViewPayments.addEventListener('click', () => {
     document.querySelectorAll('.menu-btn').forEach(btn => btn.classList.remove('active'));
     btnViewPayments.classList.add('active');
     
+    if (typeof window.cerrarSidebarMobile === 'function') {
+        window.cerrarSidebarMobile();
+    }
+    
     cargarPagos();
 });
 

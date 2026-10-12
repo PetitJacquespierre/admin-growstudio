@@ -27,10 +27,16 @@ Archivo de contexto local y memoria viva para el Dashboard Central de Gestión d
 ## 📌 4. ESTADO ACTUAL Y TAREAS PENDIENTES
 - [x] Maquetación base del dashboard y widgets principales.
 - [x] Módulo visual de estadísticas y métricas generales.
-- [ ] Conexión y sincronización automática de catálogos de clientes.
-- [ ] Panel para modificar tasa oficial del día de forma centralizada.
+- [x] Conexión y sincronización automática de catálogos de clientes.
+- [x] Panel para modificar tasa oficial del día de forma centralizada.
+- [x] **Módulo Grow Hunter & Radar Global (Inteligencia de Leads):**
+  * Radar de clientes en vivo con filtros de temperatura (Fuego, Hot, Nuevos, Contactados).
+  * Monitoreo en tiempo real de tráfico mundial por países.
+  * Generador de propuestas personalizadas (Pitch IA) en 16 idiomas con 1 clic.
+  * Exportador de lotes de leads en formato JSON listo para empaquetar y comercializar.
 
 ---
 
 ## 📝 5. BITÁCORA Y DECISIONES TÉCNICAS
 * **2026-09-30:** Creación de memoria local modular para Grow Studio Admin.
+* **2026-10-12:** Implementación completa del módulo de inteligencia comercial **Grow Hunter & Radar Global** (`hunter-radar.js`) superando la referencia de Adonis Signature con calificación semántica y generación automática de propuestas multilingües.

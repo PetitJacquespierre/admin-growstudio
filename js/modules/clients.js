@@ -226,6 +226,9 @@ const formNewClient = document.getElementById('form-new-client');
 const ncError = document.getElementById('nc-error');
 
 function openNewClientModal() {
+    if (typeof window.cerrarSidebarMobile === 'function') {
+        window.cerrarSidebarMobile();
+    }
     document.querySelectorAll('#clients-ul li').forEach(li => li.classList.remove('active'));
     DOM.btnNewClient.classList.add('active');
 
@@ -349,3 +352,45 @@ if (formNewClient) {
         }
     });
 }
+
+// ==========================================
+// CONTROL DEL MENÚ LATERAL MÓVIL (OFF-CANVAS)
+// ==========================================
+window.abrirSidebarMobile = function() {
+    const sidebar = document.getElementById('app-sidebar');
+    const backdrop = document.getElementById('sidebar-backdrop');
+    if (sidebar) sidebar.classList.add('open');
+    if (backdrop) backdrop.style.display = 'block';
+};
+
+window.cerrarSidebarMobile = function() {
+    const sidebar = document.getElementById('app-sidebar');
+    const backdrop = document.getElementById('sidebar-backdrop');
+    if (sidebar) sidebar.classList.remove('open');
+    if (backdrop) backdrop.style.display = 'none';
+};
+
+document.addEventListener('DOMContentLoaded', () => {
+    const btnToggle = document.getElementById('btn-toggle-sidebar-mobile');
+    if (btnToggle) {
+        btnToggle.addEventListener('click', (e) => {
+            e.stopPropagation();
+            window.abrirSidebarMobile();
+        });
+    }
+
+    const btnClose = document.getElementById('btn-close-sidebar-mobile');
+    if (btnClose) {
+        btnClose.addEventListener('click', () => {
+            window.cerrarSidebarMobile();
+        });
+    }
+
+    const backdrop = document.getElementById('sidebar-backdrop');
+    if (backdrop) {
+        backdrop.addEventListener('click', () => {
+            window.cerrarSidebarMobile();
+        });
+    }
+});
+

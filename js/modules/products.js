@@ -113,7 +113,10 @@ window.openClientManager = async function(id, data, liElement) {
         window.renderProducts(data.productos || []);
         window.renderPromos(data.promos || []);
         
-        // Auto-scroll al contenido en móviles
+        // Auto-scroll y cerrar drawer en móviles
+        if (typeof window.cerrarSidebarMobile === 'function') {
+            window.cerrarSidebarMobile();
+        }
         if (window.innerWidth <= 768) {
             setTimeout(() => {
                 const mainContent = document.querySelector('.main-content');

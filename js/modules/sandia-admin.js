@@ -77,6 +77,9 @@ export function initSandiaAdmin() {
             sandiaScreen.style.display = 'flex';
             loadSandiaData();
         }
+        if (typeof window.cerrarSidebarMobile === 'function') {
+            window.cerrarSidebarMobile();
+        }
     };
 
     const btnNavSandia = document.getElementById('btn-nav-sandia');
