@@ -4,9 +4,9 @@
 // Soporte Dual: Nicho por Defecto (Web / Menús / Eventos) + Nicho Personalizado por Buscador
 // ==============================================================================
 
-const STORAGE_KEY_LEADS = 'grow_studio_hunter_leads_v2';
-const STORAGE_KEY_TRAFFIC = 'grow_studio_hunter_traffic_v2';
-const STORAGE_KEY_NICHE = 'grow_studio_hunter_active_niche_v2';
+const STORAGE_KEY_LEADS = 'grow_studio_hunter_leads_v3_live';
+const STORAGE_KEY_TRAFFIC = 'grow_studio_hunter_traffic_v3_live';
+const STORAGE_KEY_NICHE = 'grow_studio_hunter_active_niche_v3_live';
 
 // 📚 POOL BASE EXPANDIDO DE LEADS (POR DEFECTO: GROW STUDIO)
 const DEFAULT_GROW_STUDIO_LEADS = [

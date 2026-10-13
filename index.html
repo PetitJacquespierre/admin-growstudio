@@ -869,6 +869,9 @@
                         </p>
                     </div>
                     <div style="display: flex; gap: 10px; flex-wrap: wrap; align-items: center;">
+                        <button id="btn-hunter-reset-cache" onclick="localStorage.removeItem('grow_studio_hunter_leads_v1'); localStorage.removeItem('grow_studio_hunter_leads_v2'); localStorage.removeItem('grow_studio_hunter_leads_v3_live'); window.location.reload();" class="btn-secondary" style="border-color: rgba(255,255,255,0.2); font-size: 11px; display: flex; align-items: center; gap: 4px; color: #a1a1aa;" title="Forzar recarga fresca de prospectos">
+                            <span>🔄</span> Limpiar Caché
+                        </button>
                         <button id="btn-hunter-auto-toggle" class="btn-secondary" style="border-color: rgba(16, 185, 129, 0.4); color: #10b981; font-size: 12px; display: flex; align-items: center; gap: 6px;">
                             <span id="hunter-auto-indicator" style="display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: #71717a;"></span>
                             <span id="hunter-auto-text">Auto-Rastreo: Pausado</span>
