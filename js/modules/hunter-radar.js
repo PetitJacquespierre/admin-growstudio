@@ -275,6 +275,7 @@ export class GrowStudioHunterEngine {
 
     init() {
         this.cargarDatos();
+        this.cargarLeadsRemotos(); // Load live Reddit leads
         this.vincularEventosUI();
         this.renderizarTodo();
         this.iniciarSimulacionTrafico();
@@ -288,10 +289,26 @@ export class GrowStudioHunterEngine {
         this.countries = storedCountries ? JSON.parse(storedCountries) : [...DEFAULT_COUNTRIES];
     }
 
-    guardarDatos() {
-        localStorage.setItem(STORAGE_KEY_LEADS, JSON.stringify(this.leads));
-        localStorage.setItem(STORAGE_KEY_TRAFFIC, JSON.stringify(this.countries));
+    cargarLeadsRemotos() {
+        // Fetch live Reddit leads from serverless endpoint
+        fetch('/api/reddit-leads')
+            .then(resp => {
+                if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+                return resp.json();
+            })
+            .then(data => {
+                if (Array.isArray(data) && data.length) {
+                    this.leads = data;
+                    this.guardarDatos();
+                    this.renderizarTodo();
+                }
+            })
+            .catch(err => {
+                console.error('Failed to load Reddit leads:', err);
+                // Fallback: keep existing leads (could be demo data)
+            });
     }
+
 
     vincularEventosUI() {
         // Pestañas de filtro (Todos, Fuego, Hot, Contactados)
