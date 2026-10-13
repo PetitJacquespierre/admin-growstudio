@@ -120,6 +120,15 @@ function parseAtomXml(xmlText, subredditName) {
     const emailMatch = plainContent.match(/[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/);
     const phoneMatch = plainContent.match(/(?:\+|00)[1-9]\d{1,3}[\s.-]?\d{2,4}[\s.-]?\d{3,4}[\s.-]?\d{3,4}/);
 
+    // Si no es el subreddit exclusivo de Portugal, verificar que mencione Portugal o el sur de Europa
+    if (subredditName !== 'PortugalExpats') {
+      const mentionsTargetArea = fullText.includes('portugal') || fullText.includes('lisbon') ||
+                                 fullText.includes('porto') || fullText.includes('algarve') ||
+                                 fullText.includes('cascais') || fullText.includes('spain') ||
+                                 fullText.includes('southern europe') || fullText.includes('europe');
+      if (!mentionsTargetArea) continue;
+    }
+
     leads.push({
       id: `real-post-${cleanAuthor}-${published ? published.slice(0, 10) : Date.now()}`,
       author: `@${cleanAuthor}`,
@@ -159,25 +168,39 @@ export default async function handler(req, res) {
   }
 
   try {
-    const targetSub = 'PortugalExpats';
-    const rssUrl = `https://www.reddit.com/r/${targetSub}/new.rss`;
-
-    const resp = await fetch(rssUrl, {
-      headers: {
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-        'Accept': 'application/atom+xml,application/xml,text/xml;q=0.9,*/*;q=0.8'
+    const targetSubs = ['PortugalExpats', 'eupersonalfinance', 'expats', 'IWantOut'];
+    const fetchPromises = targetSubs.map(async (sub) => {
+      try {
+        const resp = await fetch(`https://www.reddit.com/r/${sub}/new.rss`, {
+          headers: {
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+            'Accept': 'application/atom+xml,application/xml,text/xml;q=0.9,*/*;q=0.8'
+          }
+        });
+        if (resp.ok) {
+          const xml = await resp.text();
+          return parseAtomXml(xml, sub);
+        }
+      } catch (err) {
+        console.warn(`Error fetching feed for r/${sub}:`, err.message);
       }
+      return [];
     });
 
-    if (resp.ok) {
-      const xmlText = await resp.text();
-      const freshLeads = parseAtomXml(xmlText, targetSub);
+    const results = await Promise.all(fetchPromises);
+    const combinedLeads = results.flat();
 
-      if (freshLeads.length > 0) {
-        cachedLeads = freshLeads;
-        lastFetchTime = now;
-        return res.status(200).json(freshLeads);
-      }
+    if (combinedLeads.length > 0) {
+      // Deduplicar por id
+      const uniqueMap = new Map();
+      combinedLeads.forEach(l => {
+        if (!uniqueMap.has(l.id)) uniqueMap.set(l.id, l);
+      });
+      const uniqueLeads = Array.from(uniqueMap.values());
+
+      cachedLeads = uniqueLeads;
+      lastFetchTime = now;
+      return res.status(200).json(uniqueLeads);
     }
 
     // Si la llamada fue bloqueada o vacía pero tenemos caché anterior, devolver caché
@@ -185,7 +208,6 @@ export default async function handler(req, res) {
       return res.status(200).json(cachedLeads);
     }
 
-    // NUNCA devolver datos ficticios. Si no hay conexión, devolver array vacío con mensaje transparente.
     return res.status(200).json([]);
   } catch (error) {
     console.error('Error in /api/v2-leads:', error);
