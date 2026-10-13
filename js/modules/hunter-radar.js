@@ -1,12 +1,14 @@
 // ==============================================================================
 // 🚀 GROW STUDIO HUNTER & RADAR ENGINE (VERSIÓN 2.0 MULTICANAL REAL)
-// Motor de Prospección de Alto Valor con 2 Modos Reales:
-// Modo 1: Comercios Locales (Google Maps en Punto Fijo, Paraguaná, Falcón y ciudades clave)
-// Modo 2: Social Listening Reddit (r/forhire, r/freelance - Clientes buscando webs/menús)
+// Motor de Prospección de Alto Valor con Control Geográfico Triple:
+// 1. Local: Punto Fijo / Falcón 🇻🇪
+// 2. Nacional: Venezuela (Caracas, Maracaibo, Valencia, Barquisimeto) 🇻🇪
+// 3. Global: Mundo & Foros Internacionales (Reddit, España, Portugal, EE.UU.) 🌎
 // ==============================================================================
 
-const STORAGE_KEY_LEADS = 'grow_studio_hunter_leads_v5_live';
-const STORAGE_KEY_CHANNEL = 'grow_studio_hunter_active_channel_v5';
+const STORAGE_KEY_LEADS = 'grow_studio_hunter_leads_v6_scope';
+const STORAGE_KEY_CHANNEL = 'grow_studio_hunter_active_channel_v6';
+const STORAGE_KEY_SCOPE = 'grow_studio_hunter_geo_scope_v6';
 
 // Nichos automáticos aleatorios de alta conversión para Grow Studio
 const NICHOS_ROTATIVOS = [
@@ -23,6 +25,7 @@ export class GrowStudioHunterEngine {
         this.filter = 'TODOS';
         this.searchQuery = '';
         this.currentSource = 'all'; // 'all', 'maps', 'reddit'
+        this.geoScope = 'local'; // 'local', 'national', 'global', 'all'
         this.autoScanActive = false;
         this.autoScanInterval = null;
         this.init();
@@ -47,11 +50,17 @@ export class GrowStudioHunterEngine {
         if (storedChannel) {
             this.currentSource = storedChannel;
         }
+
+        const storedScope = localStorage.getItem(STORAGE_KEY_SCOPE);
+        if (storedScope) {
+            this.geoScope = storedScope;
+        }
     }
 
     guardarDatos() {
         localStorage.setItem(STORAGE_KEY_LEADS, JSON.stringify(this.leads));
         localStorage.setItem(STORAGE_KEY_CHANNEL, this.currentSource);
+        localStorage.setItem(STORAGE_KEY_SCOPE, this.geoScope);
     }
 
     vincularEventosUI() {
@@ -84,6 +93,22 @@ export class GrowStudioHunterEngine {
                 if (e.key === 'Enter') {
                     this.escanearNuevosLeads();
                 }
+            });
+        }
+
+        // Switch de Alcance Geográfico (Local, Nacional, Global)
+        const scopeSelect = document.getElementById('hunter-geo-scope-select');
+        if (scopeSelect) {
+            scopeSelect.value = this.geoScope;
+            scopeSelect.addEventListener('change', (e) => {
+                this.geoScope = e.target.value;
+                this.guardarDatos();
+                this.actualizarInsigniaNicho();
+                if (window.mostrarToast) {
+                    const txt = e.target.options[e.target.selectedIndex].text;
+                    window.mostrarToast(`🗺️ Alcance actualizado a: ${txt}. Escaneando...`);
+                }
+                this.escanearNuevosLeads();
             });
         }
 
@@ -126,10 +151,11 @@ export class GrowStudioHunterEngine {
                 localStorage.removeItem('grow_studio_hunter_leads_v2');
                 localStorage.removeItem('grow_studio_hunter_leads_v3_live');
                 localStorage.removeItem('grow_studio_hunter_leads_v4_real');
+                localStorage.removeItem('grow_studio_hunter_leads_v5_live');
                 this.leads = [];
                 this.renderizarTodo();
                 if (window.mostrarToast) {
-                    window.mostrarToast('🗑️ Base de prospectos limpiada. Ejecutando nuevo rastreo en vivo...');
+                    window.mostrarToast('🗑️ Base de prospectos limpiada. Ejecutando nuevo rastreo...');
                 }
                 this.escanearNuevosLeads();
             });
@@ -141,17 +167,22 @@ export class GrowStudioHunterEngine {
         const nicheBadge = document.getElementById('hunter-niche-badge');
         if (!nicheText || !nicheBadge) return;
 
-        let channelLabel = 'Punto Fijo (Local) + Social Reddit';
-        if (this.currentSource === 'maps') channelLabel = '📍 Comercios Locales (Google Maps)';
-        if (this.currentSource === 'reddit') channelLabel = '💬 Social Listening (Reddit)';
+        let scopeLabel = 'Local (Punto Fijo)';
+        if (this.geoScope === 'national') scopeLabel = 'Nacional (Venezuela 🇻🇪)';
+        else if (this.geoScope === 'global') scopeLabel = 'Global (Mundo 🌎)';
+        else if (this.geoScope === 'all') scopeLabel = 'Todos los Alcances';
+
+        let channelLabel = 'Maps + Reddit';
+        if (this.currentSource === 'maps') channelLabel = 'Solo Maps';
+        if (this.currentSource === 'reddit') channelLabel = 'Solo Reddit';
 
         if (!this.searchQuery) {
-            nicheText.textContent = `${channelLabel}`;
+            nicheText.textContent = `${scopeLabel} • ${channelLabel}`;
             nicheBadge.style.borderColor = 'rgba(0, 210, 255, 0.3)';
             nicheBadge.style.color = 'var(--brand-cyan)';
             nicheBadge.style.background = 'rgba(0, 210, 255, 0.1)';
         } else {
-            nicheText.textContent = `🎯 Nicho: "${this.searchQuery.toUpperCase()}" (${channelLabel})`;
+            nicheText.textContent = `🎯 Nicho: "${this.searchQuery.toUpperCase()}" (${scopeLabel})`;
             nicheBadge.style.borderColor = '#10b981';
             nicheBadge.style.color = '#10b981';
             nicheBadge.style.background = 'rgba(16, 185, 129, 0.15)';
@@ -227,6 +258,12 @@ export class GrowStudioHunterEngine {
             if (this.currentSource === 'maps' && !lead.platform.includes('Google Maps')) return false;
             if (this.currentSource === 'reddit' && !lead.platform.includes('Reddit')) return false;
 
+            // Filtro por alcance geográfico si se selecciona en el switch
+            if (this.geoScope !== 'all' && lead.scope && lead.scope !== this.geoScope) {
+                // Si la fuente es Reddit y estamos en modo local o nacional, filtramos si no coincide
+                if (this.geoScope === 'local' && lead.platform.includes('Reddit')) return false;
+            }
+
             // Filtro de badges
             if (this.filter === 'FUEGO' && lead.badge !== 'FUEGO') return false;
             if (this.filter === 'HOT' && lead.badge !== 'HOT') return false;
@@ -252,7 +289,7 @@ export class GrowStudioHunterEngine {
                         <span style="font-size: 32px; display: block; margin-bottom: 10px;">🔍</span>
                         <strong style="color: #fff; font-size: 14px;">No hay leads cargados para este criterio.</strong><br>
                         <span style="font-size: 12px; margin-top: 6px; display: inline-block;">
-                            Haz clic en <strong>"Escanear en Vivo"</strong> para rastrear comercios locales y solicitudes de clientes reales.
+                            Haz clic en <strong>"Escanear en Vivo"</strong> para rastrear oportunidades según el alcance seleccionado.
                         </span>
                     </td>
                 </tr>
@@ -341,7 +378,7 @@ export class GrowStudioHunterEngine {
         const container = document.getElementById('hunter-countries-list');
         if (!container) return;
 
-        // Calculamos la distribución geográfica real a partir de los leads que tenemos en memoria
+        // Distribución real basada en prospectos activos
         const conteo = {};
         this.leads.forEach(l => {
             const label = l.langLabel || 'Global 🌐';
@@ -351,17 +388,19 @@ export class GrowStudioHunterEngine {
         const items = Object.entries(conteo).map(([label, count]) => {
             let flag = '📍';
             if (label.includes('Punto Fijo') || label.includes('Falcón') || label.includes('Venezuela')) flag = '🇻🇪';
-            else if (label.includes('🇺🇸') || label.includes('English')) flag = '🇺🇸';
-            else if (label.includes('🇪🇸') || label.includes('Español')) flag = '🇪🇸';
-            else if (label.includes('🇧🇷') || label.includes('Português')) flag = '🇧🇷';
+            else if (label.includes('🇺🇸') || label.includes('English') || label.includes('Miami')) flag = '🇺🇸';
+            else if (label.includes('🇪🇸') || label.includes('Madrid')) flag = '🇪🇸';
+            else if (label.includes('🇵🇹') || label.includes('Lisboa')) flag = '🇵🇹';
+            else if (label.includes('🇲🇽') || label.includes('Cancún')) flag = '🇲🇽';
 
             return { label, count, flag };
         });
 
         if (items.length === 0) {
             items.push(
-                { label: 'Punto Fijo (Falcón)', count: 8, flag: '🇻🇪' },
-                { label: 'Comunidades Reddit', count: 5, flag: '🌐' }
+                { label: 'Punto Fijo (Falcón 🇻🇪)', count: 8, flag: '🇻🇪' },
+                { label: 'Venezuela Nacional 🇻🇪', count: 5, flag: '🇻🇪' },
+                { label: 'Global / Reddit 🌎', count: 4, flag: '🌎' }
             );
         }
 
@@ -403,11 +442,14 @@ export class GrowStudioHunterEngine {
         const queryParam = query ? encodeURIComponent(query) : encodeURIComponent(defaultNiche);
 
         if (this.currentSource === 'maps' || this.currentSource === 'all') {
-            endpointsToFetch.push(`/api/maps-leads?city=Punto+Fijo&query=${queryParam}`);
+            endpointsToFetch.push(`/api/maps-leads?scope=${this.geoScope}&query=${queryParam}`);
         }
 
         if (this.currentSource === 'reddit' || this.currentSource === 'all') {
-            endpointsToFetch.push(`/api/reddit-leads?sub=forhire&query=${encodeURIComponent(query || 'hiring')}`);
+            // Si el alcance es local estricto, no consultamos reddit a menos que el usuario lo pida
+            if (this.geoScope !== 'local') {
+                endpointsToFetch.push(`/api/reddit-leads?sub=forhire&query=${encodeURIComponent(query || 'hiring')}`);
+            }
         }
 
         try {
@@ -434,7 +476,7 @@ export class GrowStudioHunterEngine {
                 }
 
                 if (window.mostrarToast) {
-                    window.mostrarToast(`🚀 ¡${nuevos.length} prospectos reales agregados! (Punto Fijo & Reddit)`);
+                    window.mostrarToast(`🚀 ¡${nuevos.length} prospectos agregados para alcance [${this.geoScope.toUpperCase()}]!`);
                 }
             } else {
                 if (btn && !esSilencioso) {
@@ -471,16 +513,16 @@ export class GrowStudioHunterEngine {
         if (!modal) return;
 
         let demoLink = 'https://sandiaproduction.com';
-        if (lead.niche && (lead.niche.includes('Deportes') || lead.service.includes('Eventos') || lead.service.includes('Atletas') || lead.niche.includes('Running'))) {
+        if (lead.niche && (lead.niche.includes('Deportes') || lead.service.includes('Eventos') || lead.service.includes('Atletas') || lead.niche.includes('Running') || lead.service.includes('Maratón'))) {
             demoLink = 'https://www.retovirtualvzla.com';
-        } else if (lead.niche && (lead.niche.includes('Gastronomía') || lead.service.includes('Menú') || lead.service.includes('Carta') || lead.service.includes('Restaurante') || lead.niche.includes('Café'))) {
+        } else if (lead.niche && (lead.niche.includes('Gastronomía') || lead.service.includes('Menú') || lead.service.includes('Carta') || lead.service.includes('Restaurante') || lead.niche.includes('Café') || lead.service.includes('Hamburguesería'))) {
             demoLink = 'https://pasteleslaflaca.vercel.app';
         }
 
         let pitchText = '';
         if (lead.platform.includes('Google Maps') || lead.hasPhone) {
-            // Pitch específico y respetuoso con el nombre real del local
-            pitchText = `¡Hola al equipo de ${lead.author}! 👋 Les escribe Grow Studio desde aquí en Falcón.\n\nEstuvimos revisando su local y vimos que ${lead.hasWebsite ? 'su portal web podría actualizarse a una experiencia móvil ultra rápida con pedidos a WhatsApp' : 'actualmente no cuentan con un menú digital interactivo QR para que los comensales pidan directo al WhatsApp'}.\n\nEn Grow Studio desarrollamos plataformas interactivas modernas, listas para verse increíbles en teléfonos y aumentar las ventas desde el primer día.\n\nPueden ver una de nuestras plataformas en producción aquí: ${demoLink}\n\n¿Tendrán unos minutos para mostrarles cómo quedaría el menú de ${lead.author}? WhatsApp: +58 412 7732710`;
+            const locText = lead.scope === 'local' ? 'aquí en Falcón' : (lead.scope === 'national' ? 'aquí en Venezuela' : '');
+            pitchText = `¡Hola al equipo de ${lead.author}! 👋 Les escribe Grow Studio ${locText}.\n\nEstuvimos revisando su local y vimos que ${lead.hasWebsite ? 'su portal web podría actualizarse a una experiencia móvil ultra rápida con pedidos a WhatsApp' : 'actualmente no cuentan con un menú digital interactivo QR para que los comensales pidan directo al WhatsApp'}.\n\nEn Grow Studio desarrollamos plataformas interactivas modernas, listas para verse increíbles en teléfonos y aumentar las ventas desde el primer día.\n\nPueden ver una de nuestras plataformas en producción aquí: ${demoLink}\n\n¿Tendrán unos minutos para mostrarles cómo quedaría el menú de ${lead.author}? WhatsApp: +58 412 7732710`;
         } else if (lead.lang === 'pt') {
             pitchText = `Olá ${lead.author}! 👋 Vi que você precisa de uma solução profissional para ${lead.service}.\n\nNa Grow Studio, construímos plataformas modernas, ultrarrápidas e com design premium para captação de clientes e conversão direta.\n\nVeja um de nossos projetos em produção com domínio próprio: ${demoLink}\n\nPodemos entregar sua solução pronta em prazo recorde dentro da sua faixa de investimento (${lead.budget}). Vamos conversar por WhatsApp para alinhar detalhes? +58 412 7732710`;
         } else if (lead.lang === 'en') {
@@ -520,13 +562,13 @@ export class GrowStudioHunterEngine {
         const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(this.leads, null, 2));
         const downloadAnchor = document.createElement('a');
         downloadAnchor.setAttribute("href", dataStr);
-        downloadAnchor.setAttribute("download", `Grow_Studio_Leads_Reales_${new Date().toISOString().slice(0, 10)}.json`);
+        downloadAnchor.setAttribute("download", `Grow_Studio_Leads_${this.geoScope.toUpperCase()}_${new Date().toISOString().slice(0, 10)}.json`);
         document.body.appendChild(downloadAnchor);
         downloadAnchor.click();
         downloadAnchor.remove();
 
         if (window.mostrarToast) {
-            window.mostrarToast('📦 Lote de Leads reales exportado exitosamente.');
+            window.mostrarToast('📦 Lote de Leads exportado exitosamente.');
         }
     }
 }

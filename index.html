@@ -934,21 +934,34 @@
                             </div>
                         </div>
 
-                        <!-- Buscador rápido de leads con detección de Nicho y Selector de Canal -->
+                        <!-- Buscador rápido de leads con detección de Nicho, Selector de Canal y Alcance Geográfico -->
                         <div style="margin-bottom: 14px; display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
-                            <div style="position: relative; flex: 2; min-width: 260px;">
-                                <input type="text" id="hunter-search-input" placeholder="🔍 Escribe un nicho o ciudad (ej: Restaurante Madrid, Inmuebles Lisboa, Gimnasio...) y presiona Enter..." class="input-modern" style="width: 100%; box-sizing: border-box; padding: 10px 14px; font-size: 12px; border-radius: 8px; background: rgba(255,255,255,0.04);">
+                            <div style="position: relative; flex: 2; min-width: 240px;">
+                                <input type="text" id="hunter-search-input" placeholder="🔍 Escribe un nicho o palabra clave (ej: Menú QR, Maratón, Gimnasio...) y presiona Enter..." class="input-modern" style="width: 100%; box-sizing: border-box; padding: 10px 14px; font-size: 12px; border-radius: 8px; background: rgba(255,255,255,0.04);">
                             </div>
-                            <div style="min-width: 170px;">
-                                <select id="hunter-source-select" class="modern-select" style="padding: 9px 12px; font-size: 12px; width: 100%; border: 1px solid rgba(0, 210, 255, 0.3); background: rgba(18, 18, 24, 0.95); color: #fff;">
-                                    <option value="all">⚡ Híbrido (Maps + Reddit)</option>
-                                    <option value="maps">📍 Google Maps (Comercios)</option>
-                                    <option value="reddit">💬 Reddit (Contrataciones)</option>
+                            
+                            <!-- Switch de Alcance Geográfico -->
+                            <div style="min-width: 160px;">
+                                <select id="hunter-geo-scope-select" class="modern-select" style="padding: 9px 12px; font-size: 12px; width: 100%; border: 1px solid rgba(16, 185, 129, 0.4); background: rgba(18, 18, 24, 0.95); color: #10b981; font-weight: 700;" title="Filtrar por alcance geográfico">
+                                    <option value="local">📍 Local (Punto Fijo / Falcón)</option>
+                                    <option value="national">🇻🇪 Nacional (Venezuela)</option>
+                                    <option value="global">🌎 Global (Mundo & Foros)</option>
+                                    <option value="all">⚡ Todos los Alcances</option>
                                 </select>
                             </div>
+
+                            <!-- Selector de Canal -->
+                            <div style="min-width: 150px;">
+                                <select id="hunter-source-select" class="modern-select" style="padding: 9px 12px; font-size: 12px; width: 100%; border: 1px solid rgba(0, 210, 255, 0.3); background: rgba(18, 18, 24, 0.95); color: #fff;">
+                                    <option value="all">⚡ Híbrido (Maps + Reddit)</option>
+                                    <option value="maps">📍 Google Maps (Locales)</option>
+                                    <option value="reddit">💬 Reddit (Contratos)</option>
+                                </select>
+                            </div>
+
                             <div id="hunter-niche-badge" style="padding: 8px 12px; border-radius: 8px; font-size: 11px; font-weight: 700; white-space: nowrap; background: rgba(0, 210, 255, 0.1); border: 1px solid rgba(0, 210, 255, 0.3); color: var(--brand-cyan); display: flex; align-items: center; gap: 6px;">
                                 <span>🎯 Modo:</span>
-                                <strong id="hunter-niche-text">Canal Híbrido (Google Maps + Reddit)</strong>
+                                <strong id="hunter-niche-text">Local (Punto Fijo / Falcón)</strong>
                             </div>
                         </div>
 
