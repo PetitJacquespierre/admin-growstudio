@@ -1,7 +1,9 @@
 // ==============================================================================
-// 🚀 HUNTER ENGINE V2 — MÓDULO INDEPENDIENTE DE EXTRACCIÓN DE COMPRADORES
+// 🚀 HUNTER ENGINE V2 — MÓDULO INDEPENDIENTE DE EXTRACCIÓN MULTICANAL CONTINUA
 // Diseñado para captación y venta de leads de alto valor en macro
-// Almacenamiento aislado: 'hunter_v2_leads_standalone_db' (No toca datos de Grow Studio)
+// Soporta Auto-Rastreo continuo (búsqueda cada 15 segundos hasta presionar Pausa)
+// Fuentes: Reddit en vivo, Twitter/X, Instagram, Facebook y Foros especializados
+// Almacenamiento aislado: 'hunter_v2_leads_standalone_db'
 // ==============================================================================
 
 const STORAGE_V2_KEY = 'hunter_v2_leads_standalone_db';
@@ -10,6 +12,9 @@ export class HunterEngineV2 {
     constructor() {
         this.leads = [];
         this.isScanning = false;
+        this.autoScanActive = false;
+        this.autoScanInterval = null;
+        this.activeFilter = 'ALL';
         this.init();
     }
 
@@ -28,16 +33,25 @@ export class HunterEngineV2 {
     }
 
     vincularEventos() {
+        // Botón Escanear Ahora
         const btnScan = document.getElementById('btn-v2-scan-now');
         if (btnScan) {
             btnScan.addEventListener('click', () => this.escanearCompradores());
         }
 
+        // Switch Auto-Rastreo Continuo (Búsqueda continua hasta pausar)
+        const btnAuto = document.getElementById('btn-v2-auto-stream');
+        if (btnAuto) {
+            btnAuto.addEventListener('click', () => this.toggleAutoStream());
+        }
+
+        // Exportador CSV para CRM
         const btnExport = document.getElementById('btn-v2-export-crm');
         if (btnExport) {
             btnExport.addEventListener('click', () => this.exportarExcelCRM());
         }
 
+        // Limpieza de base de datos
         const btnClear = document.getElementById('btn-v2-clear-cache');
         if (btnClear) {
             btnClear.addEventListener('click', () => {
@@ -51,36 +65,87 @@ export class HunterEngineV2 {
         }
     }
 
-    async escanearCompradores() {
+    toggleAutoStream() {
+        this.autoScanActive = !this.autoScanActive;
+        const btnAuto = document.getElementById('btn-v2-auto-stream');
+        const badgeStream = document.getElementById('v2-stream-indicator');
+
+        if (this.autoScanActive) {
+            if (btnAuto) {
+                btnAuto.style.background = 'rgba(239, 68, 68, 0.2)';
+                btnAuto.style.borderColor = '#ef4444';
+                btnAuto.style.color = '#ef4444';
+                btnAuto.innerHTML = '<span>⏸️</span> Pausar Rastreo Continuo';
+            }
+            if (badgeStream) {
+                badgeStream.textContent = '🟢 Rastreando en Bucle (Cada 15s)';
+                badgeStream.style.color = '#10b981';
+            }
+
+            // Ejecuta inmediatamente y programa escaneo cada 15s
+            this.escanearCompradores(true);
+            this.autoScanInterval = setInterval(() => {
+                this.escanearCompradores(true);
+            }, 15000);
+
+            if (window.mostrarToast) {
+                window.mostrarToast('📡 Rastreo Continuo Activado: Buscando en Reddit, Twitter y Redes sin parar.');
+            }
+        } else {
+            if (btnAuto) {
+                btnAuto.style.background = 'transparent';
+                btnAuto.style.borderColor = 'rgba(16, 185, 129, 0.4)';
+                btnAuto.style.color = '#10b981';
+                btnAuto.innerHTML = '<span>▶️</span> Auto-Rastreo Continuo';
+            }
+            if (badgeStream) {
+                badgeStream.textContent = '⏸️ Stream en Pausa';
+                badgeStream.style.color = '#71717a';
+            }
+
+            if (this.autoScanInterval) {
+                clearInterval(this.autoScanInterval);
+                this.autoScanInterval = null;
+            }
+
+            if (window.mostrarToast) {
+                window.mostrarToast('⏸️ Rastreo continuo pausado.');
+            }
+        }
+    }
+
+    async escanearCompradores(esSilencioso = false) {
         if (this.isScanning) return;
         this.isScanning = true;
 
         const btn = document.getElementById('btn-v2-scan-now');
-        if (btn) {
-            btn.innerHTML = '<span>⏳</span> Rastreando compradores en tiempo real...';
+        if (btn && !esSilencioso) {
+            btn.innerHTML = '<span>⏳</span> Rastreando multicanal...';
             btn.disabled = true;
         }
 
         try {
-            const resp = await fetch('/api/v2-leads?query=buying+property&limit=25');
+            const resp = await fetch('/api/v2-leads?limit=30');
             const data = await resp.json();
 
             if (Array.isArray(data) && data.length > 0) {
-                // Evitar duplicados por ID
+                // Filtrar duplicados por ID
                 const nuevos = data.filter(d => !this.leads.some(l => l.id === d.id));
-                this.leads = [...nuevos, ...this.leads];
-                this.guardarDatos();
-                this.renderizar();
+                if (nuevos.length > 0) {
+                    this.leads = [...nuevos, ...this.leads];
+                    this.guardarDatos();
+                    this.renderizar();
 
-                if (window.mostrarToast) {
-                    window.mostrarToast(`💎 Hunter V2: ¡${nuevos.length} compradores e inversores detectados!`);
+                    if (window.mostrarToast) {
+                        window.mostrarToast(`💎 Hunter V2: +${nuevos.length} compradores detectados en vivo.`);
+                    }
                 }
             }
         } catch (err) {
             console.error('Error en escaneo V2:', err);
         } finally {
             this.isScanning = false;
-            if (btn) {
+            if (btn && !esSilencioso) {
                 btn.innerHTML = '<span>⚡</span> Extraer Compradores V2';
                 btn.disabled = false;
             }
@@ -98,7 +163,7 @@ export class HunterEngineV2 {
 
         // Calcular volumen estimado de capital en juego
         if (statCapital) {
-            const volumen = this.leads.length * 450;
+            const volumen = this.leads.length * 520;
             statCapital.textContent = `€${volumen.toLocaleString()}K+`;
         }
 
@@ -111,7 +176,7 @@ export class HunterEngineV2 {
                         <span style="font-size: 32px; display: block; margin-bottom: 10px;">🎯</span>
                         <strong style="color: #fff; font-size: 14px;">Bandeja V2 vacía</strong><br>
                         <span style="font-size: 12px; margin-top: 6px; display: inline-block;">
-                            Haz clic en <strong>"Extraer Compradores V2"</strong> para consultar el feed en vivo de inversores y compradores.
+                            Haz clic en <strong>"Extraer Compradores V2"</strong> o activa el <strong>"Auto-Rastreo Continuo"</strong> para comenzar a acumular prospectos en vivo.
                         </span>
                     </td>
                 </tr>
@@ -120,7 +185,7 @@ export class HunterEngineV2 {
         }
 
         tbody.innerHTML = this.leads.map(lead => {
-            const isHigh = lead.category.includes('High-Ticket');
+            const isHigh = lead.category && lead.category.includes('High-Ticket');
             const badgeColor = isHigh ? '#10b981' : 'var(--brand-cyan)';
             const badgeBg = isHigh ? 'rgba(16, 185, 129, 0.15)' : 'rgba(0, 210, 255, 0.15)';
 
@@ -135,10 +200,12 @@ export class HunterEngineV2 {
 
                     <!-- Prospecto & Canal -->
                     <td style="padding: 12px;">
-                        <div style="font-weight: 700; color: #fff; font-size: 13px;">
+                        <div style="font-weight: 700; color: #fff; font-size: 13px; display: flex; align-items: center; gap: 6px;">
+                            <span>${lead.platformIcon || '🌐'}</span>
                             ${lead.author}
                         </div>
-                        <span style="font-size: 10px; color: #a1a1aa;">${lead.source} • ${lead.time}</span>
+                        <span style="font-size: 10px; color: var(--brand-cyan); font-weight: 600;">${lead.platform || 'Multicanal'}</span>
+                        <span style="font-size: 10px; color: #a1a1aa; margin-left: 4px;">• ${lead.time}</span>
                     </td>
 
                     <!-- Intención & Perfil -->
@@ -169,8 +236,8 @@ export class HunterEngineV2 {
                     <!-- Contacto / CRM Directo -->
                     <td style="padding: 12px; text-align: right;">
                         <div style="display: flex; gap: 6px; justify-content: flex-end;">
-                            <a href="${lead.directMsgUrl}" target="_blank" rel="noopener noreferrer" class="btn-primary btn-small" style="background: linear-gradient(135deg, #10b981, #059669); color: #000; font-weight: 700; font-size: 11px; padding: 5px 10px; text-decoration: none; display: inline-flex; align-items: center; gap: 4px;" title="Abrir mensaje directo para el equipo de ventas">
-                                <span>💬</span> DM
+                            <a href="${lead.directMsgUrl}" target="_blank" rel="noopener noreferrer" class="btn-primary btn-small" style="background: linear-gradient(135deg, #10b981, #059669); color: #000; font-weight: 700; font-size: 11px; padding: 5px 10px; text-decoration: none; display: inline-flex; align-items: center; gap: 4px;" title="Abrir canal directo de contacto">
+                                <span>💬</span> Contactar
                             </a>
                             <a href="${lead.contactUrl}" target="_blank" rel="noopener noreferrer" class="btn-secondary btn-small" style="padding: 5px 8px; font-size: 11px; text-decoration: none; color: var(--brand-cyan); border-color: rgba(0, 210, 255, 0.4);" title="Ver publicación original">
                                 <span>🔗</span> Ver
@@ -188,16 +255,16 @@ export class HunterEngineV2 {
             return;
         }
 
-        // Formato CSV profesional para entregar al equipo de ventas o importar en CRM
-        const headers = ["ID", "Usuario", "Canal", "Categoria", "Intencion_Compra", "Detalles", "Presupuesto_Estimado", "Score", "Enlace_Mensaje_Directo", "Fecha_Deteccion"];
+        const headers = ["ID", "Usuario", "Plataforma", "Fuente", "Categoria", "Intencion_Compra", "Detalles", "Presupuesto_Estimado", "Score", "Canal_Contacto", "Fecha_Deteccion"];
         
         const rows = this.leads.map(l => [
             `"${l.id}"`,
             `"${l.author}"`,
+            `"${l.platform || 'Online'}"`,
             `"${l.source}"`,
             `"${l.category}"`,
-            `"${l.intent.replace(/"/g, '""')}"`,
-            `"${l.details.replace(/"/g, '""')}"`,
+            `"${(l.intent || '').replace(/"/g, '""')}"`,
+            `"${(l.details || '').replace(/"/g, '""')}"`,
             `"${l.budget}"`,
             `"${l.score}"`,
             `"${l.directMsgUrl}"`,
@@ -208,7 +275,7 @@ export class HunterEngineV2 {
         const encodedUri = encodeURI(csvContent);
         const link = document.createElement("a");
         link.setAttribute("href", encodedUri);
-        link.setAttribute("download", `Leads_Compradores_CRM_${new Date().toISOString().slice(0, 10)}.csv`);
+        link.setAttribute("download", `Leads_Compradores_V2_${new Date().toISOString().slice(0, 10)}.csv`);
         document.body.appendChild(link);
         link.click();
         link.remove();
