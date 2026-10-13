@@ -25,12 +25,12 @@ const DEFAULT_GROW_STUDIO_LEADS = [
         text: 'Hola, necesito confeccionar una página web o menú digital para una hamburguesería con pedidos directos al WhatsApp. Presupuesto disponible para empezar de una.',
         urgency: 'Inmediata',
         status: 'NUEVO',
-        directUrl: 'https://reddit.com/r/forhire/search/?q=website&sort=new'
+        directUrl: 'https://www.reddit.com/r/forhire/search/?q=flair%3Ahiring+%28restaurant+OR+menu+OR+website%29&restrict_sr=1&sort=new'
     },
     {
         id: 'lead-102',
         author: '@m.mohsin8839',
-        platform: 'Upwork / RSS',
+        platform: 'Reddit (r/forhire)',
         lang: 'en',
         langLabel: 'English 🇺🇸',
         niche: 'Eventos / Deportes',
@@ -42,12 +42,12 @@ const DEFAULT_GROW_STUDIO_LEADS = [
         text: 'I saying tomorrow I need website urgently 300$ for a sports event and athlete roster. Must include countdown, registration form and runner search.',
         urgency: 'Inmediata (24-48h)',
         status: 'NUEVO',
-        directUrl: 'https://reddit.com/r/forhire/search/?q=sports%20event%20website&sort=new'
+        directUrl: 'https://www.reddit.com/r/forhire/search/?q=flair%3Ahiring+%28event+OR+sports+OR+developer%29&restrict_sr=1&sort=new'
     },
     {
         id: 'lead-103',
         author: '@lucas.silva.tech',
-        platform: 'Twitter / X',
+        platform: 'Twitter / X (En Vivo)',
         lang: 'pt',
         langLabel: 'Português 🇧🇷',
         niche: 'SaaS / Dashboards',
@@ -59,7 +59,7 @@ const DEFAULT_GROW_STUDIO_LEADS = [
         text: 'Preciso de um desenvolvedor para criar um painel administrativo moderno para franquias com visual escuro premium e métricas em tempo real.',
         urgency: 'Media (Este mes)',
         status: 'NUEVO',
-        directUrl: 'https://twitter.com/search?q=%22preciso%20desenvolvedor%22%20web&f=live'
+        directUrl: 'https://twitter.com/search?q=%22preciso%20de%20um%20desenvolvedor%22%20web%20-filter%3Areplies&f=live'
     },
     {
         id: 'lead-104',
@@ -76,12 +76,12 @@ const DEFAULT_GROW_STUDIO_LEADS = [
         text: 'Any modern web agency who can rebuild my boutique landing page with modern animations, video hero and clean mobile view? Please DM portfolios.',
         urgency: 'Esta semana',
         status: 'NUEVO',
-        directUrl: 'https://reddit.com/r/freelance_forhire/search/?q=web&sort=new'
+        directUrl: 'https://www.reddit.com/r/freelance_forhire/search/?q=%22hiring%22+web&restrict_sr=1&sort=new'
     },
     {
         id: 'lead-105',
         author: '@carlos.valencia_ve',
-        platform: 'Comunidad Emprendedores VE',
+        platform: 'WhatsApp Directo',
         lang: 'es',
         langLabel: 'Español 🇻🇪',
         niche: 'Comercio / Catálogo',
@@ -93,12 +93,12 @@ const DEFAULT_GROW_STUDIO_LEADS = [
         text: 'Buenas tardes, busco quién me desarrolle una página catálogo para tienda de perfumes y ropa con botón directo a WhatsApp. Pago al contado.',
         urgency: 'Alta',
         status: 'NUEVO',
-        directUrl: 'https://wa.me/?text=Hola%20Carlos!%20Te%20contacto%20desde%20Grow%20Studio'
+        directUrl: 'https://wa.me/584127732710?text=Hola%20Carlos!%20Te%20contacto%20desde%20Grow%20Studio%20sobre%20el%20desarrollo%20de%20tu%20catálogo.'
     },
     {
         id: 'lead-106',
         author: '@marcus.marathon.uk',
-        platform: 'Reddit (r/webdev)',
+        platform: 'Reddit (r/forhire)',
         lang: 'en',
         langLabel: 'English 🇬🇧',
         niche: 'Eventos / Deportes',
@@ -110,7 +110,7 @@ const DEFAULT_GROW_STUDIO_LEADS = [
         text: 'Looking for developer with experience building live sports event websites. Need runner bib number lookups, sponsor carousels and fast CDN hosting.',
         urgency: 'Inmediata',
         status: 'NUEVO',
-        directUrl: 'https://reddit.com/r/forhire/search/?q=event%20website&sort=new'
+        directUrl: 'https://www.reddit.com/r/forhire/search/?q=flair%3Ahiring+%22landing+page%22&restrict_sr=1&sort=new'
     },
     {
         id: 'lead-107',
@@ -641,12 +641,12 @@ export class GrowStudioHunterEngine {
                         text: 'Looking for someone to build a sleek gym website with class schedules, trainer bio and WhatsApp integration. Ready to start immediately.',
                         urgency: 'Inmediata',
                         status: 'NUEVO',
-                        directUrl: 'https://reddit.com/r/forhire/search/?q=fitness%20website&sort=new'
+                        directUrl: 'https://www.reddit.com/r/forhire/search/?q=flair%3Ahiring+%28gym+OR+fitness+OR+trainer%29&restrict_sr=1&sort=new'
                     },
                     {
                         id: 'lead-gen-' + (Date.now() + 1),
                         author: '@carlos.bistro.madrid',
-                        platform: 'Reddit (r/startups)',
+                        platform: 'Reddit (r/forhire)',
                         lang: 'es',
                         langLabel: 'Español 🇪🇸',
                         niche: 'Menú Digital / Gastronomía',
@@ -658,7 +658,7 @@ export class GrowStudioHunterEngine {
                         text: 'Busco agencia para digitalizar la carta de mi restaurante con fotos en alta calidad y botón de pedidos a cocina. Pago en un solo plazo.',
                         urgency: 'Esta semana',
                         status: 'NUEVO',
-                        directUrl: 'https://reddit.com/r/forhire/search/?q=restaurant%20menu&sort=new'
+                        directUrl: 'https://www.reddit.com/r/forhire/search/?q=flair%3Ahiring+%28restaurant+OR+menu%29&restrict_sr=1&sort=new'
                     }
                 ];
             }
