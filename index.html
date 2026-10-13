@@ -1070,25 +1070,37 @@
                     </div>
                 </div>
 
+                <!-- SELECTOR DE MODO DUAL: B2C (COMPRADORES) VS B2B (BROKERS / AGENCIAS) -->
+                <div style="display: flex; gap: 10px; margin-bottom: 20px; flex-wrap: wrap;">
+                    <button id="btn-v2-tab-b2c" style="background: rgba(16, 185, 129, 0.2); border: 1px solid #10b981; color: #10b981; padding: 9px 18px; border-radius: 8px; font-weight: 700; font-size: 12px; cursor: pointer; display: flex; align-items: center; gap: 6px; transition: all 0.2s;">
+                        <span>🎯</span> Compradores Directos (B2C)
+                    </button>
+                    <button id="btn-v2-tab-b2b" style="background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.15); color: #a1a1aa; padding: 9px 18px; border-radius: 8px; font-weight: 700; font-size: 12px; cursor: pointer; display: flex; align-items: center; gap: 6px; transition: all 0.2s;">
+                        <span>🏢</span> Red de Brokers y Agencias (B2B)
+                    </button>
+                </div>
+
                 <!-- BANDEJA DE ENTRADA DE LEADS V2 -->
                 <div class="stat-card" style="background: rgba(18, 18, 24, 0.95); border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 14px; padding: 20px;">
-                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
-                        <h3 style="margin: 0; font-size: 15px; color: #fff; display: flex; align-items: center; gap: 8px;">
-                            <span>📋</span> Prospectos e Inversores en Seguimiento
-                        </h3>
-                        <span style="font-size: 11px; color: #71717a;">Formateado para equipos de venta directa</span>
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; flex-wrap: wrap; gap: 10px;">
+                        <div>
+                            <h3 id="v2-table-title" style="margin: 0; font-size: 15px; color: #fff; display: flex; align-items: center; gap: 8px;">
+                                <span>📋</span> Compradores e Inversores en Seguimiento (B2C)
+                            </h3>
+                            <span id="v2-table-subtitle" style="font-size: 11px; color: #71717a;">Filtrado con HasData & Scout: Cero alquileres, solo intención de compra</span>
+                        </div>
                     </div>
 
                     <div class="table-container" style="background: rgba(0,0,0,0.25); border-radius: 10px; border: 1px solid rgba(255,255,255,0.06); overflow-x: auto;">
                         <table style="width: 100%; border-collapse: collapse; min-width: 750px;">
-                            <thead>
+                            <thead id="v2-leads-thead">
                                 <tr style="background: rgba(255,255,255,0.02); border-bottom: 1px solid rgba(255,255,255,0.08); text-align: left; font-size: 11px; color: #71717a; text-transform: uppercase;">
                                     <th style="padding: 10px 12px; text-align: center;">Score</th>
                                     <th style="padding: 10px 12px;">Comprador</th>
-                                    <th style="padding: 10px 12px;">Intención / Interés</th>
+                                    <th style="padding: 10px 12px;">Intención de Compra</th>
                                     <th style="padding: 10px 12px;">Presupuesto</th>
                                     <th style="padding: 10px 12px; text-align: center;">Categoría</th>
-                                    <th style="padding: 10px 12px; text-align: right;">Acción Ventas</th>
+                                    <th style="padding: 10px 12px; text-align: right;">Acciones de Venta</th>
                                 </tr>
                             </thead>
                             <tbody id="v2-leads-tbody">
@@ -1099,6 +1111,49 @@
                 </div>
             </section>
         </main>
+
+    <!-- MODAL GENERADOR DE OUTREACH BILINGÜE OPENOUTREACH (INGLÉS & PORTUGUÉS) -->
+    <div id="modal-v2-outreach" style="display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.85); z-index: 2900; align-items: center; justify-content: center; backdrop-filter: blur(8px); padding: 15px;">
+        <div style="background: #121218; border: 1px solid #10b981; border-radius: 14px; width: 95%; max-width: 650px; padding: 25px; box-shadow: 0 20px 60px rgba(0,0,0,0.9); box-sizing: border-box;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; border-bottom: 1px solid rgba(255,255,255,0.08); padding-bottom: 12px;">
+                <div>
+                    <h3 style="margin: 0; font-size: 1.15rem; color: #10b981; display: flex; align-items: center; gap: 8px;">
+                        <span>✉️</span> Mensajes de Prospección Bilingüe (OpenOutreach)
+                    </h3>
+                    <span id="outreach-target-user" style="font-size: 11px; color: #a1a1aa; font-weight: 600;"></span>
+                </div>
+                <button type="button" onclick="document.getElementById('modal-v2-outreach').style.display='none'" style="background: none; border: none; color: #aaa; font-size: 22px; cursor: pointer;">✕</button>
+            </div>
+
+            <!-- BLOQUE INGLÉS -->
+            <div style="margin-bottom: 16px;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+                    <label style="font-size: 12px; font-weight: 700; color: #fff;">🇬🇧 Mensaje Profesional en Inglés (UK / International Standard):</label>
+                    <button type="button" onclick="navigator.clipboard.writeText(document.getElementById('outreach-text-en').value); if(window.mostrarToast) window.mostrarToast('📋 Copiado en Inglés al portapapeles');" class="btn-secondary btn-small" style="font-size: 11px; border-color: rgba(16, 185, 129, 0.4); color: #10b981; padding: 3px 8px;">
+                        Copiar Inglés
+                    </button>
+                </div>
+                <textarea id="outreach-text-en" rows="4" style="width: 100%; background: rgba(0,0,0,0.4); border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; color: #e4e4e7; padding: 10px; font-size: 12px; line-height: 1.4; resize: vertical; box-sizing: border-box; font-family: monospace;"></textarea>
+            </div>
+
+            <!-- BLOQUE PORTUGUÉS -->
+            <div style="margin-bottom: 18px;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+                    <label style="font-size: 12px; font-weight: 700; color: #fff;">🇵🇹 Mensagem Profissional em Português (Padrão de Negócios):</label>
+                    <button type="button" onclick="navigator.clipboard.writeText(document.getElementById('outreach-text-pt').value); if(window.mostrarToast) window.mostrarToast('📋 Copiado em Português para a área de transferência');" class="btn-secondary btn-small" style="font-size: 11px; border-color: rgba(0, 210, 255, 0.4); color: var(--brand-cyan); padding: 3px 8px;">
+                        Copiar Português
+                    </button>
+                </div>
+                <textarea id="outreach-text-pt" rows="4" style="width: 100%; background: rgba(0,0,0,0.4); border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; color: #e4e4e7; padding: 10px; font-size: 12px; line-height: 1.4; resize: vertical; box-sizing: border-box; font-family: monospace;"></textarea>
+            </div>
+
+            <div style="display: flex; justify-content: flex-end;">
+                <button type="button" onclick="document.getElementById('modal-v2-outreach').style.display='none'" class="btn-secondary" style="font-size: 12px; padding: 6px 14px;">
+                    Cerrar
+                </button>
+            </div>
+        </div>
+    </div>
 
     <!-- MODAL GENERADOR DE PITCH IA EN 16 IDIOMAS -->
     <div id="modal-hunter-pitch" style="display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.85); z-index: 2800; align-items: center; justify-content: center; backdrop-filter: blur(8px); padding: 15px;">

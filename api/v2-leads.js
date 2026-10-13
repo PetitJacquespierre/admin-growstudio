@@ -27,17 +27,24 @@ function parseAtomXml(xmlText, subredditName) {
   const leads = [];
   let match;
 
-  // Palabras clave obligatorias de intención de compra / inmuebles / inversión
-  const propertyKeywords = [
-    'property', 'house', 'apartment', 'villa', 'real estate', 'mortgage',
-    'buy', 'buying', 'bought', 'purchase', 'purchasing', 'financing',
-    'invest', 'investing', 'investment', 'portfolio', 'down payment',
-    'alojamento local', 'golden visa', 'd2 visa', 'd7 visa', 'broker', 'lawyer'
+  // HASDATA SOCIAL LISTENING: Reglas Booleanas Estrictas de Intención de Compra
+  // 1. Verbos de Adquisición / Capital
+  const actionKeywords = [
+    'buy', 'buying', 'bought', 'purchase', 'purchasing',
+    'invest', 'investing', 'investment', 'portfolio',
+    'financing', 'mortgage', 'cash buyer', 'down payment', 'alojamento local'
   ];
 
-  // Palabras a descartar (ruido no relacionado)
-  const noiseKeywords = [
-    'curtains', 'shoes', 'climbing', 'podcast', 'dialysis', 'vodafone', 'furniture', 'stereo'
+  // 2. Activos Inmobiliarios Obligatorios
+  const assetKeywords = [
+    'property', 'house', 'apartment', 'villa', 'real estate', 'home', 'distressed asset'
+  ];
+
+  // 3. Filtro Anti-Ruido Negativo (Descarta alquileres, visas de solo alquiler, quejas y vida cotidiana)
+  const negativeNoiseKeywords = [
+    'rental', 'renting', 'to rent', 'room to rent', 'flatmate', 'roommate', 'housemate', 'sublet',
+    'lease agreement', 'curtains', 'shoes', 'climbing', 'podcast', 'dialysis', 'vodafone',
+    'furniture', 'stereo', 'cancelling', 'contract cancellation', 'scam'
   ];
 
   while ((match = entryRegex.exec(xmlText)) !== null) {
@@ -62,20 +69,22 @@ function parseAtomXml(xmlText, subredditName) {
     const plainContent = unescapeHtml(contentMatch ? contentMatch[1] : '');
     const fullText = (title + ' ' + plainContent).toLowerCase();
 
-    // Filtro de ruido
-    const isNoise = noiseKeywords.some(kw => fullText.includes(kw));
+    // Filtro de ruido negativo estricto (HasData rule)
+    const isNoise = negativeNoiseKeywords.some(kw => fullText.includes(kw));
     if (isNoise) continue;
 
-    // Filtro de intención inmobiliaria
-    const hasIntent = propertyKeywords.some(kw => fullText.includes(kw));
-    if (!hasIntent) continue;
+    // Intención real: Requiere al menos un verbo de adquisición/capital Y un activo inmobiliario
+    const hasAction = actionKeywords.some(kw => fullText.includes(kw));
+    const hasAsset = assetKeywords.some(kw => fullText.includes(kw));
+    if (!hasAction || !hasAsset) continue;
 
     // Cálculo de tiempo relativo real
     let timeLabel = 'Hoy';
+    let diffMins = 30;
     if (published) {
       const pubDate = new Date(published);
       const diffMs = Date.now() - pubDate.getTime();
-      const diffMins = Math.max(1, Math.round(diffMs / 60000));
+      diffMins = Math.max(1, Math.round(diffMs / 60000));
       if (diffMins < 60) timeLabel = `Hace ${diffMins}m`;
       else if (diffMins < 1440) timeLabel = `Hace ${Math.round(diffMins / 60)}h`;
       else timeLabel = `Hace ${Math.round(diffMins / 1440)}d`;
@@ -83,19 +92,33 @@ function parseAtomXml(xmlText, subredditName) {
 
     // Extracción de presupuesto real (si lo menciona en el texto)
     let budget = 'A consultar en hilo';
+    let hasExplicitBudget = false;
     const budgetMatch = (title + ' ' + plainContent).match(/(\$|€|EUR|USD)\s?\d{2,3}(,\d{3}|\.000|\s?k)?/i) ||
                         (title + ' ' + plainContent).match(/\b\d{2,3}\s?(k|k€|keur|000)\s?(€|eur|usd)?\b/i);
     if (budgetMatch) {
       budget = budgetMatch[0];
+      hasExplicitBudget = true;
     } else if (fullText.includes('luxury') || fullText.includes('villa')) {
       budget = 'Presupuesto Alto / Villa';
+      hasExplicitBudget = true;
     } else if (fullText.includes('financing') || fullText.includes('mortgage')) {
       budget = 'En evaluación hipotecaria';
     }
 
     const isHighTicket = fullText.includes('invest') || fullText.includes('portfolio') ||
                          fullText.includes('financing') || fullText.includes('villa') ||
-                         fullText.includes('golden visa');
+                         fullText.includes('alojamento local');
+
+    // SCOUT LEAD SCORER (Fórmula matemática ponderada 0 - 100 de Scout)
+    let scoutScore = 65; // Base calificada por intención de compra y activo
+    if (hasExplicitBudget) scoutScore += 18;
+    if (isHighTicket) scoutScore += 10;
+    if (diffMins < 1440) scoutScore += 7; // Publicado hoy (< 24 horas)
+    scoutScore = Math.min(99, Math.max(70, scoutScore));
+
+    // SCOUT CONTACT EXTRACTOR: Buscar emails o teléfonos en el texto
+    const emailMatch = plainContent.match(/[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/);
+    const phoneMatch = plainContent.match(/(?:\+|00)[1-9]\d{1,3}[\s.-]?\d{2,4}[\s.-]?\d{3,4}[\s.-]?\d{3,4}/);
 
     leads.push({
       id: `real-post-${cleanAuthor}-${published ? published.slice(0, 10) : Date.now()}`,
@@ -104,13 +127,15 @@ function parseAtomXml(xmlText, subredditName) {
       platform: 'Comunidad Verificada',
       platformIcon: '💬',
       source: `r/${subredditName}`,
-      category: isHighTicket ? 'Inversor / Financiación' : 'Comprador / Reubicación',
+      category: isHighTicket ? 'Inversor / Financiación' : 'Comprador Residencial',
       intent: title,
       details: plainContent.length > 250 ? plainContent.substring(0, 247) + '...' : plainContent,
       budget: budget,
       time: timeLabel,
       publishedDate: published,
-      score: isHighTicket ? 97 : 92,
+      score: scoutScore,
+      extractedEmail: emailMatch ? emailMatch[0] : null,
+      extractedPhone: phoneMatch ? phoneMatch[0] : null,
       status: 'VERIFICADO',
       contactUrl: postUrl,
       profileUrl: `https://www.reddit.com/user/${cleanAuthor}`,
