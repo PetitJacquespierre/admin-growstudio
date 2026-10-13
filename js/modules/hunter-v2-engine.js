@@ -25,7 +25,18 @@ export class HunterEngineV2 {
 
     cargarDatos() {
         const stored = localStorage.getItem(STORAGE_V2_KEY);
-        this.leads = stored ? JSON.parse(stored) : [];
+        let parsed = stored ? JSON.parse(stored) : [];
+        // Purgar de inmediato cualquier lead simulado anterior (@invest_capital_eu, etc.)
+        parsed = parsed.filter(lead => {
+            const id = lead.id || '';
+            const author = lead.author || '';
+            return !id.startsWith('v2-soc-') &&
+                   author !== '@invest_capital_eu' &&
+                   author !== '@global_expats_desk' &&
+                   author !== '@mark_reynolds_invest';
+        });
+        this.leads = parsed;
+        this.guardarDatos();
     }
 
     guardarDatos() {
@@ -201,10 +212,12 @@ export class HunterEngineV2 {
                     <!-- Prospecto & Canal -->
                     <td style="padding: 12px;">
                         <div style="font-weight: 700; color: #fff; font-size: 13px; display: flex; align-items: center; gap: 6px;">
-                            <span>${lead.platformIcon || '🌐'}</span>
-                            ${lead.author}
+                            <span>${lead.platformIcon || '💬'}</span>
+                            <a href="${lead.profileUrl || lead.contactUrl}" target="_blank" rel="noopener noreferrer" style="color: #fff; text-decoration: none;" title="Abrir perfil real del usuario" onmouseover="this.style.color='#10b981'" onmouseout="this.style.color='#fff'">
+                                ${lead.author}
+                            </a>
                         </div>
-                        <span style="font-size: 10px; color: var(--brand-cyan); font-weight: 600;">${lead.platform || 'Multicanal'}</span>
+                        <span style="font-size: 10px; color: var(--brand-cyan); font-weight: 600;">${lead.source || 'Comunidad Real'}</span>
                         <span style="font-size: 10px; color: #a1a1aa; margin-left: 4px;">• ${lead.time}</span>
                     </td>
 
@@ -223,7 +236,7 @@ export class HunterEngineV2 {
                         <div style="font-size: 13px; font-weight: 800; color: #10b981; font-family: monospace;">
                             ${lead.budget}
                         </div>
-                        <span style="font-size: 9px; color: #a1a1aa; text-transform: uppercase;">Capacidad Verificada</span>
+                        <span style="font-size: 9px; color: #a1a1aa; text-transform: uppercase;">Interés Inmobiliario Real</span>
                     </td>
 
                     <!-- Categoría -->
@@ -236,11 +249,11 @@ export class HunterEngineV2 {
                     <!-- Contacto / CRM Directo -->
                     <td style="padding: 12px; text-align: right;">
                         <div style="display: flex; gap: 6px; justify-content: flex-end;">
-                            <a href="${lead.directMsgUrl}" target="_blank" rel="noopener noreferrer" class="btn-primary btn-small" style="background: linear-gradient(135deg, #10b981, #059669); color: #000; font-weight: 700; font-size: 11px; padding: 5px 10px; text-decoration: none; display: inline-flex; align-items: center; gap: 4px;" title="Abrir canal directo de contacto">
+                            <a href="${lead.directMsgUrl}" target="_blank" rel="noopener noreferrer" class="btn-primary btn-small" style="background: linear-gradient(135deg, #10b981, #059669); color: #000; font-weight: 700; font-size: 11px; padding: 5px 10px; text-decoration: none; display: inline-flex; align-items: center; gap: 4px;" title="Enviar mensaje directo privado a este usuario">
                                 <span>💬</span> Contactar
                             </a>
-                            <a href="${lead.contactUrl}" target="_blank" rel="noopener noreferrer" class="btn-secondary btn-small" style="padding: 5px 8px; font-size: 11px; text-decoration: none; color: var(--brand-cyan); border-color: rgba(0, 210, 255, 0.4);" title="Ver publicación original">
-                                <span>🔗</span> Ver
+                            <a href="${lead.contactUrl}" target="_blank" rel="noopener noreferrer" class="btn-secondary btn-small" style="padding: 5px 8px; font-size: 11px; text-decoration: none; color: var(--brand-cyan); border-color: rgba(0, 210, 255, 0.4);" title="Abrir la publicación original">
+                                <span>🔗</span> Ver Post
                             </a>
                         </div>
                     </td>
