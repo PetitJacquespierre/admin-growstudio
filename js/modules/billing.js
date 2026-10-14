@@ -211,17 +211,34 @@ async function cargarPagos() {
                 `;
             }
 
+            // Tipo de Pago / Canal
+            const tipoMetodo = p.metodo || (p.moneda === 'Bs' ? 'Pago Móvil' : 'Divisa');
+            let tipoBadge = '';
+            if (tipoMetodo === 'Pago Móvil') {
+                tipoBadge = `<span style="background: rgba(37, 211, 102, 0.15); color: #25d366; padding: 3px 8px; border-radius: 6px; font-size: 11px; font-weight: 700; display: inline-flex; align-items: center; gap: 4px;"><i class="fa-solid fa-mobile-screen-button"></i> Pago Móvil</span>`;
+            } else if (tipoMetodo === 'Zinli') {
+                tipoBadge = `<span style="background: rgba(0, 210, 255, 0.15); color: var(--brand-cyan); padding: 3px 8px; border-radius: 6px; font-size: 11px; font-weight: 700;">💳 Zinli</span>`;
+            } else if (tipoMetodo === 'Binance') {
+                tipoBadge = `<span style="background: rgba(243, 186, 47, 0.15); color: #f3ba2f; padding: 3px 8px; border-radius: 6px; font-size: 11px; font-weight: 700;">🪙 Binance</span>`;
+            } else {
+                tipoBadge = `<span style="background: rgba(255, 255, 255, 0.1); color: #fff; padding: 3px 8px; border-radius: 6px; font-size: 11px; font-weight: 600;">💵 ${tipoMetodo}</span>`;
+            }
+
             tr.innerHTML = `
                 <td>${p.fechaLocal || 'Reciente'}</td>
                 <td>
                     <strong>${p.cedula || p.clienteId || 'N/A'}</strong>
                     <small style="display:block; color:#9ca3af; font-size:11px;">${p.nombre || ''}</small>
                 </td>
-                <td>${p.plan || p.metodo || 'N/A'}</td>
+                <td>
+                    <strong>${p.plan || 'Servicio Web'}</strong>
+                    ${p.tipoServicio ? `<small style="display:block; color:var(--brand-cyan); font-size:10px;">${p.tipoServicio}</small>` : ''}
+                </td>
+                <td>${tipoBadge}</td>
                 <td>${montoHTML}</td>
                 <td>
                     <strong>${p.referencia}</strong>
-                    <small style="display:block; color:#9ca3af; font-size:11px;">${p.metodo || ''}</small>
+                    <small style="display:block; color:#9ca3af; font-size:11px;">Ref / Comprobante</small>
                 </td>
                 <td><span class="badge ${badgeClass}">${p.estado}</span></td>
                 <td style="display:flex; flex-direction:column; gap:4px;">

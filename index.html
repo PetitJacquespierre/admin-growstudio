@@ -421,7 +421,8 @@
                             <tr>
                                 <th>Fecha</th>
                                 <th>Cédula</th>
-                                <th>Plan</th>
+                                <th>Plan / Proyecto</th>
+                                <th>Tipo de Pago</th>
                                 <th>Monto</th>
                                 <th>Referencia</th>
                                 <th>Estado</th>
@@ -688,6 +689,10 @@
                             <div style="display: flex; justify-content: space-between; align-items: center;">
                                 <label style="font-size: 11px; color: #a1a1aa;">Deuda ($)</label>
                                 <input type="number" id="sandia-deuda" class="modern-select" style="width: 80px; padding: 3px; font-size: 11px;" value="0">
+                            </div>
+                            <!-- Estado de Gracia / Cobranza Dinámico -->
+                            <div id="sandia-cobranza-status-box" style="margin-top: 4px; padding: 8px 10px; border-radius: 8px; font-size: 10px; background: rgba(16, 185, 129, 0.1); border: 1px solid rgba(16, 185, 129, 0.3); color: #10b981; line-height: 1.3;">
+                                <span id="sandia-cobranza-badge">🟢 Al día (Corte: día 10)</span>
                             </div>
                             <button id="btn-save-sandia-billing" class="btn-secondary btn-small" style="width: 100%; border-color: var(--brand-orange); color: var(--brand-orange); font-size: 11px;">Guardar Cobranza</button>
                         </div>

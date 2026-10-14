@@ -838,6 +838,9 @@ function initSandiaConfig() {
     const visitasCountEl = document.getElementById('sandia-visitas-count');
     const btnResetVisitas = document.getElementById('btn-reset-sandia-visitas');
 
+    const statusBox = document.getElementById('sandia-cobranza-status-box');
+    const statusBadge = document.getElementById('sandia-cobranza-badge');
+
     // Escuchar cambios de configuración en Firestore
     onSnapshot(doc(db, "sandia_config", "general"), (docSnap) => {
         if (docSnap.exists()) {
@@ -854,6 +857,39 @@ function initSandiaConfig() {
             if (visitasCountEl) {
                 const totalVisitas = data.visitas || 0;
                 visitasCountEl.innerText = totalVisitas.toLocaleString('es-VE');
+            }
+
+            // Cálculo dinámico de período de gracia (5 días después de la fecha de corte)
+            if (statusBox && statusBadge && data.vencimiento) {
+                const hoy = new Date();
+                hoy.setHours(0,0,0,0);
+                const fechaCorte = new Date(data.vencimiento + 'T00:00:00');
+                const fechaGracia = new Date(fechaCorte);
+                fechaGracia.setDate(fechaGracia.getDate() + 5); // 5 días de gracia (ej. corte día 10 -> gracia hasta el 15)
+
+                const deudaTotal = parseFloat(data.deuda || 0);
+
+                if (deudaTotal <= 0) {
+                    statusBox.style.background = 'rgba(16, 185, 129, 0.1)';
+                    statusBox.style.borderColor = 'rgba(16, 185, 129, 0.3)';
+                    statusBox.style.color = '#10b981';
+                    statusBadge.innerText = '🟢 Solvente / Al día';
+                } else if (hoy <= fechaCorte) {
+                    statusBox.style.background = 'rgba(0, 210, 255, 0.1)';
+                    statusBox.style.borderColor = 'rgba(0, 210, 255, 0.3)';
+                    statusBox.style.color = 'var(--brand-cyan)';
+                    statusBadge.innerText = `⏳ Próximo corte: ${data.vencimiento} (5 días de gracia hasta el ${fechaGracia.toISOString().split('T')[0]})`;
+                } else if (hoy <= fechaGracia) {
+                    statusBox.style.background = 'rgba(245, 158, 11, 0.15)';
+                    statusBox.style.borderColor = 'rgba(245, 158, 11, 0.4)';
+                    statusBox.style.color = '#f59e0b';
+                    statusBadge.innerText = `⚠️ En Período de Gracia (Venció el ${data.vencimiento}. Límite holgura: ${fechaGracia.toISOString().split('T')[0]} antes de Mantenimiento)`;
+                } else {
+                    statusBox.style.background = 'rgba(239, 68, 68, 0.15)';
+                    statusBox.style.borderColor = 'rgba(239, 68, 68, 0.4)';
+                    statusBox.style.color = '#ef4444';
+                    statusBadge.innerText = `🔴 Fuera de Gracia (Pasó el ${fechaGracia.toISOString().split('T')[0]} - Se activa Modo Mantenimiento)`;
+                }
             }
         }
     });
