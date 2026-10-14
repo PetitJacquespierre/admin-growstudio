@@ -412,8 +412,16 @@
 
             <!-- PANTALLA DE PAGOS -->
             <section id="payments-screen" style="display: none; padding: 20px; height: 100%; flex-direction: column;">
-                <header class="top-bar" style="margin-bottom: 20px;">
-                    <h2>Pagos Recibidos</h2>
+                <header class="top-bar" style="margin-bottom: 20px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
+                    <div>
+                        <h2 style="margin: 0;">Pagos Recibidos</h2>
+                        <p style="font-size: 12px; color: #a1a1aa; margin: 4px 0 0 0;">Control de ingresos, pagos móviles, divisas y emisión de recibos PDF.</p>
+                    </div>
+                    <div style="display: flex; gap: 8px; align-items: center;">
+                        <button type="button" id="btn-registrar-pago-manual" class="btn-primary btn-small" style="display: flex; align-items: center; gap: 6px; font-weight: 700;">
+                            <span>➕</span> Registrar Pago
+                        </button>
+                    </div>
                 </header>
                 <div class="table-container" style="flex: 1;">
                     <table id="payments-table">
@@ -435,6 +443,69 @@
                     </table>
                 </div>
             </section>
+
+            <!-- MODAL REGISTRO MANUAL DE PAGO -->
+            <div id="modal-registrar-pago" style="display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.85); z-index: 2600; align-items: center; justify-content: center; backdrop-filter: blur(8px);">
+                <div style="background: var(--bg-card); border: 1px solid var(--border); border-radius: 14px; width: 92%; max-width: 480px; padding: 24px; box-shadow: 0 20px 50px rgba(0,0,0,0.8);">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; border-bottom: 1px solid rgba(255,255,255,0.08); padding-bottom: 10px;">
+                        <h3 style="margin: 0; font-size: 1.15rem; color: #fff; display: flex; align-items: center; gap: 8px;">
+                            <span>💵</span> Registrar Pago Directo
+                        </h3>
+                        <button type="button" onclick="document.getElementById('modal-registrar-pago').style.display='none'" style="background: none; border: none; color: #aaa; font-size: 20px; cursor: pointer;">✕</button>
+                    </div>
+
+                    <form id="form-registrar-pago-manual" style="display: flex; flex-direction: column; gap: 12px;">
+                        <div>
+                            <label style="font-size: 11px; color: #a1a1aa; display: block; margin-bottom: 4px;">Cliente / Proyecto:</label>
+                            <select id="manual-pago-cliente" class="modern-select" style="width: 100%;">
+                                <option value="sandia_production" data-cedula="V-16.314.604" data-nombre="Sandía Production" data-plan="Servicio Web">🍉 Sandía Production (V-16.314.604)</option>
+                                <!-- Se rellena dinámicamente con clientes -->
+                            </select>
+                        </div>
+
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+                            <div>
+                                <label style="font-size: 11px; color: #a1a1aa; display: block; margin-bottom: 4px;">Monto en USD ($):</label>
+                                <input type="number" id="manual-pago-monto" min="1" step="0.01" required value="70.00" class="input-modern" style="width: 100%; box-sizing: border-box; padding: 8px; font-weight: 700; color: #4ade80;">
+                            </div>
+                            <div>
+                                <label style="font-size: 11px; color: #a1a1aa; display: block; margin-bottom: 4px;">Método de Pago:</label>
+                                <select id="manual-pago-metodo" class="modern-select" style="width: 100%;">
+                                    <option value="Pago Móvil">📲 Pago Móvil</option>
+                                    <option value="Divisa">💵 Divisa en Efectivo</option>
+                                    <option value="Zinli">💳 Zinli</option>
+                                    <option value="Binance">🪙 Binance Pay</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+                            <div>
+                                <label style="font-size: 11px; color: #a1a1aa; display: block; margin-bottom: 4px;">Referencia / Comprobante:</label>
+                                <input type="text" id="manual-pago-ref" required placeholder="Ej: 03651184" class="input-modern" style="width: 100%; box-sizing: border-box; padding: 8px; font-family: monospace;">
+                            </div>
+                            <div>
+                                <label style="font-size: 11px; color: #a1a1aa; display: block; margin-bottom: 4px;">Fecha del Pago:</label>
+                                <input type="date" id="manual-pago-fecha" required class="input-modern" style="width: 100%; box-sizing: border-box; padding: 8px;">
+                            </div>
+                        </div>
+
+                        <div>
+                            <label style="font-size: 11px; color: #a1a1aa; display: block; margin-bottom: 4px;">Concepto / Detalle:</label>
+                            <input type="text" id="manual-pago-concepto" placeholder="Ej: Abono Web ($50) + Mantenimiento Octubre ($20)" value="Abono Web ($50) + Mantenimiento Octubre ($20)" class="input-modern" style="width: 100%; box-sizing: border-box; padding: 8px;">
+                        </div>
+
+                        <div style="display: flex; gap: 10px; margin-top: 10px; justify-content: flex-end;">
+                            <button type="button" onclick="document.getElementById('modal-registrar-pago').style.display='none'" class="btn-secondary btn-small">
+                                Cancelar
+                            </button>
+                            <button type="submit" id="btn-submit-manual-pago" class="btn-primary btn-small" style="font-weight: 700; background: var(--brand-orange); border-color: var(--brand-orange);">
+                                💾 Registrar y Aprobar
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
 
             <!-- GESTOR DE CLIENTES (Oculto inicialmente) -->
             <section class="client-manager" id="client-manager" style="display: none;">

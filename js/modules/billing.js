@@ -165,7 +165,7 @@ async function cargarPagos() {
         paymentsTbody.innerHTML = '';
         
         if (docsArray.length === 0) {
-            paymentsTbody.innerHTML = '<tr><td colspan="7" style="text-align:center; color: #9ca3af;">No hay pagos registrados aún.</td></tr>';
+            paymentsTbody.innerHTML = '<tr><td colspan="8" style="text-align:center; color: #9ca3af;">No hay pagos registrados aún.</td></tr>';
             return;
         }
 
@@ -250,7 +250,7 @@ async function cargarPagos() {
         });
     } catch (error) {
         console.error("Error al cargar pagos:", error);
-        paymentsTbody.innerHTML = '<tr><td colspan="7" style="color:red; text-align:center;">Error al cargar pagos: ' + error.message + '</td></tr>';
+        paymentsTbody.innerHTML = '<tr><td colspan="8" style="color:red; text-align:center;">Error al cargar pagos: ' + error.message + '</td></tr>';
     }
 }
 
@@ -576,3 +576,159 @@ if (DOM.btnSaveBilling) {
 }
 
 // ==========================================
+// REGISTRO MANUAL DIRECTO DE PAGOS (ADMIN)
+// ==========================================
+function initManualPaymentRegistration() {
+    const btnOpen = document.getElementById('btn-registrar-pago-manual');
+    const modal = document.getElementById('modal-registrar-pago');
+    const form = document.getElementById('form-registrar-pago-manual');
+    const selectCliente = document.getElementById('manual-pago-cliente');
+    const inputFecha = document.getElementById('manual-pago-fecha');
+    const btnSubmit = document.getElementById('btn-submit-manual-pago');
+
+    if (inputFecha && !inputFecha.value) {
+        inputFecha.value = new Date().toISOString().split('T')[0];
+    }
+
+    if (btnOpen && modal) {
+        btnOpen.addEventListener('click', () => {
+            // Actualizar opciones del select con clientes existentes
+            if (selectCliente) {
+                const clients = state.allClientsCache || [];
+                let optionsHtml = `<option value="sandia_production" data-cedula="V-16.314.604" data-nombre="Sandía Production" data-plan="Servicio Web">🍉 Sandía Production (V-16.314.604)</option>`;
+                clients.forEach(c => {
+                    const cData = c.data || {};
+                    const name = cData.businessName || cData.nombre || c.id;
+                    const ced = cData.cedula || c.id;
+                    const plan = cData.plan || 'Plan Menú Digital';
+                    optionsHtml += `<option value="${c.id}" data-cedula="${ced}" data-nombre="${name}" data-plan="${plan}">🍽️ ${name} (${ced})</option>`;
+                });
+                selectCliente.innerHTML = optionsHtml;
+            }
+            modal.style.display = 'flex';
+        });
+    }
+
+    if (form) {
+        form.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            if (!selectCliente) return;
+
+            const selectedOption = selectCliente.options[selectCliente.selectedIndex];
+            const clienteId = selectCliente.value;
+            const cedula = selectedOption ? (selectedOption.getAttribute('data-cedula') || clienteId) : clienteId;
+            const nombre = selectedOption ? (selectedOption.getAttribute('data-nombre') || 'Cliente') : 'Cliente';
+            const plan = selectedOption ? (selectedOption.getAttribute('data-plan') || 'Servicio Web') : 'Servicio Web';
+
+            const monto = parseFloat(document.getElementById('manual-pago-monto').value) || 0;
+            const metodo = document.getElementById('manual-pago-metodo').value;
+            const referencia = document.getElementById('manual-pago-ref').value.trim();
+            const fechaStr = document.getElementById('manual-pago-fecha').value;
+            const concepto = document.getElementById('manual-pago-concepto').value.trim();
+
+            if (monto <= 0) {
+                alert("Por favor ingresa un monto válido mayor a 0.");
+                return;
+            }
+            if (!referencia) {
+                alert("Por favor ingresa un número de referencia o comprobante.");
+                return;
+            }
+
+            if (btnSubmit) {
+                btnSubmit.disabled = true;
+                btnSubmit.innerText = "Registrando...";
+            }
+
+            try {
+                const cachedTasa = parseFloat(localStorage.getItem("bcv_rate_cache")) || 871.37;
+                const nuevoPago = {
+                    clienteId: clienteId,
+                    cedula: cedula,
+                    nombre: nombre,
+                    plan: plan,
+                    tipoServicio: concepto || 'Abono / Mantenimiento Web',
+                    monto: monto,
+                    montoReportado: (metodo === 'Pago Móvil') ? (monto * cachedTasa) : monto,
+                    moneda: (metodo === 'Pago Móvil') ? 'Bs' : 'USD',
+                    tasaBcv: cachedTasa,
+                    metodo: metodo,
+                    referencia: referencia,
+                    estado: 'APROBADO',
+                    fechaRegistro: new Date().toISOString(),
+                    fechaLocal: fechaStr || new Date().toISOString().split('T')[0]
+                };
+
+                // 1. Guardar en colección "pagos"
+                const docRef = await addDoc(collection(db, "pagos"), nuevoPago);
+
+                // 2. Si es Sandía Production, actualizar saldo y fecha de corte en sandia_config/general
+                if (clienteId === 'sandia_production' || cedula.includes("16314604")) {
+                    const sRef = doc(db, "sandia_config", "general");
+                    const sSnap = await getDoc(sRef);
+                    const sData = sSnap.exists() ? sSnap.data() : {};
+                    const deudaActual = sData.deuda !== undefined ? parseFloat(sData.deuda) : 170;
+                    // El pago de hoy ($70) cubre $20 de mantenimiento y $50 de web, restando a la deuda global
+                    const nuevaDeuda = Math.max(0, deudaActual - monto);
+
+                    // Nueva fecha de corte: Noviembre 10 (con 5 días de holgura hasta el 15)
+                    await setDoc(sRef, {
+                        deuda: nuevaDeuda,
+                        vencimiento: '2026-11-10',
+                        estadoWeb: 'ONLINE',
+                        fechaUltimoPago: new Date().toISOString(),
+                        ultimoMontoPagado: monto,
+                        ultimaReferencia: referencia
+                    }, { merge: true });
+
+                    // Refrescar inputs en vista de Sandía si está en el DOM
+                    const sVenc = document.getElementById('sandia-vencimiento');
+                    const sDeuda = document.getElementById('sandia-deuda');
+                    if (sVenc) sVenc.value = '2026-11-10';
+                    if (sDeuda) sDeuda.value = nuevaDeuda;
+                } else {
+                    // Actualizar cliente restaurante regular
+                    const cRef = doc(db, "clientes", clienteId);
+                    const cSnap = await getDoc(cRef);
+                    if (cSnap.exists()) {
+                        const cData = cSnap.data();
+                        const nuevaDeuda = Math.max(0, (cData.deuda || 0) - monto);
+                        const nuevaFecha = calcularNuevaFecha(cData.fechaVencimiento, cData.plan);
+                        await updateDoc(cRef, {
+                            deuda: nuevaDeuda,
+                            estado: 'ACTIVO',
+                            fechaVencimiento: nuevaFecha,
+                            fechaUltimoPago: new Date().toISOString()
+                        });
+                    }
+                }
+
+                if (window.showToast) window.showToast(`¡Pago de $${monto} aprobado y registrado con éxito! 🎉`, "success");
+                else alert(`¡Pago de $${monto} aprobado y registrado con éxito!`);
+
+                modal.style.display = 'none';
+                form.reset();
+                if (inputFecha) inputFecha.value = new Date().toISOString().split('T')[0];
+
+                // Recargar tabla de pagos
+                cargarPagos();
+
+                // Recargar métricas del dashboard si están disponibles
+                if (typeof window.renderDashboardKPIs === 'function' && state.allClientsCache) {
+                    window.renderDashboardKPIs(state.allClientsCache);
+                }
+            } catch (err) {
+                console.error("Error al registrar pago manual:", err);
+                alert("Error al registrar el pago: " + err.message);
+            } finally {
+                if (btnSubmit) {
+                    btnSubmit.disabled = false;
+                    btnSubmit.innerText = "💾 Registrar y Aprobar";
+                }
+            }
+        });
+    }
+}
+
+// Inicializar módulo de pagos manuales al cargar
+initManualPaymentRegistration();

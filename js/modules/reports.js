@@ -112,6 +112,7 @@ window.renderDashboardKPIs = function(tasaParam) {
     let totalDebt = 0;
     let debtorClientsCount = 0;
 
+    // Tráfico, MRR y Deuda de Clientes Restaurantes
     clients.forEach(c => {
         const data = c.data || {};
         const isActive = (data.estado === 'ACTIVO');
@@ -136,8 +137,23 @@ window.renderDashboardKPIs = function(tasaParam) {
         }
     });
 
+    // Incorporar Sandía Production a las Métricas Globales de la Agencia
+    if (window.sandiaConfigCache) {
+        const sData = window.sandiaConfigCache;
+        if (sData.estadoWeb === 'ONLINE') {
+            activeCount++;
+            totalMRR += parseFloat(sData.mensualidad || 20);
+        }
+        totalViews += parseInt(sData.visitas || 0, 10);
+        const sDeuda = parseFloat(sData.deuda || 0);
+        if (sDeuda > 0) {
+            totalDebt += sDeuda;
+            debtorClientsCount++;
+        }
+    }
+
     activeClientsEl.innerText = activeCount.toString();
-    if (totalClientsEl) totalClientsEl.innerText = `${clients.length} restaurantes registrados`;
+    if (totalClientsEl) totalClientsEl.innerText = `${clients.length + (window.sandiaConfigCache ? 1 : 0)} clientes activos`;
 
     if (mrrUsdEl) mrrUsdEl.innerText = `$${Math.round(totalMRR).toLocaleString('es-VE')}`;
     if (mrrBsEl) mrrBsEl.innerText = `≈ ${(totalMRR * tasa).toLocaleString('es-VE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} Bs/mes`;
@@ -327,6 +343,35 @@ function renderServiceHealthAndAlerts(clients, tasa) {
         }
     });
 
+    // Incorporar Sandía Production a las alertas de cobro si tiene saldo pendiente o fecha próxima/vencida
+    if (window.sandiaConfigCache) {
+        const sData = window.sandiaConfigCache;
+        let sDiffDays = null;
+        let sVencido = false;
+        let sProximo = false;
+        if (sData.vencimiento) {
+            const fv = new Date(sData.vencimiento + 'T00:00:00');
+            sDiffDays = Math.ceil((fv - hoy) / (1000 * 60 * 60 * 24));
+            if (sDiffDays < 0) sVencido = true;
+            else if (sDiffDays <= 7) sProximo = true;
+        }
+        const sDeuda = parseFloat(sData.deuda || 0);
+        if (sVencido || sProximo || sDeuda > 0) {
+            urgentClients.push({
+                id: 'sandia_production',
+                name: 'Sandía Production',
+                whatsapp: '584126574354',
+                plan: sData.plan || 'WEB + MTTO',
+                deuda: sDeuda,
+                fechaVencimiento: sData.vencimiento || '',
+                diffDays: sDiffDays,
+                esVencido: sVencido,
+                esProximo: sProximo,
+                isSandia: true
+            });
+        }
+    }
+
     // Ordenar: primero los más atrasados / menor cantidad de días
     urgentClients.sort((a, b) => {
         const dA = a.diffDays !== null ? a.diffDays : 999;
@@ -395,6 +440,12 @@ function renderServiceHealthAndAlerts(clients, tasa) {
 
 // ABRIR CLIENTE DESDE DASHBOARD
 window.abrirClienteDesdeDashboard = function(clienteId) {
+    if (clienteId === 'sandia_production') {
+        if (typeof window.openSandiaScreen === 'function') {
+            window.openSandiaScreen();
+        }
+        return;
+    }
     const clients = state.allClientsCache || [];
     const client = clients.find(c => c.id === clienteId);
     if (!client) {
@@ -407,6 +458,15 @@ window.abrirClienteDesdeDashboard = function(clienteId) {
 
 // COBRAR DIRECTO POR WHATSAPP DESDE LA TARJETA DE ALERTA DEL DASHBOARD
 window.cobrarClienteDesdeDashboard = async function(clienteId) {
+    if (clienteId === 'sandia_production') {
+        const sData = window.sandiaConfigCache || {};
+        const deuda = sData.deuda !== undefined ? sData.deuda : 100;
+        const vencimiento = sData.vencimiento || '2026-11-10';
+        const telefono = "584126574354";
+        const mensaje = `¡Hola Sandía Production! 🚀 Te saludamos desde Grow Studio.\n\nTe recordamos el saldo pendiente de tu portal web:\n• Saldo restante: *$${deuda} USD*\n• Próximo corte: *${vencimiento}*\n\nPuedes reportar y gestionar tus pagos directamente en tu portal: https://growstudioweb.vercel.app/cliente/\n\n¡Muchas gracias por confiar en nosotros! 🏃‍♂️💨`;
+        window.open(`https://api.whatsapp.com/send?phone=${telefono}&text=${encodeURIComponent(mensaje)}`, '_blank');
+        return;
+    }
     const clients = state.allClientsCache || [];
     const client = clients.find(c => c.id === clienteId);
     if (!client) return;

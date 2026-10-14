@@ -845,6 +845,10 @@ function initSandiaConfig() {
     onSnapshot(doc(db, "sandia_config", "general"), (docSnap) => {
         if (docSnap.exists()) {
             const data = docSnap.data();
+            window.sandiaConfigCache = data;
+            if (typeof window.renderDashboardKPIs === 'function' && window.state && window.state.allClientsCache) {
+                window.renderDashboardKPIs(window.state.allClientsCache);
+            }
             if (selectStatus && data.estadoWeb) selectStatus.value = data.estadoWeb;
             if (badgeStatus) {
                 if (data.estadoWeb === 'ONLINE') badgeStatus.style.background = '#2ecc71';
