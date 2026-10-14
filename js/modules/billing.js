@@ -295,8 +295,39 @@ window.aprobarPago = async function(pagoId, cedulaPago, montoPagado, fechaPago, 
         
         let nuevaFechaFinal = '';
         
+        // 0. Caso Especial: Sandía Production (Servicio Web de Eventos y Running)
+        const isSandia = (clienteIdDirecto === "sandia_production") || 
+                         (typeof cedulaPago === 'string' && (cedulaPago.includes("16314604") || cedulaPago.toLowerCase().includes("sandia")));
+
+        if (isSandia) {
+            try {
+                const sandiaRef = fDoc(db, "sandia_config", "general");
+                const sandiaSnap = await fGetDoc(sandiaRef);
+                const sData = sandiaSnap.exists() ? sandiaSnap.data() : {};
+                const deudaActual = sData.deuda !== undefined ? sData.deuda : 0;
+                const nuevaDeuda = Math.max(0, deudaActual - montoPagado);
+                nuevaFechaFinal = calcularNuevaFecha(sData.vencimiento, sData.plan || 'MENSUAL');
+                
+                await fUpdateDoc(sandiaRef, {
+                    deuda: nuevaDeuda,
+                    vencimiento: nuevaFechaFinal,
+                    estadoWeb: 'ONLINE',
+                    fechaUltimoPago: new Date().toISOString()
+                });
+                clienteEncontrado = true;
+                
+                // Actualizar inputs en pantalla si la vista de Sandía está cargada
+                const sVenc = document.getElementById('sandia-vencimiento');
+                const sDeuda = document.getElementById('sandia-deuda');
+                if (sVenc) sVenc.value = nuevaFechaFinal;
+                if (sDeuda) sDeuda.value = nuevaDeuda;
+            } catch (errSandia) {
+                console.error("Error al actualizar cobranza de Sandía Production:", errSandia);
+            }
+        }
+        
         // 1. Intentar por clienteId directo
-        if (clienteIdDirecto) {
+        if (!clienteEncontrado && clienteIdDirecto) {
             try {
                 const snap = await fGetDoc(fDoc(db, "clientes", clienteIdDirecto));
                 if (snap.exists()) {
@@ -320,7 +351,7 @@ window.aprobarPago = async function(pagoId, cedulaPago, montoPagado, fechaPago, 
         
         // 3. Buscar por campo usuario
         if (!clienteEncontrado) {
-            const q2 = fQuery(fCollection(db, "clientes"), fWhere("usuario", "==", cedulaPago.toLowerCase()));
+            const q2 = fQuery(fCollection(db, "clientes"), fWhere("usuario", "==", (cedulaPago || '').toLowerCase()));
             const snap2 = await fGetDocs(q2);
             if (!snap2.empty) {
                 for (const cDoc of snap2.docs) {

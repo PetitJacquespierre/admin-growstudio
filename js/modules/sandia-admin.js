@@ -833,6 +833,7 @@ function initSandiaConfig() {
     const btnSaveBilling = document.getElementById('btn-save-sandia-billing');
     const selectPlan = document.getElementById('sandia-plan');
     const inputVencimiento = document.getElementById('sandia-vencimiento');
+    const inputDeuda = document.getElementById('sandia-deuda');
 
     const visitasCountEl = document.getElementById('sandia-visitas-count');
     const btnResetVisitas = document.getElementById('btn-reset-sandia-visitas');
@@ -849,6 +850,7 @@ function initSandiaConfig() {
             }
             if (selectPlan && data.plan) selectPlan.value = data.plan;
             if (inputVencimiento && data.vencimiento) inputVencimiento.value = data.vencimiento;
+            if (inputDeuda) inputDeuda.value = (data.deuda !== undefined ? data.deuda : 0);
             if (visitasCountEl) {
                 const totalVisitas = data.visitas || 0;
                 visitasCountEl.innerText = totalVisitas.toLocaleString('es-VE');
@@ -891,10 +893,17 @@ function initSandiaConfig() {
         btnSaveBilling.addEventListener('click', async () => {
             const plan = selectPlan.value;
             const vencimiento = inputVencimiento.value;
+            const deuda = inputDeuda ? (parseFloat(inputDeuda.value) || 0) : 0;
             btnSaveBilling.disabled = true;
             btnSaveBilling.innerText = "Guardando...";
             try {
-                await setDoc(doc(db, "sandia_config", "general"), { plan, vencimiento, mensualidad: 20, fechaModificacion: new Date().toISOString() }, { merge: true });
+                await setDoc(doc(db, "sandia_config", "general"), { 
+                    plan, 
+                    vencimiento, 
+                    deuda,
+                    mensualidad: 20, 
+                    fechaModificacion: new Date().toISOString() 
+                }, { merge: true });
                 alert("¡Datos de cobranza actualizados!");
             } catch (err) {
                 alert("Error: " + err.message);
