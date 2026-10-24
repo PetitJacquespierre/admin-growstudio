@@ -520,9 +520,12 @@ export function loadSandiaData() {
 
         filtrados.forEach(c => {
             const id = c.id;
-            const esReutilizable = c.tipo !== 'UN_SOLO_USO';
+            const tipoCupon = c.tipo || 'REUTILIZABLE';
+            const maxUsos = tipoCupon === 'UN_SOLO_USO' ? 1 : (tipoCupon === 'DOS_USOS' ? 2 : (tipoCupon === 'TRES_USOS' ? 3 : null));
+            const esReutilizable = maxUsos === null;
+            const usosActuales = Number(c.usosCount !== undefined ? c.usosCount : (c.estado === 'USADO' ? 1 : 0));
             const precioUSD = (c.precioUSD !== undefined) ? Number(c.precioUSD) : 0;
-            const estaUsado = !esReutilizable && (c.estado === 'USADO' || (!!c.usadoEn && !c.habilitado));
+            const estaUsado = !esReutilizable && (c.estado === 'USADO' || usosActuales >= maxUsos || (!!c.usadoEn && !c.habilitado && maxUsos === 1));
             const estaHabilitado = c.estado === 'HABILITADO' || (c.habilitado === true && !estaUsado);
 
             let badge = '';
@@ -534,16 +537,26 @@ export function loadSandiaData() {
                 badge = `<span style="background: rgba(149, 165, 166, 0.2); color: #95a5a6; padding: 4px 8px; border-radius: 6px; font-weight: bold; font-size: 11px;">⏸️ Pausado</span>`;
             }
 
-            const badgeTipo = esReutilizable 
-                ? `<span style="background: rgba(0, 210, 255, 0.15); color: var(--brand-cyan); padding: 3px 8px; border-radius: 6px; font-size: 11px; font-weight: 700;">♾️ Multiuso</span>`
-                : `<span style="background: rgba(255, 165, 0, 0.15); color: #ffa500; padding: 3px 8px; border-radius: 6px; font-size: 11px; font-weight: 700;">🔒 1 Solo Uso</span>`;
+            let badgeTipo = `<span style="background: rgba(0, 210, 255, 0.15); color: var(--brand-cyan); padding: 3px 8px; border-radius: 6px; font-size: 11px; font-weight: 700;">♾️ Multiuso</span>`;
+            if (tipoCupon === 'UN_SOLO_USO') {
+                badgeTipo = `<span style="background: rgba(255, 165, 0, 0.15); color: #ffa500; padding: 3px 8px; border-radius: 6px; font-size: 11px; font-weight: 700;">🔒 1 Solo Uso</span>`;
+            } else if (tipoCupon === 'DOS_USOS') {
+                badgeTipo = `<span style="background: rgba(255, 165, 0, 0.15); color: #ffa500; padding: 3px 8px; border-radius: 6px; font-size: 11px; font-weight: 700;">🔒 2 Usos</span>`;
+            } else if (tipoCupon === 'TRES_USOS') {
+                badgeTipo = `<span style="background: rgba(255, 165, 0, 0.15); color: #ffa500; padding: 3px 8px; border-radius: 6px; font-size: 11px; font-weight: 700;">🔒 3 Usos</span>`;
+            }
 
             const badgePrecio = precioUSD === 0 
                 ? `<span style="color: #00ff66; font-weight: 800; font-size: 12px;">GRATIS ($0)</span>`
                 : `<span style="color: #ffffff; font-weight: 800; font-size: 12px;">$${precioUSD} USD</span>`;
 
             let atletasRegistradosText = '-';
-            if (c.usosCount !== undefined) {
+            if (maxUsos !== null) {
+                const infoAtleta = (c.atleta && c.atleta.nombre)
+                    ? ` <span style="font-size:10px; color:#888;">(${c.atleta.nombre})</span>`
+                    : (c.ultimoAtleta && c.ultimoAtleta.nombre ? ` <span style="font-size:10px; color:#888;">(${c.ultimoAtleta.nombre})</span>` : '');
+                atletasRegistradosText = `<strong style="color: var(--brand-cyan);">${usosActuales} / ${maxUsos}</strong> usos${infoAtleta}`;
+            } else if (c.usosCount !== undefined) {
                 atletasRegistradosText = `<strong style="color: var(--brand-cyan);">${c.usosCount}</strong> atletas`;
             } else if (c.atleta) {
                 atletasRegistradosText = `${c.atleta.nombre || 'Atleta'} <span style="font-size:10px; color:#888;">(C.I. ${c.atleta.cedula || 'N/A'})</span>`;
@@ -659,13 +672,24 @@ if (formEditarCupon) {
         const id = document.getElementById('edit-cupon-id').value;
         const precioUSD = Math.max(0, parseFloat(document.getElementById('edit-cupon-precio').value) || 0);
         const tipo = document.getElementById('edit-cupon-tipo').value;
+        const maxUsos = tipo === 'UN_SOLO_USO' ? 1 : (tipo === 'DOS_USOS' ? 2 : (tipo === 'TRES_USOS' ? 3 : null));
 
         try {
-            await updateDoc(doc(db, "sandia_cupones_horror", id), {
+            const payload = {
                 precioUSD: Number(precioUSD),
                 tipo: tipo,
+                maxUsos: maxUsos,
                 fechaActualizacion: new Date().toISOString()
-            });
+            };
+
+            const cached = allCuponesCache.find(item => item.id === id);
+            const usosActuales = cached ? Number(cached.usosCount !== undefined ? cached.usosCount : (cached.estado === 'USADO' ? 1 : 0)) : 0;
+            if (maxUsos === null || usosActuales < maxUsos) {
+                payload.estado = 'HABILITADO';
+                payload.habilitado = true;
+            }
+
+            await updateDoc(doc(db, "sandia_cupones_horror", id), payload);
             if (window.showToast) window.showToast(`Cupón ${id} actualizado ($${precioUSD} USD - ${tipo})`);
             else alert(`Cupón ${id} actualizado.`);
             document.getElementById('modal-editar-cupon').style.display = 'none';
@@ -679,10 +703,13 @@ if (formEditarCupon) {
 async function habilitarCuponEnFirestore(codigo, precioUSD = 0, tipo = 'REUTILIZABLE') {
     try {
         const idSanitizado = codigo.trim().toUpperCase();
+        const maxUsos = tipo === 'UN_SOLO_USO' ? 1 : (tipo === 'DOS_USOS' ? 2 : (tipo === 'TRES_USOS' ? 3 : null));
         await setDoc(doc(db, "sandia_cupones_horror", idSanitizado), {
             codigo: idSanitizado,
             precioUSD: Number(precioUSD),
-            tipo: tipo, // 'REUTILIZABLE' (no se quema) o 'UN_SOLO_USO' (se quema)
+            tipo: tipo, // 'REUTILIZABLE', 'UN_SOLO_USO', 'DOS_USOS', 'TRES_USOS'
+            maxUsos: maxUsos,
+            usosCount: 0,
             estado: 'HABILITADO',
             habilitado: true,
             fechaCreacion: new Date().toISOString(),
