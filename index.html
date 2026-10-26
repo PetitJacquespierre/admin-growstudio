@@ -168,6 +168,13 @@
                         <span style="font-size: 11px; color: #10b981; font-weight: bold;">Bs</span>
                         <span style="font-size: 10px; color: #71717a; margin-left: 2px;" id="bcv-header-updated"></span>
                     </div>
+
+                    <!-- WIDGET NOTIFICACIONES Y ALERTAS DE VENCIMIENTO -->
+                    <div id="vencimientos-top-widget" onclick="window.abrirModalAlertasVencimiento && window.abrirModalAlertasVencimiento()" style="display: flex; align-items: center; gap: 8px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.12); padding: 5px 14px; border-radius: 20px; cursor: pointer; transition: all 0.2s; position: relative;" title="Alertas de Vencimiento de Menús">
+                        <span style="font-size: 14px;">🔔</span>
+                        <span style="font-size: 12px; color: #a1a1aa; font-weight: 600;">Alertas:</span>
+                        <span id="badge-vencimientos-top" style="background: rgba(16, 185, 129, 0.2); color: #10b981; border: 1px solid rgba(16, 185, 129, 0.4); font-size: 11px; font-weight: 800; padding: 1px 7px; border-radius: 10px;">0</span>
+                    </div>
                 </div>
             </header>
             
@@ -877,9 +884,17 @@
                         <div style="position: relative; flex: 1; min-width: 200px;">
                             <input type="text" id="input-search-cupones" placeholder="🔍 Buscar cupón por código o atleta..." class="input-modern" style="width: 100%; box-sizing: border-box; padding: 8px 12px; font-size: 12px; border-radius: 8px;">
                         </div>
-                        <span id="cupones-count-badge" style="font-size: 11px; background: rgba(0, 210, 255, 0.15); color: var(--brand-cyan); padding: 5px 10px; border-radius: 8px; font-weight: 700; white-space: nowrap;">
-                            0 cupones
-                        </span>
+                        <div style="display: flex; gap: 8px; align-items: center;">
+                            <select id="select-filtro-cupones-estado" class="modern-select" style="padding: 7px 12px; font-size: 12px; border-radius: 8px; min-width: 175px;">
+                                <option value="TODOS" selected>⚡ Todos los Estados</option>
+                                <option value="ACTIVO">🟢 Solo Activos (Válidos)</option>
+                                <option value="PAUSADO">⏸️ Solo Pausados</option>
+                                <option value="USADO">🔒 Solo Canjeados (Quemados)</option>
+                            </select>
+                            <span id="cupones-count-badge" style="font-size: 11px; background: rgba(0, 210, 255, 0.15); color: var(--brand-cyan); padding: 7px 12px; border-radius: 8px; font-weight: 700; white-space: nowrap;">
+                                0 cupones
+                            </span>
+                        </div>
                     </div>
 
                     <div class="table-container" style="background: var(--bg-card); border-radius: 12px; border: 1px solid var(--border); overflow-x: auto !important; -webkit-overflow-scrolling: touch; width: 100%; max-width: 100%; display: block;">
@@ -1125,8 +1140,11 @@
                         <button id="btn-v2-auto-stream" class="btn-secondary" style="border-color: rgba(16, 185, 129, 0.4); color: #10b981; font-size: 12px; font-weight: 700; display: flex; align-items: center; gap: 6px; cursor: pointer;">
                             <span>▶️</span> Auto-Rastreo Continuo
                         </button>
-                        <button id="btn-v2-clear-cache" class="btn-secondary" style="font-size: 11px; border-color: rgba(255,255,255,0.2); color: #a1a1aa;">
+                        <button id="btn-v2-clear-cache" class="btn-secondary" style="font-size: 11px; border-color: rgba(255,255,255,0.2); color: #a1a1aa; cursor: pointer;">
                             🔄 Limpiar Base
+                        </button>
+                        <button id="btn-v2-sync-cloud" class="btn-secondary" style="border-color: rgba(0, 210, 255, 0.4); color: var(--brand-cyan); font-size: 12px; font-weight: 700; display: flex; align-items: center; gap: 6px; cursor: pointer;" title="Respaldar o recuperar leads en Firebase Firestore">
+                            <span>☁️</span> Sincronizar Nube
                         </button>
                         <button id="btn-v2-export-crm" class="btn-secondary" style="border-color: rgba(16, 185, 129, 0.4); color: #10b981; font-size: 12px; font-weight: 700; display: flex; align-items: center; gap: 6px;">
                             <span>📊</span> Exportar CSV / CRM
@@ -1668,6 +1686,56 @@
         </div>
     </div>
 
+    <!-- MODAL ALERTAS Y NOTIFICACIONES DE VENCIMIENTO DE MENÚS (FASE 4) -->
+    <div id="modal-alertas-vencimiento" style="display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.85); z-index: 2600; align-items: center; justify-content: center; backdrop-filter: blur(8px);">
+        <div style="background: #121218; border: 1px solid rgba(255,255,255,0.12); border-radius: 16px; width: 92%; max-width: 720px; padding: 24px; box-shadow: 0 25px 60px rgba(0,0,0,0.85); max-height: 85vh; display: flex; flex-direction: column; font-family: 'Segoe UI', sans-serif;">
+            
+            <!-- HEADER MODAL -->
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; border-bottom: 1px solid rgba(255,255,255,0.08); padding-bottom: 14px; flex-wrap: wrap; gap: 10px;">
+                <div style="display: flex; align-items: center; gap: 10px;">
+                    <span style="font-size: 22px;">🔔</span>
+                    <div>
+                        <h3 style="margin: 0; font-size: 1.15rem; color: #ffffff; font-weight: 700;">Alertas de Vencimiento de Menús</h3>
+                        <p style="margin: 2px 0 0 0; font-size: 11px; color: #a1a1aa;">Monitoreo preventivo de clientes SaaS y cobranza proactiva</p>
+                    </div>
+                </div>
+
+                <div style="display: flex; align-items: center; gap: 8px;">
+                    <button type="button" id="btn-activar-push-notif" onclick="window.solicitarPermisoNotificaciones && window.solicitarPermisoNotificaciones()" class="btn-secondary btn-small" style="font-size: 11px; padding: 6px 12px; border-radius: 20px; cursor: pointer; transition: all 0.2s;">
+                        <span>🔔</span> Activar Alertas en Móvil / PC
+                    </button>
+                    <button type="button" onclick="window.cerrarModalAlertasVencimiento && window.cerrarModalAlertasVencimiento()" style="background: none; border: none; color: #a1a1aa; font-size: 20px; cursor: pointer; padding: 4px 8px;">✕</button>
+                </div>
+            </div>
+
+            <!-- RESUMEN EN BADGES -->
+            <div id="alertas-resumen-badges" style="display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 15px;">
+                <!-- Dinámico -->
+            </div>
+
+            <!-- LISTA SCROLLABLE DE RESTAURANTES -->
+            <div id="alertas-vencimiento-list" style="overflow-y: auto; flex: 1; display: flex; flex-direction: column; gap: 10px; padding-right: 5px; margin-bottom: 15px;">
+                <!-- Dinámico -->
+            </div>
+
+            <!-- FOOTER -->
+            <div style="display: flex; justify-content: space-between; align-items: center; border-top: 1px solid rgba(255,255,255,0.08); padding-top: 14px; flex-wrap: wrap; gap: 10px;">
+                <span style="font-size: 11px; color: #71717a;">
+                    💡 Los montos se calculan automáticamente a la tasa oficial BCV del día.
+                </span>
+                <div style="display: flex; gap: 8px;">
+                    <button type="button" onclick="window.renderModalAlertas && window.renderModalAlertas()" class="btn-secondary btn-small" style="font-size: 12px; padding: 7px 14px;">
+                        <span>🔄</span> Actualizar Lista
+                    </button>
+                    <button type="button" onclick="window.cerrarModalAlertasVencimiento && window.cerrarModalAlertasVencimiento()" class="btn-primary btn-small" style="font-size: 12px; padding: 7px 18px;">
+                        Cerrar
+                    </button>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
     <!-- CONTENEDOR TOAST FLOTANTE -->
     <div id="toast-container" style="position: fixed; bottom: 24px; right: 24px; z-index: 9999; display: flex; flex-direction: column; gap: 10px; pointer-events: none;"></div>
 
@@ -1685,6 +1753,7 @@
     <script type="module" src="js/modules/hero.js"></script>
     <script type="module" src="js/modules/hunter-radar.js"></script>
     <script type="module" src="js/modules/hunter-v2-engine.js"></script>
+    <script type="module" src="js/modules/vencimientos-alerts.js"></script>
     <script type="module">
         import { initSandiaAdmin } from "./js/modules/sandia-admin.js";
         initSandiaAdmin();

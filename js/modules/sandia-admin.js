@@ -491,18 +491,41 @@ export function loadSandiaData() {
     });
 
     // Cupones de Cortesía (5K Horror Story / Sorteos)
-    // Cupones de Cortesía (5K Horror Story / Sorteos)
     const tableCuponesBody = document.getElementById('sandia-cupones-tbody');
     const inputSearchCupones = document.getElementById('input-search-cupones');
+    const selectFiltroEstado = document.getElementById('select-filtro-cupones-estado');
     const badgeCountCupones = document.getElementById('cupones-count-badge');
     let allCuponesCache = [];
+
+    function calcularEstadoCupon(c) {
+        const tipoCupon = c.tipo || 'REUTILIZABLE';
+        const maxUsos = tipoCupon === 'UN_SOLO_USO' ? 1 : (tipoCupon === 'DOS_USOS' ? 2 : (tipoCupon === 'TRES_USOS' ? 3 : (tipoCupon === 'CUATRO_USOS' ? 4 : (tipoCupon === 'CINCO_USOS' ? 5 : (typeof c.maxUsos === 'number' && c.maxUsos > 0 ? c.maxUsos : null)))));
+        const esReutilizable = maxUsos === null;
+        const usosActuales = Number(c.usosCount !== undefined ? c.usosCount : (c.estado === 'USADO' ? 1 : 0));
+        const estaUsado = !esReutilizable && (c.estado === 'USADO' || usosActuales >= maxUsos || (!!c.usadoEn && !c.habilitado && maxUsos === 1));
+        const estaHabilitado = c.estado === 'HABILITADO' || (c.habilitado === true && !estaUsado);
+
+        if (estaUsado) return 'USADO';
+        if (estaHabilitado) return 'ACTIVO';
+        return 'PAUSADO';
+    }
 
     function renderCuponesFiltrados() {
         if (!tableCuponesBody) return;
         tableCuponesBody.innerHTML = '';
 
+        const estadoFiltro = selectFiltroEstado ? selectFiltroEstado.value : 'TODOS';
         const filterQuery = (inputSearchCupones ? inputSearchCupones.value.trim().toLowerCase() : '');
+
         const filtrados = allCuponesCache.filter(c => {
+            const estadoCalculado = calcularEstadoCupon(c);
+
+            // Filtro por Estado (ACTIVO, PAUSADO, USADO)
+            if (estadoFiltro !== 'TODOS' && estadoCalculado !== estadoFiltro) {
+                return false;
+            }
+
+            // Filtro por Búsqueda (código o atleta)
             if (!filterQuery) return true;
             const cod = (c.id || '').toLowerCase();
             const atletaNombre = (c.atleta && c.atleta.nombre ? c.atleta.nombre : '').toLowerCase();
@@ -511,7 +534,8 @@ export function loadSandiaData() {
         });
 
         if (badgeCountCupones) {
-            badgeCountCupones.innerText = `${filtrados.length} / ${allCuponesCache.length} cupones`;
+            const textoFiltro = estadoFiltro === 'TODOS' ? '' : ` • ${estadoFiltro}`;
+            badgeCountCupones.innerText = `${filtrados.length} / ${allCuponesCache.length} cupones${textoFiltro}`;
         }
 
         if (filtrados.length === 0) {
@@ -567,7 +591,7 @@ export function loadSandiaData() {
                 atletasRegistradosText = `${c.atleta.nombre || 'Atleta'} <span style="font-size:10px; color:#888;">(C.I. ${c.atleta.cedula || 'N/A'})</span>`;
             }
 
-            const linkVIP = `https://www.sandiaproduction.com/paraguanahorror.html?cupon=${id}`;
+            const linkVIP = `https://www.sandiaproduction.com/paraguanahorror.html?vip=${id}`;
 
             const tr = document.createElement('tr');
             tr.innerHTML = `
@@ -577,21 +601,38 @@ export function loadSandiaData() {
                 <td style="padding: 10px 14px;">${badge}</td>
                 <td style="padding: 10px 14px; font-size: 12px;">${atletasRegistradosText}</td>
                 <td style="padding: 10px 14px; text-align: right; white-space: nowrap;">
-                    <button class="btn-secondary btn-small btn-copiar-vip" title="Copiar enlace VIP para participantes" style="margin-right: 4px; font-size: 11px; border-color: var(--brand-cyan); color: var(--brand-cyan); padding: 5px 9px;">📋 Link</button>
-                    <button class="btn-secondary btn-small btn-edit-cupon" title="Editar precio o modalidad del cupón" style="margin-right: 4px; font-size: 11px; border-color: rgba(255,255,255,0.25); padding: 5px 8px;">✏️</button>
-                    <button class="btn-secondary btn-small btn-deshabilitar-cupon" style="margin-right: 4px; font-size: 11px; color: ${estaHabilitado ? '#f39c12' : '#2ecc71'}; border-color: ${estaHabilitado ? 'rgba(243, 156, 18, 0.4)' : 'rgba(46, 204, 113, 0.4)'}; padding: 5px 9px;">
+                    <button class="btn-secondary btn-small btn-copiar-vip" title="Copiar enlace VIP oficial listo para enviar por WhatsApp" style="margin-right: 6px; font-size: 11px; background: rgba(0, 210, 255, 0.12); border-color: var(--brand-cyan); color: var(--brand-cyan); font-weight: 700; padding: 5px 10px; border-radius: 6px; cursor: pointer; transition: all 0.2s;">
+                        🔗 Copiar Link VIP
+                    </button>
+                    <button class="btn-secondary btn-small btn-edit-cupon" title="Editar precio o modalidad del cupón" style="margin-right: 4px; font-size: 11px; border-color: rgba(255,255,255,0.25); padding: 5px 8px; cursor: pointer;">✏️</button>
+                    <button class="btn-secondary btn-small btn-deshabilitar-cupon" style="margin-right: 4px; font-size: 11px; color: ${estaHabilitado ? '#f39c12' : '#2ecc71'}; border-color: ${estaHabilitado ? 'rgba(243, 156, 18, 0.4)' : 'rgba(46, 204, 113, 0.4)'}; padding: 5px 9px; cursor: pointer;">
                         ${estaHabilitado ? 'Pausar' : 'Activar'}
                     </button>
-                    <button class="btn-secondary btn-small btn-del-cupon" style="color: #ef4444; border-color: rgba(239, 68, 68, 0.3); font-size: 11px; padding: 5px 8px;">🗑️</button>
+                    <button class="btn-secondary btn-small btn-del-cupon" style="color: #ef4444; border-color: rgba(239, 68, 68, 0.3); font-size: 11px; padding: 5px 8px; cursor: pointer;">🗑️</button>
                 </td>
             `;
 
-            tr.querySelector('.btn-copiar-vip').addEventListener('click', () => {
+            const btnCopiar = tr.querySelector('.btn-copiar-vip');
+            btnCopiar.addEventListener('click', () => {
+                const onCopied = () => {
+                    const originalHtml = btnCopiar.innerHTML;
+                    btnCopiar.innerHTML = '✔ ¡Copiado!';
+                    btnCopiar.style.background = 'rgba(0, 255, 102, 0.2)';
+                    btnCopiar.style.borderColor = '#00ff66';
+                    btnCopiar.style.color = '#00ff66';
+                    setTimeout(() => {
+                        btnCopiar.innerHTML = originalHtml;
+                        btnCopiar.style.background = 'rgba(0, 210, 255, 0.12)';
+                        btnCopiar.style.borderColor = 'var(--brand-cyan)';
+                        btnCopiar.style.color = 'var(--brand-cyan)';
+                    }, 2200);
+
+                    if (window.showToast) window.showToast(`¡Enlace VIP copiado! 🎟️ Listo para pegar en WhatsApp: ${linkVIP}`);
+                    else alert(`¡Enlace VIP copiado!\n\n${linkVIP}`);
+                };
+
                 if (navigator.clipboard && navigator.clipboard.writeText) {
-                    navigator.clipboard.writeText(linkVIP).then(() => {
-                        if (window.showToast) window.showToast(`¡Enlace VIP copiado! 📋 ${linkVIP}`);
-                        else alert(`¡Enlace VIP copiado!\n\n${linkVIP}`);
-                    }).catch(() => {
+                    navigator.clipboard.writeText(linkVIP).then(onCopied).catch(() => {
                         copiarTextoFallback(linkVIP);
                     });
                 } else {
@@ -621,17 +662,41 @@ export function loadSandiaData() {
         });
     }
 
+    if (selectFiltroEstado) {
+        selectFiltroEstado.addEventListener('change', () => {
+            renderCuponesFiltrados();
+        });
+    }
+
     if (unsubscribeCupones) unsubscribeCupones();
     const qCupones = query(collection(db, "sandia_cupones_horror"));
     unsubscribeCupones = onSnapshot(qCupones, (snapshot) => {
         allCuponesCache = [];
         snapshot.forEach(d => allCuponesCache.push({ id: d.id, ...d.data() }));
 
-        // Ordenar alfabéticamente/numéricamente
+        // Ordenamiento Inteligente y Jerárquico:
+        // 1. Estados: ACTIVO (Peso 1 - Arriba de primeros) > PAUSADO (Peso 2) > USADO/QUEMADO (Peso 3 - Al fondo)
+        // 2. Cronología: Los recién creados o actualizados saltan inmediatamente a la primera fila
         allCuponesCache.sort((a, b) => {
+            const pesoEstado = (c) => {
+                const est = calcularEstadoCupon(c);
+                if (est === 'ACTIVO') return 1;
+                if (est === 'PAUSADO') return 2;
+                return 3; // USADO / QUEMADO
+            };
+
+            const pA = pesoEstado(a);
+            const pB = pesoEstado(b);
+            if (pA !== pB) return pA - pB;
+
+            // Recién creados o modificados arriba de primeros
+            const timeA = new Date(a.fechaActualizacion || a.fechaCreacion || 0).getTime();
+            const timeB = new Date(b.fechaActualizacion || b.fechaCreacion || 0).getTime();
+            if (timeA && timeB && timeA !== timeB) return timeB - timeA;
+
             const numA = parseInt((a.id.match(/\d+/) || [0])[0], 10);
             const numB = parseInt((b.id.match(/\d+/) || [0])[0], 10);
-            if (numA && numB) return numA - numB;
+            if (numA && numB && numA !== numB) return numB - numA;
             return a.id.localeCompare(b.id);
         });
 
@@ -655,6 +720,7 @@ function copiarTextoFallback(texto) {
 }
 
 function abrirModalEditarCupon(cupon) {
+    if (!cupon) return;
     const modal = document.getElementById('modal-editar-cupon');
     const inputId = document.getElementById('edit-cupon-id');
     const inputCodigo = document.getElementById('edit-cupon-codigo');
@@ -662,9 +728,10 @@ function abrirModalEditarCupon(cupon) {
     const selectTipo = document.getElementById('edit-cupon-tipo');
 
     if (!modal) return;
-    if (inputId) inputId.value = cupon.id;
-    if (inputCodigo) inputCodigo.value = cupon.id;
-    if (inputPrecio) inputPrecio.value = cupon.precioUSD !== undefined ? cupon.precioUSD : 0;
+    const idVal = String(cupon.id || cupon.codigo || '').trim().toUpperCase();
+    if (inputId) inputId.value = idVal;
+    if (inputCodigo) inputCodigo.value = idVal;
+    if (inputPrecio) inputPrecio.value = cupon.precioUSD !== undefined ? Number(cupon.precioUSD) : 0;
     if (selectTipo) selectTipo.value = cupon.tipo || 'REUTILIZABLE';
 
     modal.style.display = 'flex';
@@ -674,16 +741,30 @@ const formEditarCupon = document.getElementById('form-editar-cupon');
 if (formEditarCupon) {
     formEditarCupon.addEventListener('submit', async (e) => {
         e.preventDefault();
-        const id = document.getElementById('edit-cupon-id').value;
-        const precioUSD = Math.max(0, parseFloat(document.getElementById('edit-cupon-precio').value) || 0);
-        const tipo = document.getElementById('edit-cupon-tipo').value;
+        const id = (document.getElementById('edit-cupon-id')?.value || '').trim().toUpperCase();
+        if (!id) {
+            alert("Error: No se pudo identificar el código del cupón.");
+            return;
+        }
+
+        const inputPrecio = document.getElementById('edit-cupon-precio');
+        const precioUSD = inputPrecio ? Math.max(0, parseFloat(inputPrecio.value) || 0) : 0;
+        const selectTipo = document.getElementById('edit-cupon-tipo');
+        const tipo = selectTipo ? selectTipo.value : 'REUTILIZABLE';
         const maxUsos = tipo === 'UN_SOLO_USO' ? 1 : (tipo === 'DOS_USOS' ? 2 : (tipo === 'TRES_USOS' ? 3 : (tipo === 'CUATRO_USOS' ? 4 : (tipo === 'CINCO_USOS' ? 5 : null))));
+
+        const btnSubmit = formEditarCupon.querySelector('button[type="submit"]');
+        if (btnSubmit) {
+            btnSubmit.disabled = true;
+            btnSubmit.innerText = "Guardando...";
+        }
 
         try {
             const payload = {
+                codigo: id,
                 precioUSD: Number(precioUSD),
                 tipo: tipo,
-                maxUsos: maxUsos,
+                maxUsos: maxUsos !== null ? Number(maxUsos) : null,
                 fechaActualizacion: new Date().toISOString()
             };
 
@@ -694,13 +775,22 @@ if (formEditarCupon) {
                 payload.habilitado = true;
             }
 
-            await updateDoc(doc(db, "sandia_cupones_horror", id), payload);
-            if (window.showToast) window.showToast(`Cupón ${id} actualizado ($${precioUSD} USD - ${tipo})`);
-            else alert(`Cupón ${id} actualizado.`);
-            document.getElementById('modal-editar-cupon').style.display = 'none';
+            // Usar setDoc con merge: true (mismo método infalible que habilitar y toggle)
+            await setDoc(doc(db, "sandia_cupones_horror", id), payload, { merge: true });
+
+            if (window.showToast) window.showToast(`✔ Cupón ${id} actualizado correctamente ($${precioUSD} USD - ${tipo})`);
+            else alert(`✔ Cupón ${id} actualizado correctamente.`);
+
+            const modal = document.getElementById('modal-editar-cupon');
+            if (modal) modal.style.display = 'none';
         } catch (err) {
             console.error("Error al actualizar cupón:", err);
             alert("Error al actualizar cupón: " + err.message);
+        } finally {
+            if (btnSubmit) {
+                btnSubmit.disabled = false;
+                btnSubmit.innerText = "Guardar Cambios";
+            }
         }
     });
 }
@@ -718,10 +808,21 @@ async function habilitarCuponEnFirestore(codigo, precioUSD = 0, tipo = 'REUTILIZ
             estado: 'HABILITADO',
             habilitado: true,
             fechaCreacion: new Date().toISOString(),
+            fechaActualizacion: new Date().toISOString(),
             evento: '5K Paraguaná Horror Story'
         }, { merge: true });
-        if (window.showToast) window.showToast(`✔ Cupón ${idSanitizado} guardado y habilitado ($${precioUSD} USD - ${tipo})`);
-        else alert(`✔ Cupón ${idSanitizado} guardado y habilitado exitosamente ($${precioUSD} USD - ${tipo}).`);
+        const linkVIP = `https://www.sandiaproduction.com/paraguanahorror.html?vip=${idSanitizado}`;
+        try {
+            if (navigator.clipboard && navigator.clipboard.writeText) {
+                await navigator.clipboard.writeText(linkVIP);
+            }
+        } catch(clipErr) {}
+
+        if (window.showToast) {
+            window.showToast(`✔ Cupón ${idSanitizado} creado. ¡Enlace VIP copiado al portapapeles! 🎟️`);
+        } else {
+            prompt(`✔ Cupón ${idSanitizado} creado ($${precioUSD} USD - ${tipo}). Copia este enlace VIP:`, linkVIP);
+        }
     } catch (e) {
         console.error("Error al habilitar cupón:", e);
         alert("Error al habilitar cupón: " + e.message);
