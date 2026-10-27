@@ -17,6 +17,7 @@ export const sandiaImagesList = [
     "madremia.jpg",
     "matea_run.png",
     "paraguanahorror.jpeg",
+    "paraguanahorror_50cupos.jpg",
     "paraguanahorror_agotada.jpg",
     "runfree.png",
     "runfreelogo.png",
@@ -963,6 +964,9 @@ function initSandiaConfig() {
     const selectStatus = document.getElementById('sandia-web-status');
     const badgeStatus = document.getElementById('sandia-web-status-badge');
 
+    const selectHorrorInsc = document.getElementById('sandia-horror-inscripciones-status');
+    const btnSaveHorrorInsc = document.getElementById('btn-save-horror-inscripciones');
+
     const btnSaveBilling = document.getElementById('btn-save-sandia-billing');
     const selectPlan = document.getElementById('sandia-plan');
     const inputVencimiento = document.getElementById('sandia-vencimiento');
@@ -983,6 +987,10 @@ function initSandiaConfig() {
                 window.renderDashboardKPIs(window.state.allClientsCache);
             }
             if (selectStatus && data.estadoWeb) selectStatus.value = data.estadoWeb;
+            if (selectHorrorInsc) {
+                const abiertas = data.inscripcionesHorrorAbiertas !== false;
+                selectHorrorInsc.value = abiertas ? 'ABIERTAS' : 'CERRADAS';
+            }
             if (badgeStatus) {
                 if (data.estadoWeb === 'ONLINE') badgeStatus.style.background = '#2ecc71';
                 else if (data.estadoWeb === 'MANTENIMIENTO') badgeStatus.style.background = '#f39c12';
@@ -1058,6 +1066,30 @@ function initSandiaConfig() {
             } finally {
                 btnSaveStatus.disabled = false;
                 btnSaveStatus.innerText = "Guardar Estado Web";
+            }
+        });
+    }
+
+    if (btnSaveHorrorInsc && selectHorrorInsc) {
+        btnSaveHorrorInsc.addEventListener('click', async () => {
+            const abiertas = selectHorrorInsc.value === 'ABIERTAS';
+            btnSaveHorrorInsc.disabled = true;
+            btnSaveHorrorInsc.innerText = "...";
+            try {
+                await setDoc(doc(db, "sandia_config", "general"), {
+                    inscripcionesHorrorAbiertas: abiertas,
+                    fechaModificacionHorror: new Date().toISOString()
+                }, { merge: true });
+                if (window.showToast) {
+                    window.showToast(abiertas ? "🟢 ¡Inscripciones 5K Horror ABIERTAS!" : "🔒 ¡Inscripciones 5K Horror CERRADAS (Triple Candado Activo)!");
+                } else {
+                    alert(abiertas ? "🟢 ¡Inscripciones 5K Horror ABIERTAS!" : "🔒 ¡Inscripciones 5K Horror CERRADAS!");
+                }
+            } catch (err) {
+                alert("Error: " + err.message);
+            } finally {
+                btnSaveHorrorInsc.disabled = false;
+                btnSaveHorrorInsc.innerText = "Aplicar";
             }
         });
     }

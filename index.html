@@ -732,7 +732,18 @@
                             <option value="MANTENIMIENTO">⚠️ Modo Mantenimiento</option>
                             <option value="SUSPENDIDO">🔴 Pausado / Suspendido (Kill Switch)</option>
                         </select>
-                        <button id="btn-save-sandia-status" class="btn-primary btn-small" style="width: 100%; background: #e62035; border: none; font-size: 11px;">Guardar Estado Web</button>
+                        <button id="btn-save-sandia-status" class="btn-primary btn-small" style="width: 100%; background: #e62035; border: none; font-size: 11px; margin-bottom: 10px;">Guardar Estado Web</button>
+
+                        <div style="border-top: 1px solid rgba(255,255,255,0.1); padding-top: 8px;">
+                            <label style="font-size: 11px; color: #ccc; font-weight: 700; display: block; margin-bottom: 4px;">🎃 Inscripciones 5K Horror:</label>
+                            <div style="display: flex; gap: 6px;">
+                                <select id="sandia-horror-inscripciones-status" class="modern-select" style="flex: 1; font-size: 11px; padding: 4px;">
+                                    <option value="ABIERTAS">🟢 Abiertas (+50 Cupos: $20 / Grupal $15)</option>
+                                    <option value="CERRADAS">🔒 Cerradas (100% Agotado / Solo VIP)</option>
+                                </select>
+                                <button id="btn-save-horror-inscripciones" class="btn-secondary btn-small" style="font-size: 11px; padding: 4px 10px; border-color: #00ff66; color: #00ff66; font-weight: bold;">Aplicar</button>
+                            </div>
+                        </div>
                     </div>
 
                     <!-- CONTADOR DE VISITAS WEB CON RESET Y REPORTES -->
