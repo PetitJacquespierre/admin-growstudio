@@ -34,6 +34,24 @@ let unsubscribeCupones = null;
 let currentEventId = null;
 let currentAliadoId = null;
 
+export function obtenerMaxUsosCupon(tipo, maxUsosField) {
+    const mapa = {
+        'UN_SOLO_USO': 1,
+        'DOS_USOS': 2,
+        'TRES_USOS': 3,
+        'CUATRO_USOS': 4,
+        'CINCO_USOS': 5,
+        'SEIS_USOS': 6,
+        'SIETE_USOS': 7,
+        'OCHO_USOS': 8,
+        'NUEVE_USOS': 9,
+        'DIEZ_USOS': 10
+    };
+    if (mapa[tipo]) return mapa[tipo];
+    if (typeof maxUsosField === 'number' && maxUsosField > 0) return maxUsosField;
+    return null; // REUTILIZABLE (ilimitado)
+}
+
 // Función para resolver rutas de imágenes sin romper el entorno ni entrar en loops
 export function resolveSandiaImgPath(img) {
     if (!img || typeof img !== 'string') return 'https://www.sandiaproduction.com/img/Isotipo.png';
@@ -502,7 +520,7 @@ export function loadSandiaData() {
 
     function calcularEstadoCupon(c) {
         const tipoCupon = c.tipo || 'REUTILIZABLE';
-        const maxUsos = tipoCupon === 'UN_SOLO_USO' ? 1 : (tipoCupon === 'DOS_USOS' ? 2 : (tipoCupon === 'TRES_USOS' ? 3 : (tipoCupon === 'CUATRO_USOS' ? 4 : (tipoCupon === 'CINCO_USOS' ? 5 : (typeof c.maxUsos === 'number' && c.maxUsos > 0 ? c.maxUsos : null)))));
+        const maxUsos = obtenerMaxUsosCupon(tipoCupon, c.maxUsos);
         const esReutilizable = maxUsos === null;
         const usosActuales = Number(c.usosCount !== undefined ? c.usosCount : (c.estado === 'USADO' ? 1 : 0));
         const estaUsado = !esReutilizable && (c.estado === 'USADO' || usosActuales >= maxUsos || (!!c.usadoEn && !c.habilitado && maxUsos === 1));
@@ -549,7 +567,7 @@ export function loadSandiaData() {
         filtrados.forEach(c => {
             const id = c.id;
             const tipoCupon = c.tipo || 'REUTILIZABLE';
-            const maxUsos = tipoCupon === 'UN_SOLO_USO' ? 1 : (tipoCupon === 'DOS_USOS' ? 2 : (tipoCupon === 'TRES_USOS' ? 3 : (tipoCupon === 'CUATRO_USOS' ? 4 : (tipoCupon === 'CINCO_USOS' ? 5 : (typeof c.maxUsos === 'number' && c.maxUsos > 0 ? c.maxUsos : null)))));
+            const maxUsos = obtenerMaxUsosCupon(tipoCupon, c.maxUsos);
             const esReutilizable = maxUsos === null;
             const usosActuales = Number(c.usosCount !== undefined ? c.usosCount : (c.estado === 'USADO' ? 1 : 0));
             const precioUSD = (c.precioUSD !== undefined) ? Number(c.precioUSD) : 0;
@@ -566,7 +584,10 @@ export function loadSandiaData() {
             }
 
             let badgeTipo = `<span style="background: rgba(0, 210, 255, 0.15); color: var(--brand-cyan); padding: 3px 8px; border-radius: 6px; font-size: 11px; font-weight: 700;">♾️ Multiuso</span>`;
-            if (tipoCupon === 'UN_SOLO_USO') {
+            if (maxUsos !== null) {
+                const textoUso = maxUsos === 1 ? '1 Solo Uso' : `${maxUsos} Usos`;
+                badgeTipo = `<span style="background: rgba(255, 165, 0, 0.15); color: #ffa500; padding: 3px 8px; border-radius: 6px; font-size: 11px; font-weight: 700;">🔒 ${textoUso}</span>`;
+            } else if (false) {
                 badgeTipo = `<span style="background: rgba(255, 165, 0, 0.15); color: #ffa500; padding: 3px 8px; border-radius: 6px; font-size: 11px; font-weight: 700;">🔒 1 Solo Uso</span>`;
             } else if (tipoCupon === 'DOS_USOS') {
                 badgeTipo = `<span style="background: rgba(255, 165, 0, 0.15); color: #ffa500; padding: 3px 8px; border-radius: 6px; font-size: 11px; font-weight: 700;">🔒 2 Usos</span>`;
@@ -754,7 +775,7 @@ if (formEditarCupon) {
         const precioUSD = inputPrecio ? Math.max(0, parseFloat(inputPrecio.value) || 0) : 0;
         const selectTipo = document.getElementById('edit-cupon-tipo');
         const tipo = selectTipo ? selectTipo.value : 'REUTILIZABLE';
-        const maxUsos = tipo === 'UN_SOLO_USO' ? 1 : (tipo === 'DOS_USOS' ? 2 : (tipo === 'TRES_USOS' ? 3 : (tipo === 'CUATRO_USOS' ? 4 : (tipo === 'CINCO_USOS' ? 5 : null))));
+        const maxUsos = obtenerMaxUsosCupon(tipo);
 
         const btnSubmit = formEditarCupon.querySelector('button[type="submit"]');
         if (btnSubmit) {
@@ -801,7 +822,7 @@ if (formEditarCupon) {
 async function habilitarCuponEnFirestore(codigo, precioUSD = 0, tipo = 'REUTILIZABLE') {
     try {
         const idSanitizado = codigo.trim().toUpperCase();
-        const maxUsos = tipo === 'UN_SOLO_USO' ? 1 : (tipo === 'DOS_USOS' ? 2 : (tipo === 'TRES_USOS' ? 3 : (tipo === 'CUATRO_USOS' ? 4 : (tipo === 'CINCO_USOS' ? 5 : null))));
+        const maxUsos = obtenerMaxUsosCupon(tipo);
         await setDoc(doc(db, "sandia_cupones_horror", idSanitizado), {
             codigo: idSanitizado,
             precioUSD: Number(precioUSD),
