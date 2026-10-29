@@ -19,6 +19,7 @@ export const sandiaImagesList = [
     "paraguanahorror.jpeg",
     "paraguanahorror_50cupos.jpg",
     "paraguanahorror_30cupos.jpg",
+    "paraguanahorror_ultimoscupos.jpg",
     "paraguanahorror_agotada.jpg",
     "runfree.png",
     "runfreelogo.png",
