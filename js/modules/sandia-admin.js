@@ -23,6 +23,7 @@ export const sandiaImagesList = [
     "paraguanahorror_agotada.jpg",
     "runfree.png",
     "runfreelogo.png",
+    "semanarunfree.png",
     "runmusicfest.png",
     "teamfslogo1.png",
     "trailbotanico2026.png"
