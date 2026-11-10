@@ -520,3 +520,133 @@ input:checked + .slider:before {
         font-size: 1.5rem !important;
     }
 }
+
+
+/* ========================================================== */
+/* ⚡ GROW SEO & GEO ENGINE — ESTILOS DARK LUXURY             */
+/* ========================================================== */
+.seo-bento-container {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+    gap: 12px;
+    margin-bottom: 24px;
+}
+
+.seo-metric-card {
+    background: rgba(22, 27, 34, 0.75);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-top: 1px solid rgba(255, 255, 255, 0.16);
+    border-radius: 14px;
+    padding: 16px;
+    transition: all 0.25s ease;
+    backdrop-filter: blur(8px);
+}
+.seo-metric-card:hover {
+    transform: translateY(-2px);
+    border-color: rgba(0, 210, 255, 0.3);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+}
+
+.seo-card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 11px;
+    font-weight: 700;
+    color: #cbd5e1;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+.seo-card-icon {
+    font-size: 14px;
+}
+
+.seo-card-score {
+    font-size: 26px;
+    font-weight: 900;
+    margin: 8px 0 6px 0;
+    font-family: monospace;
+}
+
+.card-score-green { color: #10b981; }
+.card-score-amber { color: #f59e0b; }
+.card-score-red { color: #ef4444; }
+
+.seo-card-bar {
+    height: 4px;
+    background: rgba(255, 255, 255, 0.08);
+    border-radius: 4px;
+    overflow: hidden;
+}
+.seo-card-fill {
+    height: 100%;
+    border-radius: 4px;
+    transition: width 0.6s ease;
+}
+.seo-card-fill.card-score-green { background: #10b981; box-shadow: 0 0 8px #10b981; }
+.seo-card-fill.card-score-amber { background: #f59e0b; box-shadow: 0 0 8px #f59e0b; }
+.seo-card-fill.card-score-red { background: #ef4444; box-shadow: 0 0 8px #ef4444; }
+
+.seo-issue-card {
+    background: rgba(255, 255, 255, 0.02);
+    border-radius: 12px;
+    padding: 14px 16px;
+    margin-bottom: 12px;
+    transition: all 0.2s;
+}
+.seo-issue-card.issue-critical {
+    border-left: 4px solid #ef4444;
+    border-top: 1px solid rgba(239, 68, 68, 0.2);
+    border-right: 1px solid rgba(239, 68, 68, 0.2);
+    border-bottom: 1px solid rgba(239, 68, 68, 0.2);
+    background: rgba(239, 68, 68, 0.03);
+}
+.seo-issue-card.issue-warning {
+    border-left: 4px solid #f59e0b;
+    border-top: 1px solid rgba(245, 158, 11, 0.2);
+    border-right: 1px solid rgba(245, 158, 11, 0.2);
+    border-bottom: 1px solid rgba(245, 158, 11, 0.2);
+    background: rgba(245, 158, 11, 0.03);
+}
+
+.seo-issue-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 6px;
+}
+.seo-badge-tag {
+    font-size: 10px;
+    font-weight: 800;
+    text-transform: uppercase;
+    padding: 2px 8px;
+    border-radius: 6px;
+}
+.seo-badge-tag.tag-critical {
+    background: rgba(239, 68, 68, 0.2);
+    color: #f87171;
+}
+.seo-badge-tag.tag-warning {
+    background: rgba(245, 158, 11, 0.2);
+    color: #fbbf24;
+}
+.seo-issue-title {
+    font-size: 13px;
+    font-weight: 700;
+    color: #fff;
+}
+.seo-issue-desc {
+    font-size: 12px;
+    color: #94a3b8;
+    margin: 4px 0 8px 0;
+    line-height: 1.5;
+}
+.seo-issue-fix {
+    font-size: 11px;
+    color: #00d2ff;
+    background: rgba(0, 210, 255, 0.08);
+    border: 1px solid rgba(0, 210, 255, 0.15);
+    padding: 6px 12px;
+    border-radius: 8px;
+    line-height: 1.4;
+}
