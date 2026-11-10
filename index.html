@@ -1282,8 +1282,8 @@
                             🌐 Ingresa la URL a auditar (Web propia o de prospecto)
                         </label>
                         <div style="display: flex; gap: 10px; flex-wrap: wrap;">
-                            <input type="text" id="seo-target-url-input" placeholder="https://retovirtualvzla.com" value="https://www.retovirtualvzla.com/" class="modern-select" style="flex: 1; min-width: 280px; font-size: 14px; padding: 12px 16px; border-radius: 12px; background: rgba(0,0,0,0.4); border: 1px solid rgba(255,255,255,0.15); color: #fff;">
-                            <button type="button" onclick="window.startSeoAudit && window.startSeoAudit()" class="btn-primary" style="padding: 12px 24px; font-size: 13px; font-weight: 900; background: linear-gradient(135deg, #00d2ff, #0077b6); color: #001e50; border: none; border-radius: 12px; cursor: pointer; display: flex; align-items: center; gap: 8px; box-shadow: 0 0 20px rgba(0,210,255,0.3);">
+                            <input type="text" id="seo-target-url-input" onkeydown="if(event.key === 'Enter') { window.startSeoAudit && window.startSeoAudit(); }" placeholder="https://retovirtualvzla.com" value="https://www.retovirtualvzla.com/" class="modern-select" style="flex: 1; min-width: 280px; font-size: 14px; padding: 12px 16px; border-radius: 12px; background: rgba(0,0,0,0.4); border: 1px solid rgba(255,255,255,0.15); color: #fff;">
+                            <button id="btn-run-seo-audit" type="button" onclick="window.startSeoAudit ? window.startSeoAudit() : alert('El motor de auditoría está cargando...')" class="btn-primary" style="padding: 12px 24px; font-size: 13px; font-weight: 900; background: linear-gradient(135deg, #00d2ff, #0077b6); color: #001e50; border: none; border-radius: 12px; cursor: pointer; display: flex; align-items: center; gap: 8px; box-shadow: 0 0 20px rgba(0,210,255,0.3);">
                                 <span>🚀</span> AUDITAR CON GROW IA
                             </button>
                         </div>
