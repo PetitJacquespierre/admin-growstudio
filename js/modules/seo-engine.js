@@ -1979,10 +1979,35 @@
 
         let fixList = [];
         data.issuesCritical.forEach((c, i) => {
-            fixList.push(`${i + 1}. [CRÍTICO] ${c.title}: ${c.rec}`);
+            let taskRec = c.rec;
+            // Si es la falla de cabeceras de seguridad, inyectar el código exacto de vercel.json
+            if (c.title.includes('Cabeceras de seguridad HTTP')) {
+                taskRec = `Crear o actualizar vercel.json en la raíz del proyecto con las cabeceras requeridas:\n` +
+                          `{\n` +
+                          `  "headers": [\n` +
+                          `    {\n` +
+                          `      "source": "/(.*)",\n` +
+                          `      "headers": [\n` +
+                          `        { "key": "X-Content-Type-Options", "value": "nosniff" },\n` +
+                          `        { "key": "X-Frame-Options", "value": "SAMEORIGIN" },\n` +
+                          `        { "key": "Content-Security-Policy", "value": "default-src 'self' 'unsafe-inline' 'unsafe-eval' https: data: blob:;" },\n` +
+                          `        { "key": "Strict-Transport-Security", "value": "max-age=63072000; includeSubDomains; preload" }\n` +
+                          `      ]\n` +
+                          `    }\n` +
+                          `  ]\n` +
+                          `}`;
+            }
+            fixList.push(`${i + 1}. [CRÍTICO] ${c.title}:\n   ${taskRec}`);
         });
+
         data.issuesWarning.forEach((w, i) => {
-            fixList.push(`${data.issuesCritical.length + i + 1}. [MEJORA] ${w.title}: ${w.rec}`);
+            let taskRec = w.rec;
+            // Si es WebMCP, inyectar el formulario declarativo exacto
+            if (w.title.includes('WebMCP')) {
+                taskRec = `Añadir en el footer de index.html el formulario declarativo WebMCP:\n` +
+                          `   <form toolname="consultar_servicios_${data.hostname.replace(/[^a-z0-9]/gi, '_')}" tooldescription="Consulta de servicios y catálogo oficial" action="index.html" method="get" class="hidden"></form>`;
+            }
+            fixList.push(`${data.issuesCritical.length + i + 1}. [MEJORA] ${w.title}:\n   ${taskRec}`);
         });
 
         if (fixList.length === 0) {
