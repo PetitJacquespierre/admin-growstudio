@@ -81,41 +81,63 @@
             let fetchSuccess = false;
             let responseHeaders = {};
 
-            const proxies = [
-                (u) => `https://corsproxy.io/?${encodeURIComponent(u)}`,
-                (u) => `https://api.codetabs.com/v1/proxy?quest=${encodeURIComponent(u)}`,
-                (u) => `https://api.allorigins.win/raw?url=${encodeURIComponent(u)}`,
-                (u) => u
-            ];
-
-            for (const proxyFn of proxies) {
-                try {
-                    const fetchUrl = proxyFn(url);
-                    const controller = new AbortController();
-                    const timeoutId = setTimeout(() => controller.abort(), 4500);
-
-                    const res = await fetch(fetchUrl, { 
-                        headers: { 'Accept': 'text/html,application/xhtml+xml' },
-                        signal: controller.signal
-                    });
-                    clearTimeout(timeoutId);
-
-                    if (res.ok) {
-                        htmlContent = await res.text();
-                        if (htmlContent && htmlContent.length > 200) {
-                            fetchSuccess = true;
-                            if (res.headers && typeof res.headers.forEach === 'function') {
-                                try {
-                                    res.headers.forEach((val, key) => {
-                                        responseHeaders[key.toLowerCase()] = val;
-                                    });
-                                } catch (hErr) {}
-                            }
-                            break;
-                        }
+            // 1. Intentar primero con nuestra Serverless Function nativa de Grow Studio en Vercel
+            try {
+                const nativeApiUrl = `/api/seo-crawl?url=${encodeURIComponent(url)}`;
+                const ctrl = new AbortController();
+                const to = setTimeout(() => ctrl.abort(), 8000);
+                const nRes = await fetch(nativeApiUrl, { signal: ctrl.signal });
+                clearTimeout(to);
+                if (nRes.ok) {
+                    const json = await nRes.json();
+                    if (json.ok && json.html && json.html.length > 200) {
+                        htmlContent = json.html;
+                        responseHeaders = json.headers || {};
+                        fetchSuccess = true;
                     }
-                } catch (e) {
-                    console.warn('Proxy intento fallido o timeout:', e.message);
+                }
+            } catch (nErr) {
+                console.warn('API nativa seo-crawl no disponible o en entorno local:', nErr.message);
+            }
+
+            // 2. Si no estamos en Vercel o falló, usar proxies públicos con fallback
+            if (!fetchSuccess) {
+                const proxies = [
+                    (u) => `https://api.allorigins.win/raw?url=${encodeURIComponent(u)}`,
+                    (u) => `https://corsproxy.io/?${encodeURIComponent(u)}`,
+                    (u) => `https://api.codetabs.com/v1/proxy?quest=${encodeURIComponent(u)}`,
+                    (u) => u
+                ];
+
+                for (const proxyFn of proxies) {
+                    try {
+                        const fetchUrl = proxyFn(url);
+                        const controller = new AbortController();
+                        const timeoutId = setTimeout(() => controller.abort(), 5500);
+
+                        const res = await fetch(fetchUrl, { 
+                            headers: { 'Accept': 'text/html,application/xhtml+xml' },
+                            signal: controller.signal
+                        });
+                        clearTimeout(timeoutId);
+
+                        if (res.ok) {
+                            htmlContent = await res.text();
+                            if (htmlContent && htmlContent.length > 200) {
+                                fetchSuccess = true;
+                                if (res.headers && typeof res.headers.forEach === 'function') {
+                                    try {
+                                        res.headers.forEach((val, key) => {
+                                            responseHeaders[key.toLowerCase()] = val;
+                                        });
+                                    } catch (hErr) {}
+                                }
+                                break;
+                            }
+                        }
+                    } catch (e) {
+                        console.warn('Proxy intento fallido o timeout:', e.message);
+                    }
                 }
             }
 
