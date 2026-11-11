@@ -32,6 +32,8 @@
     /**
      * Inicia la auditoría de una URL ingresada
      */
+    let auditTimerInterval = null;
+
     async function startAudit(targetUrl) {
         if (!targetUrl) {
             alert('Por favor ingresa una URL válida (ej. https://retovirtualvzla.com)');
@@ -53,6 +55,23 @@
 
         const progressUrlEl = document.getElementById('seo-progress-url');
         if (progressUrlEl) progressUrlEl.textContent = url;
+
+        // Iniciar temporizador dinámico en vivo
+        const timerCountEl = document.getElementById('seo-timer-count');
+        const timeTagEl = document.getElementById('seo-progress-time-tag');
+        if (timeTagEl) {
+            const now = new Date();
+            timeTagEl.textContent = `Iniciado a las ${now.toLocaleTimeString()}`;
+        }
+        if (auditTimerInterval) clearInterval(auditTimerInterval);
+        const startTime = Date.now();
+        if (timerCountEl) {
+            timerCountEl.textContent = '0.0';
+            auditTimerInterval = setInterval(() => {
+                const elapsedSec = ((Date.now() - startTime) / 1000).toFixed(1);
+                timerCountEl.textContent = elapsedSec;
+            }, 100);
+        }
 
         updateProgressStep(1, 'active');
 
@@ -124,6 +143,11 @@
             await new Promise(r => setTimeout(r, 400));
             updateProgressStep(4, 'done');
 
+            if (auditTimerInterval) {
+                clearInterval(auditTimerInterval);
+                auditTimerInterval = null;
+            }
+
             currentAuditResult = auditData;
             saveAuditToHistory(auditData);
 
@@ -134,6 +158,10 @@
             if (inputContainer) inputContainer.style.opacity = '1';
 
         } catch (error) {
+            if (auditTimerInterval) {
+                clearInterval(auditTimerInterval);
+                auditTimerInterval = null;
+            }
             console.error('Error durante la auditoría:', error);
             alert('Error al auditar la página: ' + error.message);
             if (progressEl) progressEl.style.display = 'none';
@@ -1842,7 +1870,37 @@ ${title} es un proyecto web oficial accesible en ${currentAuditResult.url}. Ofre
         document.body.removeChild(a);
     }
 
-    function downloadPdf(mode = 'diagnostico') {
+    function getLogoDataUrl() {
+        return new Promise((resolve) => {
+            try {
+                const existingImg = document.querySelector('img[src*="growlogo"]') || document.querySelector('img[src*="growisotipo"]');
+                if (existingImg && existingImg.complete && existingImg.naturalWidth > 0) {
+                    const canvas = document.createElement('canvas');
+                    canvas.width = existingImg.naturalWidth;
+                    canvas.height = existingImg.naturalHeight;
+                    const ctx = canvas.getContext('2d');
+                    ctx.drawImage(existingImg, 0, 0);
+                    return resolve(canvas.toDataURL('image/png'));
+                }
+                const img = new Image();
+                img.crossOrigin = 'Anonymous';
+                img.onload = function() {
+                    try {
+                        const canvas = document.createElement('canvas');
+                        canvas.width = this.naturalWidth;
+                        canvas.height = this.naturalHeight;
+                        const ctx = canvas.getContext('2d');
+                        ctx.drawImage(this, 0, 0);
+                        resolve(canvas.toDataURL('image/png'));
+                    } catch(e) { resolve(null); }
+                };
+                img.onerror = function() { resolve(null); };
+                img.src = 'img/growlogo.png';
+            } catch(e) { resolve(null); }
+        });
+    }
+
+    async function downloadPdf(mode = 'detallado') {
         if (!currentAuditResult) {
             alert('Primero realiza una auditoría para poder exportar.');
             return;
@@ -1854,6 +1912,365 @@ ${title} es un proyecto web oficial accesible en ${currentAuditResult.url}. Ofre
         }
 
         const data = currentAuditResult;
+        const logoDataUrl = await getLogoDataUrl();
+
+        if (mode === 'detallado') {
+            await generateDetailedMultiPagePdf(data, logoDataUrl);
+        } else {
+            generateExecutiveSummaryPdf(data, mode, logoDataUrl);
+        }
+    }
+
+    /**
+     * GENERADOR DEL PDF TÉCNICO DETALLADO (MULTI-PÁGINA EXHAUSTIVO)
+     * Desglosa cada una de las 10 categorías y todas sus comprobaciones individuales con badges y documentación.
+     */
+    async function generateDetailedMultiPagePdf(data, logoDataUrl) {
+        const { jsPDF } = window.jspdf;
+        const pdf = new jsPDF({ orientation: 'p', unit: 'mm', format: 'a4' });
+
+        const bgDark = [13, 17, 23];
+        const cardBg = [22, 27, 34];
+        const cyan = [0, 210, 255];
+        const textWhite = [255, 255, 255];
+        const textMuted = [161, 161, 170];
+        const green = [16, 185, 129];
+        const amber = [245, 158, 11];
+        const red = [239, 68, 68];
+
+        function drawContinuousHeader(doc, pageTitle) {
+            doc.setFillColor(...bgDark);
+            doc.rect(0, 0, 210, 297, 'F');
+            doc.setDrawColor(...cyan);
+            doc.setLineWidth(0.8);
+            doc.line(15, 18, 195, 18);
+
+            doc.setFont('helvetica', 'bold');
+            doc.setFontSize(8.5);
+            doc.setTextColor(...cyan);
+            doc.text('GROW STUDIO · LABORATORIO DE INGENIERÍA WEB & AI SEO', 15, 14);
+
+            doc.setFont('helvetica', 'normal');
+            doc.setFontSize(8);
+            doc.setTextColor(...textMuted);
+            doc.text(pageTitle, 195, 14, { align: 'right' });
+        }
+
+        // ==========================================
+        // PÁGINA 1: PORTADA EJECUTIVA Y RESUMEN GLOBAL
+        // ==========================================
+        pdf.setFillColor(...bgDark);
+        pdf.rect(0, 0, 210, 297, 'F');
+
+        // Borde superior iluminado
+        pdf.setDrawColor(...cyan);
+        pdf.setLineWidth(1.5);
+        pdf.line(0, 0, 210, 0);
+
+        // Logo oficial o Tipografía de Marca
+        if (logoDataUrl) {
+            try {
+                pdf.addImage(logoDataUrl, 'PNG', 15, 14, 38, 12);
+            } catch(e) {
+                pdf.setFont('helvetica', 'bold');
+                pdf.setFontSize(18);
+                pdf.setTextColor(...cyan);
+                pdf.text('GROW STUDIO', 15, 22);
+            }
+        } else {
+            pdf.setFont('helvetica', 'bold');
+            pdf.setFontSize(18);
+            pdf.setTextColor(...cyan);
+            pdf.text('GROW STUDIO', 15, 22);
+        }
+
+        pdf.setFont('helvetica', 'bold');
+        pdf.setFontSize(9.5);
+        pdf.setTextColor(...textWhite);
+        pdf.text('LABORATORIO DE INGENIERÍA WEB & AI SEO', 60, 20);
+
+        pdf.setFont('helvetica', 'normal');
+        pdf.setFontSize(8.5);
+        pdf.setTextColor(...textMuted);
+        pdf.text(`Fecha: ${data.date} | Ref: AUD-${Date.now().toString().slice(-6)}`, 195, 18, { align: 'right' });
+        pdf.text('admin-growstudio.vercel.app', 195, 23, { align: 'right' });
+
+        pdf.setDrawColor(40, 45, 55);
+        pdf.setLineWidth(0.4);
+        pdf.line(15, 30, 195, 30);
+
+        // Tarjeta de Título de la Auditoría
+        pdf.setFillColor(...cardBg);
+        pdf.roundedRect(15, 36, 180, 52, 4, 4, 'F');
+
+        pdf.setFont('helvetica', 'bold');
+        pdf.setFontSize(13);
+        pdf.setTextColor(...textWhite);
+        pdf.text('INFORME TÉCNICO EXHAUSTIVO DE AUDITORÍA SEO & IA (GEO)', 22, 46);
+
+        pdf.setFont('helvetica', 'normal');
+        pdf.setFontSize(10);
+        pdf.setTextColor(...cyan);
+        pdf.text(`URL Auditada: ${data.url}`, 22, 53);
+
+        const scoreColor = data.totalScore >= 85 ? green : (data.totalScore >= 65 ? amber : red);
+        pdf.setFillColor(...scoreColor);
+        pdf.roundedRect(152, 42, 35, 36, 4, 4, 'F');
+
+        pdf.setFont('helvetica', 'bold');
+        pdf.setFontSize(22);
+        pdf.setTextColor(0, 0, 0);
+        pdf.text(`${data.totalScore}`, 170, 59, { align: 'center' });
+        pdf.setFontSize(8.5);
+        pdf.text('/ 100 PUNTOS', 170, 67, { align: 'center' });
+        pdf.setFontSize(8);
+        pdf.text(data.statusLabel, 170, 73, { align: 'center' });
+
+        // Estadísticas de comprobaciones
+        let totalChecksCount = 0;
+        let correctCount = 0;
+        data.categoriesDetail.forEach(c => {
+            totalChecksCount += c.checks.length;
+            correctCount += c.checks.filter(chk => chk.status === 'CORRECTO').length;
+        });
+
+        pdf.setFontSize(9);
+        pdf.setTextColor(...textWhite);
+        pdf.text(`Estado Global: ${data.statusLabel} | Fallas Críticas: ${data.issuesCritical.length} | A Mejorar: ${data.issuesWarning.length}`, 22, 63);
+        pdf.text(`Verificaciones Superadas: ${correctCount} de ${totalChecksCount} pruebas técnicas realizadas`, 22, 70);
+        pdf.text(`Índice GEO (Citabilidad en Motores de IA ChatGPT/Perplexity): ${data.geoLevel}`, 22, 77);
+
+        // Tabla Resumen de las 10 Dimensiones
+        pdf.setFont('helvetica', 'bold');
+        pdf.setFontSize(11);
+        pdf.setTextColor(...cyan);
+        pdf.text('DESGLOSE RESUMIDO DE LAS 10 DIMENSIONES TÉCNICAS', 15, 98);
+
+        const cats = [
+            ['1. Rastreo e Indexación', `${data.scores.rastreo}/100`, '6. Rendimiento & Core Web Vitals', `${data.scores.rendimiento}/100`],
+            ['2. URL y Arquitectura', `${data.scores.url}/100`, '7. Móvil y Accesibilidad (WCAG)', `${data.scores.a11y}/100`],
+            ['3. Etiquetas On-page (H1/Title)', `${data.scores.onpage}/100`, '8. Confianza y E-E-A-T', `${data.scores.eeat}/100`],
+            ['4. Contenido y Legibilidad', `${data.scores.contenido}/100`, '9. Internacional y Lang', `${data.scores.internacional}/100`],
+            ['5. Schema.org JSON-LD', `${data.scores.schema}/100`, '10. AI SEO (GEO & Crawlers de IA)', `${data.scores.aiseo}/100`]
+        ];
+
+        let tableY = 104;
+        pdf.setFont('helvetica', 'normal');
+        pdf.setFontSize(8.5);
+
+        cats.forEach(row => {
+            pdf.setFillColor(...cardBg);
+            pdf.roundedRect(15, tableY, 86, 9.5, 2, 2, 'F');
+            pdf.roundedRect(108, tableY, 87, 9.5, 2, 2, 'F');
+
+            pdf.setTextColor(...textWhite);
+            pdf.text(row[0], 19, tableY + 6);
+            pdf.text(row[2], 112, tableY + 6);
+
+            pdf.setFont('helvetica', 'bold');
+            pdf.setTextColor(...cyan);
+            pdf.text(row[1], 95, tableY + 6, { align: 'right' });
+            pdf.text(row[3], 189, tableY + 6, { align: 'right' });
+            pdf.setFont('helvetica', 'normal');
+
+            tableY += 12.5;
+        });
+
+        // Caja de Aspectos de Máxima Prioridad
+        pdf.setFont('helvetica', 'bold');
+        pdf.setFontSize(11);
+        pdf.setTextColor(...amber);
+        pdf.text('PRIORIDADES INMEDIATAS DETECTADAS', 15, tableY + 8);
+
+        let issuesY = tableY + 15;
+        const topIssues = [...data.issuesCritical, ...data.issuesWarning].slice(0, 4);
+
+        if (topIssues.length === 0) {
+            pdf.setFillColor(...cardBg);
+            pdf.roundedRect(15, issuesY, 180, 18, 3, 3, 'F');
+            pdf.setTextColor(...green);
+            pdf.setFontSize(9.5);
+            pdf.text('✓ El sitio web cumple con todos los estándares técnicos y de citabilidad requeridos.', 22, issuesY + 11);
+            issuesY += 24;
+        } else {
+            topIssues.forEach((issue, idx) => {
+                pdf.setFillColor(...cardBg);
+                pdf.roundedRect(15, issuesY, 180, 15, 2, 2, 'F');
+
+                pdf.setFont('helvetica', 'bold');
+                pdf.setFontSize(8.5);
+                pdf.setTextColor(...textWhite);
+                pdf.text(`${idx + 1}. [${issue.cat}] ${issue.title}`, 20, issuesY + 6);
+
+                pdf.setFont('helvetica', 'normal');
+                pdf.setFontSize(7.5);
+                pdf.setTextColor(...textMuted);
+                const recShort = issue.rec.length > 95 ? issue.rec.slice(0, 92) + '...' : issue.rec;
+                pdf.text(`   Solución: ${recShort}`, 20, issuesY + 11);
+
+                issuesY += 18;
+            });
+        }
+
+        pdf.setFont('helvetica', 'normal');
+        pdf.setFontSize(8.5);
+        pdf.setTextColor(...cyan);
+        pdf.text('→ En las páginas siguientes se detalla el análisis exhaustivo de cada comprobación técnica.', 15, 272);
+
+        // ========================================================
+        // PÁGINAS 2 EN ADELANTE: DESGLOSE EXHAUSTIVO POR CATEGORÍAS
+        // ========================================================
+        let currentY = 26;
+        pdf.addPage();
+        drawContinuousHeader(pdf, `Auditoría Detallada — ${data.hostname}`);
+
+        for (let catIdx = 0; catIdx < data.categoriesDetail.length; catIdx++) {
+            const cat = data.categoriesDetail[catIdx];
+
+            // Si no hay suficiente espacio para el banner de categoría + primer check, salta página
+            if (currentY + 28 > 270) {
+                pdf.addPage();
+                drawContinuousHeader(pdf, `Auditoría Detallada — ${data.hostname}`);
+                currentY = 26;
+            }
+
+            // Banner de la Categoría
+            pdf.setFillColor(28, 34, 44);
+            pdf.roundedRect(15, currentY, 180, 12, 3, 3, 'F');
+            pdf.setDrawColor(...cyan);
+            pdf.setLineWidth(0.4);
+            pdf.roundedRect(15, currentY, 180, 12, 3, 3, 'D');
+
+            pdf.setFont('helvetica', 'bold');
+            pdf.setFontSize(10);
+            pdf.setTextColor(...textWhite);
+            pdf.text(cat.name, 22, currentY + 8);
+
+            const catScoreColor = cat.score >= 85 ? green : (cat.score >= 65 ? amber : red);
+            pdf.setFont('helvetica', 'bold');
+            pdf.setTextColor(...catScoreColor);
+            pdf.text(`${cat.score}/100`, 188, currentY + 8, { align: 'right' });
+
+            currentY += 16;
+
+            // Recorrer cada comprobación de la categoría
+            for (let checkIdx = 0; checkIdx < cat.checks.length; checkIdx++) {
+                const check = cat.checks[checkIdx];
+
+                let pillColor = green;
+                let pillText = check.status || 'CORRECTO';
+                if (pillText === 'MEJORABLE') pillColor = amber;
+                else if (pillText === 'CRÍTICO') pillColor = red;
+                else if (pillText === 'NO EVALUABLE' || pillText === 'SIN API DETECTADA') pillColor = [113, 113, 122];
+
+                pdf.setFont('helvetica', 'normal');
+                pdf.setFontSize(8);
+                const descLines = pdf.splitTextToSize(check.desc || '', 156);
+
+                let chipLines = [];
+                if (check.chips && check.chips.length > 0) {
+                    const chipsStr = 'Afectados: ' + check.chips.join(', ');
+                    chipLines = pdf.splitTextToSize(chipsStr, 156);
+                }
+
+                let docLine = '';
+                if (check.docLabel || check.docUrl) {
+                    docLine = `Doc Oficial: ${check.docLabel || 'Referencia'} (${check.docUrl || ''})`;
+                }
+                const docLines = docLine ? pdf.splitTextToSize(docLine, 156) : [];
+
+                const itemHeight = 9 + (descLines.length * 3.6) + (chipLines.length ? chipLines.length * 3.6 + 2 : 0) + (docLines.length ? docLines.length * 3.6 + 2 : 0) + 4;
+
+                // Verificar si se necesita salto de página
+                if (currentY + itemHeight > 270) {
+                    pdf.addPage();
+                    drawContinuousHeader(pdf, `Auditoría Detallada — ${data.hostname}`);
+                    currentY = 26;
+                }
+
+                // Fondo sutil del item
+                pdf.setFillColor(...cardBg);
+                pdf.roundedRect(15, currentY, 180, itemHeight - 2, 2, 2, 'F');
+
+                // Badge de Estatus
+                pdf.setFillColor(...pillColor);
+                pdf.roundedRect(19, currentY + 3, 26, 4.5, 1.5, 1.5, 'F');
+                pdf.setFont('helvetica', 'bold');
+                pdf.setFontSize(6.5);
+                pdf.setTextColor(0, 0, 0);
+                pdf.text(pillText, 32, currentY + 6.3, { align: 'center' });
+
+                // Título del Check
+                pdf.setFont('helvetica', 'bold');
+                pdf.setFontSize(8.5);
+                pdf.setTextColor(...textWhite);
+                const checkTitleShort = check.title.length > 70 ? check.title.slice(0, 68) + '...' : check.title;
+                pdf.text(checkTitleShort, 48, currentY + 6.5);
+
+                // Descripción
+                let lineY = currentY + 11.5;
+                pdf.setFont('helvetica', 'normal');
+                pdf.setFontSize(7.5);
+                pdf.setTextColor(...textMuted);
+                descLines.forEach(l => {
+                    pdf.text(l, 19, lineY);
+                    lineY += 3.6;
+                });
+
+                // Chips si existen
+                if (chipLines.length > 0) {
+                    lineY += 1;
+                    pdf.setFont('helvetica', 'normal');
+                    pdf.setFontSize(7.2);
+                    pdf.setTextColor(...amber);
+                    chipLines.forEach(cl => {
+                        pdf.text(cl, 19, lineY);
+                        lineY += 3.6;
+                    });
+                }
+
+                // Enlace a documentación oficial
+                if (docLines.length > 0) {
+                    lineY += 1;
+                    pdf.setFont('helvetica', 'italic');
+                    pdf.setFontSize(7.2);
+                    pdf.setTextColor(...cyan);
+                    docLines.forEach(dl => {
+                        pdf.text(dl, 19, lineY);
+                        lineY += 3.6;
+                    });
+                }
+
+                currentY += itemHeight;
+            }
+
+            currentY += 4;
+        }
+
+        // ==========================================
+        // PIE DE PÁGINA Y NUMERACIÓN A TODAS LAS PÁGINAS
+        // ==========================================
+        const totalPages = pdf.getNumberOfPages();
+        for (let i = 1; i <= totalPages; i++) {
+            pdf.setPage(i);
+            pdf.setDrawColor(40, 45, 55);
+            pdf.setLineWidth(0.4);
+            pdf.line(15, 282, 195, 282);
+
+            pdf.setFont('helvetica', 'normal');
+            pdf.setFontSize(7.5);
+            pdf.setTextColor(...textMuted);
+            pdf.text('Grow Studio © 2026 · Soluciones Digitales de Alto Valor · Confidencial', 15, 287);
+            pdf.text(`Página ${i} de ${totalPages}`, 195, 287, { align: 'right' });
+        }
+
+        pdf.save(`Auditoria_SEO_Detallada_${data.hostname}_GrowStudio.pdf`);
+    }
+
+    /**
+     * GENERADOR DEL PDF RESUMEN EJECUTIVO (1 PÁGINA / CERTIFICADO)
+     */
+    function generateExecutiveSummaryPdf(data, mode, logoDataUrl) {
         const { jsPDF } = window.jspdf;
         const pdf = new jsPDF({ orientation: 'p', unit: 'mm', format: 'a4' });
 
@@ -1870,56 +2287,68 @@ ${title} es un proyecto web oficial accesible en ${currentAuditResult.url}. Ofre
         pdf.rect(0, 0, 210, 297, 'F');
 
         pdf.setDrawColor(...cyan);
-        pdf.setLineWidth(1.2);
+        pdf.setLineWidth(1.5);
         pdf.line(0, 0, 210, 0);
 
-        pdf.setFont('helvetica', 'bold');
-        pdf.setFontSize(18);
-        pdf.setTextColor(...cyan);
-        pdf.text('GROW STUDIO', 15, 20);
+        if (logoDataUrl) {
+            try {
+                pdf.addImage(logoDataUrl, 'PNG', 15, 14, 38, 12);
+            } catch(e) {
+                pdf.setFont('helvetica', 'bold');
+                pdf.setFontSize(18);
+                pdf.setTextColor(...cyan);
+                pdf.text('GROW STUDIO', 15, 20);
+            }
+        } else {
+            pdf.setFont('helvetica', 'bold');
+            pdf.setFontSize(18);
+            pdf.setTextColor(...cyan);
+            pdf.text('GROW STUDIO', 15, 20);
+        }
 
-        pdf.setFontSize(10);
+        pdf.setFont('helvetica', 'bold');
+        pdf.setFontSize(9.5);
         pdf.setTextColor(...textWhite);
-        pdf.text('LABORATORIO DE INGENIERÍA WEB & AI SEO', 15, 26);
+        pdf.text('LABORATORIO DE INGENIERÍA WEB & AI SEO', 60, 20);
 
         pdf.setFont('helvetica', 'normal');
-        pdf.setFontSize(9);
+        pdf.setFontSize(8.5);
         pdf.setTextColor(...textMuted);
-        pdf.text(`Fecha: ${data.date} | Ref: AUD-${Date.now().toString().slice(-6)}`, 140, 20);
-        pdf.text('growstudioweb.vercel.app', 140, 25);
+        pdf.text(`Fecha: ${data.date} | Ref: AUD-${Date.now().toString().slice(-6)}`, 195, 18, { align: 'right' });
+        pdf.text('admin-growstudio.vercel.app', 195, 23, { align: 'right' });
 
         pdf.setDrawColor(40, 45, 55);
         pdf.setLineWidth(0.4);
-        pdf.line(15, 32, 195, 32);
+        pdf.line(15, 30, 195, 30);
 
         pdf.setFillColor(...cardBg);
-        pdf.roundedRect(15, 38, 180, 42, 4, 4, 'F');
+        pdf.roundedRect(15, 36, 180, 44, 4, 4, 'F');
 
         pdf.setFont('helvetica', 'bold');
         pdf.setFontSize(12);
         pdf.setTextColor(...textWhite);
-        pdf.text(mode === 'blindaje' ? 'CERTIFICADO DE BLINDAJE & OPTIMIZACIÓN TÉCNICA' : 'AUDITORÍA DE VULNERABILIDAD & RENDIMIENTO SEO', 22, 48);
+        pdf.text(mode === 'blindaje' ? 'CERTIFICADO DE BLINDAJE & OPTIMIZACIÓN TÉCNICA' : 'AUDITORÍA EJECUTIVA DE RENDIMIENTO & CITABILIDAD IA', 22, 47);
 
         pdf.setFont('helvetica', 'normal');
         pdf.setFontSize(10);
-        pdf.setTextColor(...textMuted);
-        pdf.text(`URL Auditada: ${data.url}`, 22, 55);
+        pdf.setTextColor(...cyan);
+        pdf.text(`URL Auditada: ${data.url}`, 22, 54);
 
         const scoreColor = data.totalScore >= 85 ? green : (data.totalScore >= 65 ? amber : red);
         pdf.setFillColor(...scoreColor);
-        pdf.roundedRect(155, 43, 32, 28, 4, 4, 'F');
+        pdf.roundedRect(152, 41, 35, 33, 4, 4, 'F');
 
         pdf.setFont('helvetica', 'bold');
-        pdf.setFontSize(18);
+        pdf.setFontSize(20);
         pdf.setTextColor(0, 0, 0);
-        pdf.text(`${data.totalScore}`, 160, 58);
+        pdf.text(`${data.totalScore}`, 170, 58, { align: 'center' });
         pdf.setFontSize(8);
-        pdf.text('/ 100 PUNTOS', 157, 66);
+        pdf.text('/ 100 PUNTOS', 170, 66, { align: 'center' });
 
-        pdf.setFontSize(9);
+        pdf.setFontSize(8.5);
         pdf.setTextColor(...textWhite);
-        pdf.text(`Diagnóstico: ${data.statusLabel} | Fallas Críticas: ${data.issuesCritical.length} | Mejoras: ${data.issuesWarning.length}`, 22, 64);
-        pdf.text(`Índice GEO (Citabilidad en ChatGPT/Perplexity): ${data.geoLevel}`, 22, 71);
+        pdf.text(`Diagnóstico: ${data.statusLabel} | Fallas Críticas: ${data.issuesCritical.length} | Mejoras: ${data.issuesWarning.length}`, 22, 63);
+        pdf.text(`Índice GEO (Citabilidad en ChatGPT/Perplexity): ${data.geoLevel}`, 22, 70);
 
         pdf.setFont('helvetica', 'bold');
         pdf.setFontSize(11);
@@ -1927,21 +2356,21 @@ ${title} es un proyecto web oficial accesible en ${currentAuditResult.url}. Ofre
         pdf.text('DESGLOSE DE LAS 10 DIMENSIONES TÉCNICAS', 15, 90);
 
         const cats = [
-            ['1. Rastreo e Indexación', `${data.scores.rastreo}/100`, '6. Rendimiento & CLS', `${data.scores.rendimiento}/100`],
+            ['1. Rastreo e Indexación', `${data.scores.rastreo}/100`, '6. Rendimiento & Core Web Vitals', `${data.scores.rendimiento}/100`],
             ['2. URL y Arquitectura', `${data.scores.url}/100`, '7. Móvil y Accesibilidad (WCAG)', `${data.scores.a11y}/100`],
             ['3. Etiquetas On-page (H1/Title)', `${data.scores.onpage}/100`, '8. Confianza y E-E-A-T', `${data.scores.eeat}/100`],
             ['4. Contenido y Legibilidad', `${data.scores.contenido}/100`, '9. Internacional y Lang', `${data.scores.internacional}/100`],
-            ['5. Schema.org JSON-LD', `${data.scores.schema}/100`, '10. AI SEO (GEO & Crawlers)', `${data.scores.aiseo}/100`]
+            ['5. Schema.org JSON-LD', `${data.scores.schema}/100`, '10. AI SEO (GEO & Crawlers IA)', `${data.scores.aiseo}/100`]
         ];
 
         let tableY = 96;
         pdf.setFont('helvetica', 'normal');
-        pdf.setFontSize(9);
+        pdf.setFontSize(8.5);
 
         cats.forEach(row => {
             pdf.setFillColor(...cardBg);
-            pdf.roundedRect(15, tableY, 86, 9, 2, 2, 'F');
-            pdf.roundedRect(108, tableY, 87, 9, 2, 2, 'F');
+            pdf.roundedRect(15, tableY, 86, 9.5, 2, 2, 'F');
+            pdf.roundedRect(108, tableY, 87, 9.5, 2, 2, 'F');
 
             pdf.setTextColor(...textWhite);
             pdf.text(row[0], 19, tableY + 6);
@@ -1949,20 +2378,20 @@ ${title} es un proyecto web oficial accesible en ${currentAuditResult.url}. Ofre
 
             pdf.setFont('helvetica', 'bold');
             pdf.setTextColor(...cyan);
-            pdf.text(row[1], 83, tableY + 6);
-            pdf.text(row[3], 176, tableY + 6);
+            pdf.text(row[1], 95, tableY + 6, { align: 'right' });
+            pdf.text(row[3], 189, tableY + 6, { align: 'right' });
             pdf.setFont('helvetica', 'normal');
 
-            tableY += 12;
+            tableY += 12.5;
         });
 
         pdf.setFont('helvetica', 'bold');
         pdf.setFontSize(11);
         const actionColor = (mode === 'blindaje' ? green : amber);
         pdf.setTextColor(...actionColor);
-        pdf.text(mode === 'blindaje' ? 'VERIFICACIÓN DE PROTOCOLOS BLINDADOS' : 'PLAN DE ACCIÓN RECOMENDADO (CORRECCIONES INMEDIATAS)', 15, tableY + 5);
+        pdf.text(mode === 'blindaje' ? 'VERIFICACIÓN DE PROTOCOLOS BLINDADOS' : 'PLAN DE ACCIÓN RECOMENDADO (CORRECCIONES INMEDIATAS)', 15, tableY + 6);
 
-        let issuesY = tableY + 12;
+        let issuesY = tableY + 13;
         pdf.setFontSize(8.5);
 
         const topIssues = [...data.issuesCritical, ...data.issuesWarning].slice(0, 5);
@@ -1978,7 +2407,7 @@ ${title} es un proyecto web oficial accesible en ${currentAuditResult.url}. Ofre
                 pdf.setFont('helvetica', 'normal');
                 pdf.setTextColor(...textMuted);
                 pdf.text(`   Solución: ${issue.rec}`, 15, issuesY + 4.5);
-                issuesY += 10;
+                issuesY += 10.5;
             });
         }
 
@@ -1990,9 +2419,9 @@ ${title} es un proyecto web oficial accesible en ${currentAuditResult.url}. Ofre
         pdf.setTextColor(...textMuted);
         pdf.text('Grow Studio © 2026 · Soluciones Digitales de Alto Valor · Confidencial', 15, 282);
         pdf.setTextColor(...cyan);
-        pdf.text('Certificado de Ingeniería Web', 155, 282);
+        pdf.text('Certificado de Ingeniería Web', 195, 282, { align: 'right' });
 
-        pdf.save(`Auditoria_GrowStudio_${data.hostname}_${mode}.pdf`);
+        pdf.save(`Auditoria_SEO_Resumen_${data.hostname}_GrowStudio.pdf`);
     }
 
     function saveAuditToHistory(data) {
