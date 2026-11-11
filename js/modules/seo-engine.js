@@ -56,6 +56,17 @@
         const progressUrlEl = document.getElementById('seo-progress-url');
         if (progressUrlEl) progressUrlEl.textContent = url;
 
+        // Cargar inmediatamente el logo / favicon de la web analizada en el reactor de escaneo
+        try {
+            const targetHostname = new URL(url).hostname;
+            const faviconUrl = `https://www.google.com/s2/favicons?domain=${targetHostname}&sz=128`;
+            const scannerLogo = document.getElementById('seo-scanner-target-logo');
+            if (scannerLogo) {
+                scannerLogo.src = faviconUrl;
+                scannerLogo.onerror = () => { scannerLogo.src = 'img/growisotipo.png'; };
+            }
+        } catch (e) {}
+
         // Iniciar temporizador dinámico en vivo
         const timerCountEl = document.getElementById('seo-timer-count');
         const timeTagEl = document.getElementById('seo-progress-time-tag');
@@ -1820,6 +1831,11 @@
             scoreLabel.className = 'status-badge ' + (data.totalScore >= 85 ? 'status-green' : (data.totalScore >= 65 ? 'status-amber' : 'status-red'));
         }
         if (urlDisplay) urlDisplay.textContent = data.url;
+        const resultFavicon = document.getElementById('seo-result-favicon');
+        if (resultFavicon) {
+            resultFavicon.src = `https://www.google.com/s2/favicons?domain=${data.hostname}&sz=128`;
+            resultFavicon.onerror = () => { resultFavicon.src = 'img/growisotipo.png'; };
+        }
         if (summaryText) {
             if (data.issuesCritical.length > 0) {
                 summaryText.innerHTML = `<strong>${data.issuesCritical.length} aspectos a corregir</strong> y <strong>${data.issuesWarning.length} a mejorar</strong> detectados — revísalos abajo.`;

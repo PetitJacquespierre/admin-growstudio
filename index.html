@@ -1305,21 +1305,21 @@
                                 <span id="seo-ai-chevron" style="color: #71717a; font-size: 11px; transition: transform 0.25s ease;">▼</span>
                             </div>
                             <div id="seo-ai-config-panel" style="display: none; padding: 18px; border-top: 1px solid rgba(255, 255, 255, 0.06); background: rgba(0, 0, 0, 0.35);">
-                                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 15px; margin-bottom: 14px;">
+                                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 15px; margin-bottom: 14px; align-items: end;">
                                     <div>
                                         <label style="display: block; font-size: 11px; font-weight: 700; color: #94a3b8; text-transform: uppercase; margin-bottom: 6px;">Proveedor de IA</label>
-                                        <select id="seo-ai-provider-select" onchange="window.handleSeoAiProviderChange && window.handleSeoAiProviderChange(this.value)" class="modern-select" style="width: 100%; padding: 10px 14px; border-radius: 8px; background: rgba(15, 23, 42, 0.9); border: 1px solid rgba(255, 255, 255, 0.15); color: #fff; font-size: 12px; font-weight: 600;">
+                                        <select id="seo-ai-provider-select" onchange="window.handleSeoAiProviderChange && window.handleSeoAiProviderChange(this.value)" class="modern-select" style="width: 100%; padding: 12px 14px; border-radius: 10px; background: rgba(15, 23, 42, 0.95); border: 1px solid rgba(255, 255, 255, 0.15); color: #fff; font-size: 12px; font-weight: 600;">
                                             <option value="gemini">Google Gemini (Recomendado — 100% Gratis con Google AI Studio)</option>
                                             <option value="anthropic">Anthropic Claude (claude-3-5-haiku / sonnet)</option>
                                             <option value="openai">OpenAI (gpt-4o-mini)</option>
                                         </select>
                                     </div>
                                     <div>
-                                        <label style="display: block; font-size: 11px; font-weight: 700; color: #94a3b8; text-transform: uppercase; margin-bottom: 6px;">API Key del Proveedor</label>
-                                        <div style="display: flex; gap: 8px;">
-                                            <input type="password" id="seo-ai-key-input" placeholder="AIzaSy... (Gemini) o sk-ant-... (Claude)" class="modern-select" style="flex: 1; padding: 10px 14px; border-radius: 8px; background: rgba(15, 23, 42, 0.9); border: 1px solid rgba(255, 255, 255, 0.15); color: #fff; font-size: 12px; font-family: monospace;">
-                                            <button type="button" onclick="window.saveSeoAiKey && window.saveSeoAiKey()" class="btn-primary" style="padding: 10px 16px; font-size: 12px; font-weight: 700; border-radius: 8px; white-space: nowrap;">Guardar</button>
-                                            <button type="button" onclick="window.clearSeoAiKey && window.clearSeoAiKey()" class="btn-secondary" style="padding: 10px 12px; font-size: 12px; border-radius: 8px; color: #ef4444;" title="Borrar clave">✕</button>
+                                        <label style="display: block; font-size: 11px; font-weight: 700; color: #00d2ff; text-transform: uppercase; margin-bottom: 6px;">🔑 Ingresa tu API Key</label>
+                                        <div style="display: flex; gap: 10px; align-items: center; width: 100%;">
+                                            <input type="password" id="seo-ai-key-input" placeholder="Pega aquí tu clave (AIzaSy... / sk-ant-... / sk-...)" style="flex: 1; min-width: 180px; width: 100%; padding: 12px 16px; border-radius: 10px; background: rgba(15, 23, 42, 0.95); border: 1px solid rgba(0, 210, 255, 0.4); color: #fff; font-size: 13px; font-family: monospace; outline: none; box-shadow: inset 0 2px 5px rgba(0,0,0,0.6);">
+                                            <button type="button" onclick="window.saveSeoAiKey && window.saveSeoAiKey()" style="flex: 0 0 auto; width: auto !important; padding: 12px 20px; font-size: 13px; font-weight: 800; background: linear-gradient(135deg, #00d2ff, #0077b6); color: #001e50; border: none; border-radius: 10px; cursor: pointer; white-space: nowrap; box-shadow: 0 4px 15px rgba(0,210,255,0.3);">Guardar</button>
+                                            <button type="button" onclick="window.clearSeoAiKey && window.clearSeoAiKey()" style="flex: 0 0 auto; width: auto !important; padding: 12px 16px; font-size: 13px; font-weight: 800; background: rgba(239, 68, 68, 0.15); border: 1px solid rgba(239, 68, 68, 0.3); color: #ef4444; border-radius: 10px; cursor: pointer;" title="Borrar clave">✕</button>
                                         </div>
                                     </div>
                                 </div>
@@ -1358,9 +1358,9 @@
                         <div class="orbital-ring-outer" style="position: absolute; inset: 0; border-radius: 50%; border: 2px dashed rgba(0, 210, 255, 0.45); animation: orbit-spin 8s linear infinite;"></div>
                         <!-- Anillo Orbital Intermedio (Giro inverso dual color) -->
                         <div class="orbital-ring-mid" style="position: absolute; inset: 12px; border-radius: 50%; border: 2px solid transparent; border-top-color: #00d2ff; border-bottom-color: #f59e0b; animation: orbit-reverse 3s linear infinite;"></div>
-                        <!-- Isotipo Central de Grow Studio con respiración -->
+                        <!-- Isotipo Central con Logo Dinámico de la Web Analizada -->
                         <div style="position: relative; z-index: 2; width: 68px; height: 68px; border-radius: 20px; background: rgba(13, 17, 23, 0.95); border: 1px solid rgba(0, 210, 255, 0.5); display: flex; align-items: center; justify-content: center; box-shadow: 0 0 25px rgba(0, 210, 255, 0.4); animation: pulse-glow 2.5s ease-in-out infinite;">
-                            <img src="img/growisotipo.png" alt="Grow Studio" style="width: 44px; height: 44px; object-fit: contain; filter: drop-shadow(0 0 8px rgba(0,210,255,0.7));">
+                            <img id="seo-scanner-target-logo" src="img/growisotipo.png" alt="Logo de la web" style="width: 44px; height: 44px; object-fit: contain; border-radius: 12px; filter: drop-shadow(0 0 8px rgba(0,210,255,0.7));">
                         </div>
                     </div>
 
@@ -1400,7 +1400,10 @@
 
                             <div>
                                 <span id="seo-status-badge" class="status-badge status-amber" style="font-size: 11px; padding: 4px 10px; border-radius: 20px; font-weight: 800; text-transform: uppercase;">MEJORABLE</span>
-                                <h3 id="seo-result-url" style="font-size: 16px; font-weight: 700; color: #fff; margin: 8px 0 4px 0; font-family: monospace;">https://...</h3>
+                                <div style="display: flex; align-items: center; gap: 10px; margin: 8px 0 4px 0; flex-wrap: wrap;">
+                                    <img id="seo-result-favicon" src="img/growisotipo.png" alt="Favicon" style="width: 26px; height: 26px; border-radius: 8px; object-fit: contain; background: rgba(0,0,0,0.5); border: 1px solid rgba(255,255,255,0.15); padding: 3px;">
+                                    <h3 id="seo-result-url" style="font-size: 16px; font-weight: 700; color: #fff; margin: 0; font-family: monospace;">https://...</h3>
+                                </div>
                                 <p id="seo-summary-text" style="color: #94a3b8; font-size: 13px; margin: 0;">2 aspectos críticos y 15 a mejorar detectados.</p>
                             </div>
                         </div>
