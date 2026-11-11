@@ -1074,7 +1074,9 @@
         });
 
         if (unlazyVideos.length > 0) {
-            scoreRendimiento -= 8.3;
+            if (imgsWithoutDims.length === 0) {
+                scoreRendimiento -= 8.3; // Solo descuenta si no hubo fallo crítico previo
+            }
             const item = {
                 cat: '6. Rendimiento',
                 title: 'Carga diferida de vídeos',
