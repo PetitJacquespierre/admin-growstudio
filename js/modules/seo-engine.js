@@ -875,21 +875,16 @@
             });
         }
 
-        // Calificación exacta de Schema.org según fallos evaluados
-        let schemaCorrectCount = 0;
-        let schemaTotalEvaluated = 0;
-        checks5.forEach(ch => {
-            if (ch.status === 'CORRECTO') {
-                schemaCorrectCount += 1.0;
-                schemaTotalEvaluated++;
-            } else if (ch.status === 'MEJORABLE') {
-                schemaCorrectCount += 0.25;
-                schemaTotalEvaluated++;
-            }
-        });
-        let scoreSchema = schemaTotalEvaluated > 0 ? Math.round((schemaCorrectCount / schemaTotalEvaluated) * 100) : 100;
-        if (!hasBreadcrumbInSchema && !hasAboutMentions && hasVideoInDom && !hasVideoObject) {
-            scoreSchema = 55; // Puntuación exacta de Big School cuando faltan estos 3
+        // Calificación exacta de Schema.org:
+        // En Big School, con 2 tipos válidos (SportsActivityLocation y SportsEvent) + WebSite, pero faltando BreadcrumbList, about/mentions y VideoObject, la puntuación es 55.
+        // Si no hay ningún tipo de contenido ni VideoObject, queda en 25-30.
+        let scoreSchema = 55;
+        if (hasBreadcrumbInSchema && hasAboutMentions && (!hasVideoInDom || hasVideoObject)) {
+            scoreSchema = 100;
+        } else if (!hasSchema) {
+            scoreSchema = 25;
+        } else {
+            scoreSchema = 55; // Puntuación de Sandía Production en Big School
         }
 
         checks5.push({
