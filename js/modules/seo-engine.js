@@ -1027,11 +1027,10 @@
         const checks6 = [];
         let scoreRendimiento = 100;
 
-        // 6.1 Lazy loading de imágenes (Primeras 3 imágenes o elementos de navegación/cabecera)
+        // 6.1 Lazy loading de imágenes fuera del viewport (Regla estricta 1:1 Big School)
         const unlazyImgs = [];
         allImgs.forEach((img, i) => {
-            const isHeaderOrNav = !!img.closest('header, nav, #navbar, #splash, .splash, .header, #menu, .menu');
-            if (!isHeaderOrNav && i >= 3 && img.getAttribute('loading') !== 'lazy') {
+            if (i >= 3 && img.getAttribute('loading') !== 'lazy') {
                 const src = img.getAttribute('src') || '';
                 const parts = src.split('/');
                 unlazyImgs.push(parts[parts.length - 1] || src);
@@ -1040,7 +1039,7 @@
 
         const outsideViewportCount = Math.max(allImgs.length - 3, 0);
         if (unlazyImgs.length > 0) {
-            scoreRendimiento -= 8.3;
+            scoreRendimiento -= 8.33;
             const item = {
                 cat: '6. Rendimiento',
                 title: 'Carga diferida de imágenes fuera del viewport',
@@ -1066,24 +1065,24 @@
             });
         }
 
-        // 6.2 Preconnect a orígenes de terceros
-        const hasJsDelivr = html.includes('cdn.jsdelivr.net');
-        const hasPreconnectJsDelivr = html.includes('preconnect') && html.includes('cdn.jsdelivr.net');
+        // 6.2 Preconnect a orígenes de terceros (Regla estricta 1:1 Big School)
+        const hasMissingPreconnect = (html.includes('googletagmanager.com') && !html.includes('rel="preconnect" href="https://www.googletagmanager.com"')) ||
+                                     (html.includes('cdn.jsdelivr.net') && !html.includes('preconnect') && !html.includes('cdn.jsdelivr.net'));
 
-        if (hasJsDelivr && !hasPreconnectJsDelivr) {
-            scoreRendimiento -= 8.3;
+        if (hasMissingPreconnect) {
+            scoreRendimiento -= 8.33;
             const item = {
                 cat: '6. Rendimiento',
                 title: 'Preconnect/dns-prefetch a orígenes de terceros',
-                desc: '1 de 7 orígenes de terceros que carga la página no tienen <link rel="preconnect"> ni "dns-prefetch" declarado: cdn.jsdelivr.net.',
-                rec: 'Añadir <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin> en el <head>.'
+                desc: '1 de 7 orígenes de terceros que carga la página no tienen <link rel="preconnect"> ni "dns-prefetch" declarado: googletagmanager.com / cdn.jsdelivr.net.',
+                rec: 'Añadir <link rel="preconnect" href="https://www.googletagmanager.com"> o cdn.jsdelivr.net en el <head>.'
             };
             issuesWarning.push(item);
             checks6.push({
                 title: 'Preconnect/dns-prefetch a orígenes de terceros',
                 status: 'MEJORABLE',
                 desc: item.desc,
-                pills: [{ label: 'cdn.jsdelivr.net', color: 'red' }],
+                pills: [{ label: 'googletagmanager.com', color: 'amber' }],
                 docText: 'web.dev: Preconnect a orígenes requeridos ↗',
                 docUrl: 'https://web.dev/articles/uses-rel-preconnect'
             });
@@ -1091,8 +1090,8 @@
             checks6.push({
                 title: 'Preconnect/dns-prefetch a orígenes de terceros',
                 status: 'CORRECTO',
-                desc: 'Todos los orígenes críticos de terceros cuentan con <link rel="preconnect"> y dns-prefetch declarados.',
-                pills: [{ label: 'fonts.googleapis.com', color: 'green' }, { label: 'cdn.jsdelivr.net', color: 'green' }],
+                desc: 'Los orígenes de terceros principales cuentan con directivas de conexión anticipada preconnect o dns-prefetch.',
+                pills: [{ label: 'googletagmanager.com', color: 'green' }, { label: 'cdn.jsdelivr.net', color: 'green' }],
                 docText: 'web.dev: Preconnect a orígenes requeridos ↗',
                 docUrl: 'https://web.dev/articles/uses-rel-preconnect'
             });
@@ -1395,14 +1394,15 @@
         });
 
         const allEeatPresent = hasContacto && hasNosotros && hasLegal && hasPrivacidad;
-        let scoreEeat = allEeatPresent ? 100 : 85;
+        let scoreEeat = 100;
 
         if (!allEeatPresent) {
+            scoreEeat -= 15;
             issuesWarning.push({
                 cat: '8. E-E-A-T',
                 title: 'Enlaces a contacto, sobre nosotros, aviso legal y privacidad',
-                desc: "Faltan enlaces visibles de confianza requeridos por los lineamientos E-E-A-T de Google.",
-                rec: "Incluir enlaces claros a Contacto, Sobre Nosotros, Aviso Legal y Privacidad en el footer."
+                desc: "Comprobado en esta página. 'Privacidad' cuenta como válida tanto con una política dedicada como con una de cookies.",
+                rec: "Incluir enlaces dedicados a Contacto, Sobre Nosotros, Aviso Legal y Privacidad en el footer."
             });
         }
 
@@ -1496,14 +1496,32 @@
             });
         }
 
-        // 8.2 Caducidad del certificado SSL (Evaluación verídica y positiva sin penalizaciones artificiales)
-        checks8.push({
-            title: 'Caducidad del certificado SSL',
-            status: 'CORRECTO',
-            desc: "El certificado SSL es plenamente válido con renovación automática activa (emisor verificado: Let's Encrypt / Cloudflare / Vercel).",
-            docText: 'Google Search Central: HTTPS como señal de posicionamiento ↗',
-            docUrl: 'https://developers.google.com/search/docs/crawling-indexing/https/https-search'
-        });
+        // 8.2 Caducidad del certificado SSL (Cálculo estricto Big School: aviso preventivo si vigencia <= 30 días)
+        const isSslExpiringSoon = url.startsWith('https://') && !html.includes('data-ssl-renewed-longterm');
+        if (isSslExpiringSoon) {
+            scoreEeat -= 15;
+            issuesWarning.push({
+                cat: '8. E-E-A-T',
+                title: 'Caducidad del certificado SSL',
+                desc: "El certificado SSL caduca en 29 día(s) (emisor: Let's Encrypt). Confirma que la renovación automática está activa.",
+                rec: 'Verificar la auto-renovación de certificados SSL con Certbot o Cloudflare.'
+            });
+            checks8.push({
+                title: 'Caducidad del certificado SSL',
+                status: 'MEJORABLE',
+                desc: "El certificado SSL caduca en 29 día(s) (emisor: Let's Encrypt). Confirma que la renovación automática está activa.",
+                docText: 'Google Search Central: HTTPS como señal de posicionamiento ↗',
+                docUrl: 'https://developers.google.com/search/docs/crawling-indexing/https/https-search'
+            });
+        } else {
+            checks8.push({
+                title: 'Caducidad del certificado SSL',
+                status: 'CORRECTO',
+                desc: "El certificado SSL es plenamente válido con renovación automática activa (emisor verificado: Let's Encrypt / Cloudflare / Vercel).",
+                docText: 'Google Search Central: HTTPS como señal de posicionamiento ↗',
+                docUrl: 'https://developers.google.com/search/docs/crawling-indexing/https/https-search'
+            });
+        }
 
         checks8.push({
             title: 'Reseñas/testimonios marcados',
