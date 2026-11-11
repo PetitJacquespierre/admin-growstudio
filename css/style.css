@@ -540,11 +540,16 @@ input:checked + .slider:before {
     padding: 16px;
     transition: all 0.25s ease;
     backdrop-filter: blur(8px);
+    cursor: pointer !important;
+    user-select: none;
 }
 .seo-metric-card:hover {
-    transform: translateY(-2px);
-    border-color: rgba(0, 210, 255, 0.3);
-    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+    transform: translateY(-4px);
+    border-color: rgba(0, 210, 255, 0.5) !important;
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5), 0 0 20px rgba(0, 210, 255, 0.25);
+}
+.seo-metric-card:active {
+    transform: scale(0.97);
 }
 
 .seo-card-header {
@@ -660,6 +665,7 @@ input:checked + .slider:before {
     border-radius: 14px;
     overflow: hidden;
     transition: all 0.25s ease;
+    scroll-margin-top: 90px;
 }
 .seo-accordion-card.open {
     border-color: rgba(0, 210, 255, 0.35);
