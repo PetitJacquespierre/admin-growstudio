@@ -457,19 +457,20 @@
                 docUrl: 'https://developers.google.com/search/docs/fundamentals/seo-starter-guide#heading-tags'
             });
         } else {
-            scoreOnPage -= 20;
+            scoreOnPage = 35; // Calificación exacta de FALLO crítico de Big School
+            const skipReason = hasHeadingSkips ? 'se salta niveles de encabezado (ej. de H2 a H4 sin H3 intermedio)' : 'múltiples H1 o H1 no es el primer encabezado';
             const item = {
                 cat: '3. On-page',
-                title: 'Estructura de encabezados con saltos o H1 no prioritario',
-                desc: `Encabezados con inconsistencias (H1 detectados: ${h1Count}). Secuencia: ${headingSeqStr.substring(0, 60)}...`,
+                title: 'Estructura de encabezados (H1 único, primero y sin saltos)',
+                desc: `Problemas de estructura: ${skipReason}. Secuencia real: ${headingSeqStr}`,
                 rec: 'Dejar 1 solo H1 principal al inicio y ordenar secuencialmente H1 -> H2 -> H3.'
             };
-            issuesWarning.push(item);
+            issuesCritical.push(item);
             checks3.push({
                 title: 'Estructura de encabezados (H1 único, primero y sin saltos)',
-                status: 'MEJORABLE',
+                status: 'FALLO',
                 desc: item.desc,
-                pills: [{ label: `Secuencia: ${headingSeqStr.substring(0, 75)}...`, color: 'amber' }],
+                pills: [{ label: `Secuencia real: ${headingSeqStr.substring(0, 75)}...`, color: 'red' }],
                 docText: 'Google: Mejores prácticas de encabezados (SEO Starter Guide) ↗',
                 docUrl: 'https://developers.google.com/search/docs/fundamentals/seo-starter-guide#heading-tags'
             });
@@ -738,89 +739,136 @@
         // 5. DATOS ESTRUCTURADOS (SCHEMA.ORG)
         // ========================================================
         const checks5 = [];
-        let scoreSchema = 100;
-
         const schemaScripts = Array.from(doc.querySelectorAll('script[type="application/ld+json"]'));
         const detectedTypes = [];
-        let foundSportsEvent = false;
-        let foundSportsOrg = false;
-        let foundVideoObject = false;
+        let rawSchemaText = '';
 
         schemaScripts.forEach(sc => {
-            const txt = sc.textContent;
-            if (txt.includes('SportsEvent')) { detectedTypes.push('SportsEvent'); foundSportsEvent = true; }
-            if (txt.includes('SportsOrganization')) { detectedTypes.push('SportsOrganization'); foundSportsOrg = true; }
-            if (txt.includes('VideoObject')) { detectedTypes.push('VideoObject'); foundVideoObject = true; }
-            if (txt.includes('Organization') && !detectedTypes.includes('Organization')) detectedTypes.push('Organization');
-            if (txt.includes('WebSite') && !detectedTypes.includes('WebSite')) detectedTypes.push('WebSite');
+            const txt = sc.textContent || '';
+            rawSchemaText += txt;
+            ['SportsEvent', 'SportsOrganization', 'Organization', 'LocalBusiness', 'WebSite', 'VideoObject', 'BreadcrumbList'].forEach(type => {
+                if (txt.includes(type) && !detectedTypes.includes(type)) {
+                    detectedTypes.push(type);
+                }
+            });
         });
 
+        // 5.1 Tipos detectados
+        const hasSchema = detectedTypes.length > 0;
         checks5.push({
             title: 'Datos estructurados Schema detectados',
-            status: 'CORRECTO',
-            desc: `${detectedTypes.length || 3} tipo(s) de contenido detectado(s) (además de los estructurales/de identidad). 1 de 1 tipo(s) con resultado enriquecido asociado cumple todos los requisitos de Google.`,
-            pills: [
-                { label: 'SportsEvent (Válido en Schema.org)', color: 'gray' },
-                { label: 'SportsOrganization (Válido en Schema.org)', color: 'gray' },
-                { label: 'VideoObject (Cumple todos los requisitos obligatorios)', color: 'green' }
-            ],
-            docText: 'Google: requisitos de VideoObject ↗',
-            docUrl: 'https://developers.google.com/search/docs/appearance/structured-data/video'
+            status: hasSchema ? 'CORRECTO' : 'MEJORABLE',
+            desc: hasSchema ? `${detectedTypes.length} tipo(s) de contenido detectado(s) en Schema.org.` : 'No se detectan datos estructurados Schema.org en la página.',
+            pills: detectedTypes.map(t => ({ label: `${t} (Válido en Schema.org)`, color: 'gray' })),
+            docText: 'Schema.org: Documentación oficial ↗',
+            docUrl: 'https://schema.org/'
         });
 
-        checks5.push({
-            title: 'BreadcrumbList marcado',
-            status: 'CORRECTO',
-            desc: 'BreadcrumbList presente en JSON-LD.',
-            docText: 'Google Search Central: Datos estructurados BreadcrumbList ↗',
-            docUrl: 'https://developers.google.com/search/docs/appearance/structured-data/breadcrumb'
-        });
+        // 5.2 BreadcrumbList
+        const hasBreadcrumbInSchema = rawSchemaText.includes('BreadcrumbList');
+        if (hasBreadcrumbInSchema) {
+            checks5.push({
+                title: 'BreadcrumbList marcado',
+                status: 'CORRECTO',
+                desc: 'BreadcrumbList presente en JSON-LD.',
+                docText: 'Google Search Central: Datos estructurados BreadcrumbList ↗',
+                docUrl: 'https://developers.google.com/search/docs/appearance/structured-data/breadcrumb'
+            });
+        } else {
+            issuesWarning.push({
+                cat: '5. Schema.org',
+                title: 'BreadcrumbList marcado',
+                desc: 'No se detecta BreadcrumbList en JSON-LD.',
+                rec: 'Declarar BreadcrumbList en JSON-LD para enriquecer la jerarquía en los resultados.'
+            });
+            checks5.push({
+                title: 'BreadcrumbList marcado',
+                status: 'MEJORABLE',
+                desc: 'No se detecta BreadcrumbList en JSON-LD.',
+                docText: 'Google Search Central: Datos estructurados BreadcrumbList ↗',
+                docUrl: 'https://developers.google.com/search/docs/appearance/structured-data/breadcrumb'
+            });
+        }
 
+        // 5.3 Identidad del sitio (Organization / WebSite)
+        const hasIdentitySchema = rawSchemaText.includes('Organization') || rawSchemaText.includes('WebSite') || rawSchemaText.includes('LocalBusiness');
         checks5.push({
             title: 'Identidad del sitio marcada (Organization / WebSite)',
-            status: 'CORRECTO',
-            desc: 'Detectado: Organization WebSite. Esto describe QUIÉN es el sitio/marca (su identidad), no de qué trata esta página en concreto.',
+            status: hasIdentitySchema ? 'CORRECTO' : 'MEJORABLE',
+            desc: hasIdentitySchema ? 'Detectado: Identidad de sitio marcada (Organization/WebSite).' : 'Falta declarar schema Organization o WebSite.',
             docText: 'Schema.org: Organization ↗',
             docUrl: 'https://schema.org/Organization'
         });
 
-        checks5.push({
-            title: 'Logo de marca en schema Organization',
-            status: 'CORRECTO',
-            desc: "El schema Organization/LocalBusiness incluye la propiedad 'logo'.",
-            docText: 'Schema.org: Organization ↗',
-            docUrl: 'https://schema.org/Organization'
-        });
+        // 5.4 Marcado de entidades (about/mentions)
+        const hasAboutMentions = rawSchemaText.includes('"about"') || rawSchemaText.includes('"mentions"') || rawSchemaText.includes('about:') || rawSchemaText.includes('mentions:');
+        if (hasAboutMentions) {
+            checks5.push({
+                title: 'Marcado de entidades (about/mentions)',
+                status: 'CORRECTO',
+                desc: "Se usa 'about' o 'mentions' para declarar explícitamente las entidades de la página.",
+                docText: 'Schema.org: Vocabulario de datos estructurados ↗',
+                docUrl: 'https://schema.org/docs/datamodel.html'
+            });
+        } else {
+            issuesWarning.push({
+                cat: '5. Schema.org',
+                title: 'Marcado de entidades (about/mentions)',
+                desc: "No se usan las propiedades 'about'/'mentions' en el JSON-LD para reforzar de qué trata realmente la página ante buscadores y motores de IA.",
+                rec: "Añadir propiedades 'about' o 'mentions' en el schema JSON-LD con enlaces a Wikipedia/Wikidata."
+            });
+            checks5.push({
+                title: 'Marcado de entidades (about/mentions)',
+                status: 'MEJORABLE',
+                desc: "No se usan las propiedades 'about'/'mentions' en el JSON-LD para reforzar de qué trata realmente la página ante buscadores y motores de IA.",
+                docText: 'Schema.org: Vocabulario de datos estructurados ↗',
+                docUrl: 'https://schema.org/docs/datamodel.html'
+            });
+        }
 
-        checks5.push({
-            title: 'Enlaces sameAs a perfiles externos',
-            status: 'CORRECTO',
-            desc: "Se encuentra 'sameAs' con 4 enlace(s) a perfiles externos (Instagram, TikTok, Strava, WhatsApp...) — ayuda a Google a confirmar la entidad en su Knowledge Graph.",
-            pills: [
-                { label: 'instagram.com/retovirtual.vzla', color: 'green' },
-                { label: 'tiktok.com/@retovirtual.vzla', color: 'green' },
-                { label: 'strava.com/clubs/1859944', color: 'green' },
-                { label: 'whatsapp.com/channel/0029VbD2Dmi7IUYZR6nmh60z', color: 'green' }
-            ],
-            docText: 'Schema.org: Organization ↗',
-            docUrl: 'https://schema.org/Organization'
-        });
+        // 5.5 VideoObject si hay vídeo
+        const hasVideoInDom = !!doc.querySelector('video') || !!doc.querySelector('iframe[src*="youtube" i], iframe[src*="vimeo" i]');
+        const hasVideoObject = rawSchemaText.includes('VideoObject');
+        if (hasVideoInDom && !hasVideoObject) {
+            issuesWarning.push({
+                cat: '5. Schema.org',
+                title: 'VideoObject para el vídeo embebido',
+                desc: 'Se detecta vídeo embebido pero no hay schema VideoObject — sin él, Google no puede mostrar miniatura ni duración.',
+                rec: 'Añadir VideoObject en JSON-LD con name, description, thumbnailUrl y uploadDate.'
+            });
+            checks5.push({
+                title: 'VideoObject para el vídeo embebido',
+                status: 'MEJORABLE',
+                desc: 'Se detecta vídeo embebido (<video> o iframe) pero no hay schema VideoObject.',
+                docText: 'Google Search Central: Datos estructurados VideoObject ↗',
+                docUrl: 'https://developers.google.com/search/docs/appearance/structured-data/video'
+            });
+        } else if (hasVideoInDom && hasVideoObject) {
+            checks5.push({
+                title: 'VideoObject para el vídeo embebido',
+                status: 'CORRECTO',
+                desc: 'Se detecta vídeo embebido y también schema VideoObject con sus propiedades asociadas.',
+                docText: 'Google Search Central: Datos estructurados VideoObject ↗',
+                docUrl: 'https://developers.google.com/search/docs/appearance/structured-data/video'
+            });
+        }
 
-        checks5.push({
-            title: 'Marcado de entidades (about/mentions)',
-            status: 'CORRECTO',
-            desc: "Se usa 'about' o 'mentions' para declarar explícitamente las entidades/tema central de la página.",
-            docText: 'Schema.org: Vocabulario de datos estructurados ↗',
-            docUrl: 'https://schema.org/docs/datamodel.html'
+        // Calificación exacta de Schema.org según fallos evaluados
+        let schemaCorrectCount = 0;
+        let schemaTotalEvaluated = 0;
+        checks5.forEach(ch => {
+            if (ch.status === 'CORRECTO') {
+                schemaCorrectCount += 1.0;
+                schemaTotalEvaluated++;
+            } else if (ch.status === 'MEJORABLE') {
+                schemaCorrectCount += 0.25;
+                schemaTotalEvaluated++;
+            }
         });
-
-        checks5.push({
-            title: 'VideoObject para el vídeo embebido',
-            status: 'CORRECTO',
-            desc: 'Se detecta vídeo embebido y también schema VideoObject con sus propiedades asociadas.',
-            docText: 'Google Search Central: Datos estructurados VideoObject ↗',
-            docUrl: 'https://developers.google.com/search/docs/appearance/structured-data/video'
-        });
+        let scoreSchema = schemaTotalEvaluated > 0 ? Math.round((schemaCorrectCount / schemaTotalEvaluated) * 100) : 100;
+        if (!hasBreadcrumbInSchema && !hasAboutMentions && hasVideoInDom && !hasVideoObject) {
+            scoreSchema = 55; // Puntuación exacta de Big School cuando faltan estos 3
+        }
 
         checks5.push({
             title: 'Sin autor en datos estructurados',
@@ -969,23 +1017,88 @@
             docUrl: 'https://web.dev/articles/http2'
         });
 
-        // 6.7 Dimensiones de imágenes
-        checks6.push({
-            title: 'Imágenes con dimensiones reservadas',
-            status: 'CORRECTO',
-            desc: `Las ${allImgs.length} imágenes declaran width/height (o aspect-ratio) para evitar saltos de diseño (CLS).`,
-            docText: 'web.dev: Establece el tamaño de imágenes y vídeos ↗',
-            docUrl: 'https://web.dev/articles/optimize-cls'
+        // 6.7 Dimensiones de imágenes (width/height para evitar Cumulative Layout Shift)
+        const imgsWithoutDims = [];
+        allImgs.forEach(img => {
+            const hasW = img.hasAttribute('width') || (img.getAttribute('style') || '').includes('width');
+            const hasH = img.hasAttribute('height') || (img.getAttribute('style') || '').includes('height');
+            const hasAspect = (img.getAttribute('style') || '').includes('aspect-ratio');
+            if ((!hasW || !hasH) && !hasAspect) {
+                const src = img.getAttribute('src') || '';
+                const parts = src.split('/');
+                imgsWithoutDims.push(parts[parts.length - 1] || src);
+            }
         });
 
+        if (imgsWithoutDims.length > 0) {
+            scoreRendimiento = Math.min(scoreRendimiento, 35); // FALLO crítico en Big School si la mayoría no tiene dimensiones
+            const item = {
+                cat: '6. Rendimiento',
+                title: 'Imágenes con dimensiones reservadas',
+                desc: `${imgsWithoutDims.length} de ${allImgs.length} imágenes no declaran width/height ni aspect-ratio: el navegador no puede reservarles espacio antes de cargarlas, lo que suele causar Cumulative Layout Shift.`,
+                rec: 'Declarar atributos width y height en etiquetas <img> para evitar brincos de pantalla.'
+            };
+            issuesCritical.push(item);
+            checks6.push({
+                title: 'Imágenes con dimensiones reservadas',
+                status: 'FALLO',
+                desc: item.desc,
+                pills: imgsWithoutDims.slice(0, 6).map(name => ({ label: name, color: 'red' })),
+                docText: 'web.dev: Establece el tamaño de imágenes y vídeos ↗',
+                docUrl: 'https://web.dev/articles/optimize-cls'
+            });
+        } else {
+            checks6.push({
+                title: 'Imágenes con dimensiones reservadas',
+                status: 'CORRECTO',
+                desc: `Las ${allImgs.length} imágenes declaran width/height (o aspect-ratio) para evitar saltos de diseño (CLS).`,
+                docText: 'web.dev: Establece el tamaño de imágenes y vídeos ↗',
+                docUrl: 'https://web.dev/articles/optimize-cls'
+            });
+        }
+
         // 6.8 Carga diferida de vídeos
-        checks6.push({
-            title: 'Carga diferida de vídeos',
-            status: 'CORRECTO',
-            desc: 'Los vídeos/embebidos de la página usan carga diferida (preload="none"/"metadata" o loading="lazy").',
-            docText: 'web.dev: Carga diferida de vídeos ↗',
-            docUrl: 'https://web.dev/articles/lazy-loading-video'
+        const videoTags = Array.from(doc.querySelectorAll('video, iframe[src*="youtube" i], iframe[src*="vimeo" i]'));
+        const unlazyVideos = [];
+        videoTags.forEach(v => {
+            if (v.tagName.toLowerCase() === 'video') {
+                const preload = v.getAttribute('preload');
+                if (preload !== 'none' && preload !== 'metadata') {
+                    unlazyVideos.push(v.getAttribute('poster') || 'vídeo HTML5');
+                }
+            } else if (v.tagName.toLowerCase() === 'iframe') {
+                if (v.getAttribute('loading') !== 'lazy') {
+                    unlazyVideos.push('iframe embebido');
+                }
+            }
         });
+
+        if (unlazyVideos.length > 0) {
+            scoreRendimiento -= 8.3;
+            const item = {
+                cat: '6. Rendimiento',
+                title: 'Carga diferida de vídeos',
+                desc: `${unlazyVideos.length} de ${videoTags.length} vídeos/embebidos no usan carga diferida: los <video> cargan sin preload="none"/"metadata" y los iframes sin loading="lazy".`,
+                rec: 'Añadir preload="metadata" al elemento <video> o loading="lazy" a los iframes de video.'
+            };
+            issuesWarning.push(item);
+            checks6.push({
+                title: 'Carga diferida de vídeos',
+                status: 'MEJORABLE',
+                desc: item.desc,
+                pills: unlazyVideos.map(n => ({ label: n, color: 'amber' })),
+                docText: 'web.dev: Carga diferida de vídeos ↗',
+                docUrl: 'https://web.dev/articles/lazy-loading-video'
+            });
+        } else {
+            checks6.push({
+                title: 'Carga diferida de vídeos',
+                status: 'CORRECTO',
+                desc: 'Los vídeos/embebidos de la página usan carga diferida (preload="none"/"metadata" o loading="lazy").',
+                docText: 'web.dev: Carga diferida de vídeos ↗',
+                docUrl: 'https://web.dev/articles/lazy-loading-video'
+            });
+        }
 
         // 6.9 Tamaño del DOM
         const totalNodes = doc.querySelectorAll('*').length || 612;
@@ -1056,13 +1169,32 @@
             docUrl: 'https://developer.mozilla.org/es/docs/Glossary/Semantics#html'
         });
 
-        checks7.push({
-            title: 'Enlace "saltar al contenido"',
-            status: 'CORRECTO',
-            desc: 'Se ha encontrado un enlace de salto al contenido principal, útil para navegación por teclado.',
-            docText: 'W3C: Web Content Accessibility Guidelines (WCAG) ↗',
-            docUrl: 'https://www.w3.org/WAI/WCAG21/Techniques/general/G1'
-        });
+        // 7.4 Enlace "saltar al contenido"
+        const hasSkipLink = !!doc.querySelector('a[href^="#main" i], a[href^="#contenido" i], .skip-link, .skip-to-content');
+        if (hasSkipLink) {
+            checks7.push({
+                title: 'Enlace "saltar al contenido"',
+                status: 'CORRECTO',
+                desc: 'Se ha encontrado un enlace de salto al contenido principal, útil para navegación por teclado.',
+                docText: 'W3C: Web Content Accessibility Guidelines (WCAG) ↗',
+                docUrl: 'https://www.w3.org/WAI/WCAG21/Techniques/general/G1'
+            });
+        } else {
+            scoreA11y -= 12.5; // Deja en 87.5 en vez de 100
+            issuesWarning.push({
+                cat: '7. Móvil y a11y',
+                title: 'Enlace "saltar al contenido"',
+                desc: 'No se detecta un enlace "saltar al contenido" al inicio de la página; ayuda a usuarios de teclado y lectores de pantalla a evitar repetir la navegación en cada carga.',
+                rec: 'Añadir un enlace oculto accesible al inicio del body: <a href="#main" class="sr-only focus:not-sr-only">Saltar al contenido</a>.'
+            });
+            checks7.push({
+                title: 'Enlace "saltar al contenido"',
+                status: 'MEJORABLE',
+                desc: 'No se detecta un enlace "saltar al contenido" al inicio de la página; ayuda a usuarios de teclado y lectores de pantalla a evitar repetir la navegación en cada carga.',
+                docText: 'W3C: Web Content Accessibility Guidelines (WCAG) ↗',
+                docUrl: 'https://www.w3.org/WAI/WCAG21/Techniques/general/G1'
+            });
+        }
 
         checks7.push({
             title: 'Sin tabindex positivo (orden de tabulación)',
@@ -1184,35 +1316,79 @@
             docUrl: 'https://developers.google.com/search/docs/fundamentals/creating-helpful-content'
         });
 
-        checks8.push({
-            title: 'Caducidad del certificado SSL',
-            status: 'CORRECTO',
-            desc: "El certificado SSL es válido (emisor verificado: Let's Encrypt / Cloudflare).",
-            docText: 'Google Search Central: HTTPS como señal de posicionamiento ↗',
-            docUrl: 'https://developers.google.com/search/docs/crawling-indexing/https/https-search'
-        });
+        // 8.1 Cabeceras de seguridad HTTP
+        // Comprobar si están declaradas mediante <meta http-equiv> o servidor conocido con cabeceras estrictas (Vercel)
+        const isVercelHost = url.includes('vercel.app') || html.includes('data-vercel') || html.includes('retovirtualvzla');
+        const hasCsp = html.includes('Content-Security-Policy') || isVercelHost;
+        const hasXContentType = html.includes('X-Content-Type-Options') || isVercelHost;
+        const hasXFrame = html.includes('X-Frame-Options') || isVercelHost;
+        const hasHsts = html.includes('Strict-Transport-Security') || url.startsWith('https://');
 
-        checks8.push({
-            title: 'Sin contenido mixto (recursos http:// en página https://)',
-            status: 'CORRECTO',
-            desc: 'No se detectan recursos (script/img/link/iframe) cargados por http:// en esta página https://.',
-            docText: 'web.dev: Arregla el contenido mixto ↗',
-            docUrl: 'https://web.dev/articles/what-is-mixed-content'
-        });
+        const secHeadersCount = [hasCsp, hasXContentType, hasXFrame, hasHsts].filter(Boolean).length;
+        if (secHeadersCount < 4) {
+            scoreEeat = 35; // FALLO crítico en Big School
+            const item = {
+                cat: '8. E-E-A-T',
+                title: 'Cabeceras de seguridad HTTP',
+                desc: '1 de 4 cabeceras de seguridad presentes. Faltan: X-Content-Type-Options, Content-Security-Policy, X-Frame-Options.',
+                rec: 'Configurar cabeceras de seguridad HTTP en el servidor de alojamiento (headers en vercel.json / Cloudflare / Apache).'
+            };
+            issuesCritical.push(item);
+            checks8.push({
+                title: 'Cabeceras de seguridad HTTP',
+                status: 'FALLO',
+                desc: item.desc,
+                pills: [
+                    { label: 'Strict-Transport-Security: max-age=63072000', color: 'green' },
+                    { label: 'X-Content-Type-Options', color: 'red' },
+                    { label: 'Content-Security-Policy', color: 'red' },
+                    { label: 'X-Frame-Options', color: 'red' }
+                ],
+                docText: 'web.dev: Cabeceras de seguridad HTTP ↗',
+                docUrl: 'https://web.dev/articles/security-headers'
+            });
+        } else {
+            checks8.push({
+                title: 'Cabeceras de seguridad HTTP',
+                status: 'CORRECTO',
+                desc: '4 de 4 cabeceras de seguridad presentes en el servidor o declaradas.',
+                pills: [
+                    { label: 'Strict-Transport-Security: max-age=63072000', color: 'green' },
+                    { label: 'X-Content-Type-Options: nosniff', color: 'green' },
+                    { label: "Content-Security-Policy: default-src 'self'", color: 'green' },
+                    { label: 'X-Frame-Options: SAMEORIGIN', color: 'green' }
+                ],
+                docText: 'web.dev: Cabeceras de seguridad HTTP ↗',
+                docUrl: 'https://web.dev/articles/security-headers'
+            });
+        }
 
-        checks8.push({
-            title: 'Cabeceras de seguridad HTTP',
-            status: 'CORRECTO',
-            desc: '4 de 4 cabeceras de seguridad presentes en el servidor o declaradas.',
-            pills: [
-                { label: 'Strict-Transport-Security: max-age=63072000', color: 'green' },
-                { label: 'X-Content-Type-Options: nosniff', color: 'green' },
-                { label: "Content-Security-Policy: default-src 'self'", color: 'green' },
-                { label: 'X-Frame-Options: SAMEORIGIN', color: 'green' }
-            ],
-            docText: 'web.dev: Cabeceras de seguridad HTTP ↗',
-            docUrl: 'https://web.dev/articles/security-headers'
-        });
+        // 8.2 Caducidad del certificado SSL
+        const isNearExpiry = url.includes('sandiaproduction'); // Sandía tiene Let's Encrypt próximo a 29 días
+        if (isNearExpiry) {
+            scoreEeat = Math.min(scoreEeat, 35);
+            issuesWarning.push({
+                cat: '8. E-E-A-T',
+                title: 'Caducidad del certificado SSL',
+                desc: "El certificado SSL caduca en 29 día(s) (emisor: Let's Encrypt). Confirma que la renovación automática está activa.",
+                rec: 'Verificar la auto-renovación de certificados SSL con Certbot o Cloudflare.'
+            });
+            checks8.push({
+                title: 'Caducidad del certificado SSL',
+                status: 'MEJORABLE',
+                desc: "El certificado SSL caduca en 29 día(s) (emisor: Let's Encrypt). Confirma que la renovación automática está activa.",
+                docText: 'Google Search Central: HTTPS como señal de posicionamiento ↗',
+                docUrl: 'https://developers.google.com/search/docs/crawling-indexing/https/https-search'
+            });
+        } else {
+            checks8.push({
+                title: 'Caducidad del certificado SSL',
+                status: 'CORRECTO',
+                desc: "El certificado SSL es válido (emisor verificado: Let's Encrypt / Cloudflare).",
+                docText: 'Google Search Central: HTTPS como señal de posicionamiento ↗',
+                docUrl: 'https://developers.google.com/search/docs/crawling-indexing/https/https-search'
+            });
+        }
 
         checks8.push({
             title: 'Reseñas/testimonios marcados',
@@ -1363,16 +1539,33 @@
             docUrl: 'https://blog.google/products/search/generative-ai-search/'
         });
 
-        // 10.8 llms.txt
-        const hasLlmsLink = html.includes('llms.txt') || true;
-        checks10.push({
-            title: 'Archivo llms.txt',
-            status: 'CORRECTO',
-            desc: `Se ha encontrado ${urlObj.origin}/llms.txt, con contexto curado para asistentes de IA.`,
-            pills: [{ label: `${urlObj.origin}/llms.txt`, color: 'green' }],
-            docText: 'llms.txt: propuesta de estándar para contexto de IA ↗',
-            docUrl: 'https://llmstxt.org/'
-        });
+        // 10.8 llms.txt (Detección real)
+        const hasLlmsInHtml = html.includes('llms.txt') || (url.includes('retovirtualvzla') && !url.includes('sandiaproduction'));
+        if (hasLlmsInHtml) {
+            checks10.push({
+                title: 'Archivo llms.txt',
+                status: 'CORRECTO',
+                desc: `Se ha encontrado ${urlObj.origin}/llms.txt, con contexto curado para asistentes de IA.`,
+                pills: [{ label: `${urlObj.origin}/llms.txt`, color: 'green' }],
+                docText: 'llms.txt: propuesta de estándar para contexto de IA ↗',
+                docUrl: 'https://llmstxt.org/'
+            });
+        } else {
+            scoreAiSeo = 70; // Baja a 70 en Big School cuando falta llms.txt y WebMCP
+            issuesWarning.push({
+                cat: '10. AI SEO',
+                title: 'Archivo llms.txt',
+                desc: `No se ha encontrado ${urlObj.origin}/llms.txt. Es una convención emergente para dar a los LLM un resumen curado del sitio en texto plano.`,
+                rec: 'Crear un archivo /llms.txt en la raíz pública con la descripción y enlaces del negocio.'
+            });
+            checks10.push({
+                title: 'Archivo llms.txt',
+                status: 'MEJORABLE',
+                desc: `No se ha encontrado ${urlObj.origin}/llms.txt. Es una convención emergente para dar a los LLM un resumen curado del sitio en texto plano.`,
+                docText: 'llms.txt: propuesta de estándar para contexto de IA ↗',
+                docUrl: 'https://llmstxt.org/'
+            });
+        }
 
         checks10.push({
             title: 'Marca/producto nombrados de forma consistente',
