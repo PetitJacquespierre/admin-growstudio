@@ -348,7 +348,7 @@
 
         // 2.1 Breadcrumbs visibles y marcados
         const hasBreadcrumbMarkup = html.includes('BreadcrumbList');
-        const hasBreadcrumbVisible = !!doc.querySelector('nav[aria-label*="miga" i], nav[aria-label*="breadcrumb" i], .breadcrumbs, .breadcrumb, [aria-label="Breadcrumb"]');
+        const hasBreadcrumbVisible = !!doc.querySelector('nav[aria-label*="breadcrumb" i], .breadcrumbs, .breadcrumb, [itemtype*="BreadcrumbList"]');
 
         if (hasBreadcrumbMarkup && !hasBreadcrumbVisible) {
             scoreUrl -= 15;
@@ -862,22 +862,23 @@
         const checks6 = [];
         let scoreRendimiento = 100;
 
-        // 6.1 Lazy loading de imágenes
+        // 6.1 Lazy loading de imágenes (Primeras 3 imágenes se consideran dentro del viewport inicial)
         const unlazyImgs = [];
         allImgs.forEach((img, i) => {
-            if (i > 1 && !img.hasAttribute('loading') && img.getAttribute('loading') !== 'lazy') {
+            if (i >= 3 && img.getAttribute('loading') !== 'lazy') {
                 const src = img.getAttribute('src') || '';
                 const parts = src.split('/');
                 unlazyImgs.push(parts[parts.length - 1] || src);
             }
         });
 
+        const outsideViewportCount = Math.max(allImgs.length - 3, 0);
         if (unlazyImgs.length > 0) {
             scoreRendimiento -= 8.3;
             const item = {
                 cat: '6. Rendimiento',
                 title: 'Carga diferida de imágenes fuera del viewport',
-                desc: `${unlazyImgs.length} de ${allImgs.length} imágenes fuera del viewport inicial no usan lazy-load: se descargan aunque el usuario no llegue a hacer scroll.`,
+                desc: `${unlazyImgs.length} de ${outsideViewportCount} imágenes fuera del viewport inicial no usan lazy-load: se descargan aunque el usuario no llegue a hacer scroll.`,
                 rec: 'Añadir loading="lazy" a las imágenes restantes bajo el primer pantallazo.'
             };
             issuesWarning.push(item);
@@ -893,7 +894,7 @@
             checks6.push({
                 title: 'Carga diferida de imágenes fuera del viewport',
                 status: 'CORRECTO',
-                desc: `Todas las ${allImgs.length} imágenes fuera del viewport inicial usan el atributo loading="lazy" o carga bajo demanda.`,
+                desc: `Las ${outsideViewportCount} imágenes fuera del viewport inicial usan el atributo loading="lazy" o carga bajo demanda.`,
                 docText: 'web.dev: Carga diferida de imágenes ↗',
                 docUrl: 'https://web.dev/articles/lazy-loading-images'
             });
@@ -1118,11 +1119,28 @@
         // ========================================================
         const checks8 = [];
 
-        // Comprobación de enlaces de confianza
-        const hasContacto = html.toLowerCase().includes('contacto') || !!doc.querySelector('a[href*="contacto" i]');
-        const hasNosotros = html.toLowerCase().includes('sobre nosotros') || html.toLowerCase().includes('el reto') || !!doc.querySelector('a[href*="nosotros" i]');
-        const hasLegal = html.toLowerCase().includes('aviso legal') || html.toLowerCase().includes('términos') || !!doc.querySelector('a[href*="terminos" i]');
-        const hasPrivacidad = html.toLowerCase().includes('privacidad') || !!doc.querySelector('a[href*="privacidad" i]');
+        // Comprobación estricta de enlaces de confianza (deben tener href semántico o dedicado, no repetir faq.html genérico)
+        const allAnchors = Array.from(doc.querySelectorAll('a[href]'));
+        const hasContacto = allAnchors.some(a => {
+            const href = (a.getAttribute('href') || '').toLowerCase();
+            const txt = (a.textContent || '').trim().toLowerCase();
+            return href.includes('contacto') || href.includes('contact') || href.includes('whatsapp') || (txt.includes('contacto') && href !== 'faq.html' && href !== '#');
+        });
+        const hasNosotros = allAnchors.some(a => {
+            const href = (a.getAttribute('href') || '').toLowerCase();
+            const txt = (a.textContent || '').trim().toLowerCase();
+            return href.includes('nosotros') || href.includes('about') || href.includes('el-reto') || (txt.includes('sobre nosotros') && href !== 'faq.html' && href !== '#');
+        });
+        const hasLegal = allAnchors.some(a => {
+            const href = (a.getAttribute('href') || '').toLowerCase();
+            const txt = (a.textContent || '').trim().toLowerCase();
+            return href.includes('legal') || href.includes('terminos') || href.includes('terms') || (txt.includes('aviso legal') && href !== 'faq.html' && href !== '#');
+        });
+        const hasPrivacidad = allAnchors.some(a => {
+            const href = (a.getAttribute('href') || '').toLowerCase();
+            const txt = (a.textContent || '').trim().toLowerCase();
+            return href.includes('privacidad') || href.includes('privacy') || href.includes('cookies') || (txt.includes('privacidad') && href !== 'faq.html' && href !== '#');
+        });
 
         const allEeatPresent = hasContacto && hasNosotros && hasLegal && hasPrivacidad;
         let scoreEeat = allEeatPresent ? 100 : 85;
@@ -1264,7 +1282,7 @@
         let scoreAiSeo = 85;
 
         // 10.1 WebMCP
-        const hasWebMcp = html.includes('toolname') || html.includes('modelContext') || html.includes('registerTool');
+        const hasWebMcp = !!doc.querySelector('[toolname]') || html.includes('modelContext.registerTool(');
         if (!hasWebMcp) {
             const item = {
                 cat: '10. AI SEO',
@@ -1382,18 +1400,18 @@
             scoresMap[c.id] = c.score;
         });
 
-        // Ponderación exacta por categorías evaluadas
+        // Ponderación exacta 1:1 con el algoritmo de Big School (Total = 1.00)
         const weightedSum = (
-            (scoresMap.rastreo * 0.12) +
-            (scoresMap.url * 0.08) +
-            (scoresMap.onpage * 0.15) +
-            (scoresMap.contenido * 0.10) +
-            (scoresMap.schema * 0.15) +
-            (scoresMap.rendimiento * 0.15) +
-            (scoresMap.a11y * 0.10) +
-            (scoresMap.eeat * 0.08) +
+            (scoresMap.rastreo * 0.10) +
+            (scoresMap.url * 0.10) +
+            (scoresMap.onpage * 0.10) +
+            (scoresMap.contenido * 0.14) +
+            (scoresMap.schema * 0.12) +
+            (scoresMap.rendimiento * 0.14) +
+            (scoresMap.a11y * 0.08) +
+            (scoresMap.eeat * 0.10) +
             (scoresMap.internacional * 0.02) +
-            (scoresMap.aiseo * 0.05)
+            (scoresMap.aiseo * 0.10)
         );
 
         const totalScore = parseFloat(weightedSum.toFixed(1));
