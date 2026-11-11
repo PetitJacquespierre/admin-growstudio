@@ -860,7 +860,7 @@
         // 6. RENDIMIENTO Y CORE WEB VITALS
         // ========================================================
         const checks6 = [];
-        let scoreRendimiento = 83.3;
+        let scoreRendimiento = 100;
 
         // 6.1 Lazy loading de imágenes
         const unlazyImgs = [];
@@ -873,7 +873,7 @@
         });
 
         if (unlazyImgs.length > 0) {
-            scoreRendimiento -= 16.7;
+            scoreRendimiento -= 8.3;
             const item = {
                 cat: '6. Rendimiento',
                 title: 'Carga diferida de imágenes fuera del viewport',
@@ -904,6 +904,7 @@
         const hasPreconnectJsDelivr = html.includes('preconnect') && html.includes('cdn.jsdelivr.net');
 
         if (hasJsDelivr && !hasPreconnectJsDelivr) {
+            scoreRendimiento -= 8.3;
             const item = {
                 cat: '6. Rendimiento',
                 title: 'Preconnect/dns-prefetch a orígenes de terceros',
@@ -1116,7 +1117,6 @@
         // 8. CONFIANZA Y E-E-A-T
         // ========================================================
         const checks8 = [];
-        let scoreEeat = 85;
 
         // Comprobación de enlaces de confianza
         const hasContacto = html.toLowerCase().includes('contacto') || !!doc.querySelector('a[href*="contacto" i]');
@@ -1125,6 +1125,16 @@
         const hasPrivacidad = html.toLowerCase().includes('privacidad') || !!doc.querySelector('a[href*="privacidad" i]');
 
         const allEeatPresent = hasContacto && hasNosotros && hasLegal && hasPrivacidad;
+        let scoreEeat = allEeatPresent ? 100 : 85;
+
+        if (!allEeatPresent) {
+            issuesWarning.push({
+                cat: '8. E-E-A-T',
+                title: 'Enlaces a contacto, sobre nosotros, aviso legal y privacidad',
+                desc: "Faltan enlaces visibles de confianza requeridos por los lineamientos E-E-A-T de Google.",
+                rec: "Incluir enlaces claros a Contacto, Sobre Nosotros, Aviso Legal y Privacidad en el footer."
+            });
+        }
 
         checks8.push({
             title: 'Enlaces a contacto, sobre nosotros, aviso legal y privacidad',
