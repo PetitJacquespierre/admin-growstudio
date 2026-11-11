@@ -1293,6 +1293,48 @@
                             <span>✓ Simulador GEO (ChatGPT/Perplexity)</span>
                             <span>✓ Generador de Auto-Fix</span>
                         </div>
+
+                        <!-- MÓDULO DE INTELIGENCIA ARTIFICIAL (ESTILO BIG SCHOOL / GROW STUDIO AI) -->
+                        <div class="seo-ai-config-wrapper" style="margin-top: 16px; border-radius: 12px; background: rgba(255, 255, 255, 0.03); border: 1px solid rgba(255, 255, 255, 0.1); overflow: hidden; transition: all 0.3s ease;">
+                            <div onclick="window.toggleSeoAiConfig && window.toggleSeoAiConfig()" style="padding: 12px 18px; display: flex; justify-content: space-between; align-items: center; cursor: pointer; user-select: none; background: rgba(255, 255, 255, 0.02);">
+                                <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
+                                    <span style="color: #ff3366; font-size: 14px;">✦</span>
+                                    <span style="font-size: 13px; font-weight: 700; color: #fff;">Usa tu propia API key de IA (activa el análisis semántico profundo)</span>
+                                    <span id="seo-ai-status-pill" style="font-size: 10px; padding: 2px 8px; border-radius: 12px; background: rgba(113, 113, 122, 0.2); color: #a1a1aa; font-weight: 700;">Sin configurar</span>
+                                </div>
+                                <span id="seo-ai-chevron" style="color: #71717a; font-size: 11px; transition: transform 0.25s ease;">▼</span>
+                            </div>
+                            <div id="seo-ai-config-panel" style="display: none; padding: 18px; border-top: 1px solid rgba(255, 255, 255, 0.06); background: rgba(0, 0, 0, 0.35);">
+                                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 15px; margin-bottom: 14px;">
+                                    <div>
+                                        <label style="display: block; font-size: 11px; font-weight: 700; color: #94a3b8; text-transform: uppercase; margin-bottom: 6px;">Proveedor de IA</label>
+                                        <select id="seo-ai-provider-select" onchange="window.handleSeoAiProviderChange && window.handleSeoAiProviderChange(this.value)" class="modern-select" style="width: 100%; padding: 10px 14px; border-radius: 8px; background: rgba(15, 23, 42, 0.9); border: 1px solid rgba(255, 255, 255, 0.15); color: #fff; font-size: 12px; font-weight: 600;">
+                                            <option value="gemini">Google Gemini (Recomendado — 100% Gratis con Google AI Studio)</option>
+                                            <option value="anthropic">Anthropic Claude (claude-3-5-haiku / sonnet)</option>
+                                            <option value="openai">OpenAI (gpt-4o-mini)</option>
+                                        </select>
+                                    </div>
+                                    <div>
+                                        <label style="display: block; font-size: 11px; font-weight: 700; color: #94a3b8; text-transform: uppercase; margin-bottom: 6px;">API Key del Proveedor</label>
+                                        <div style="display: flex; gap: 8px;">
+                                            <input type="password" id="seo-ai-key-input" placeholder="AIzaSy... (Gemini) o sk-ant-... (Claude)" class="modern-select" style="flex: 1; padding: 10px 14px; border-radius: 8px; background: rgba(15, 23, 42, 0.9); border: 1px solid rgba(255, 255, 255, 0.15); color: #fff; font-size: 12px; font-family: monospace;">
+                                            <button type="button" onclick="window.saveSeoAiKey && window.saveSeoAiKey()" class="btn-primary" style="padding: 10px 16px; font-size: 12px; font-weight: 700; border-radius: 8px; white-space: nowrap;">Guardar</button>
+                                            <button type="button" onclick="window.clearSeoAiKey && window.clearSeoAiKey()" class="btn-secondary" style="padding: 10px 12px; font-size: 12px; border-radius: 8px; color: #ef4444;" title="Borrar clave">✕</button>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; font-size: 11px; color: #71717a;">
+                                    <div id="seo-ai-helper-link">
+                                        <a href="https://aistudio.google.com/app/apikey" target="_blank" rel="noopener noreferrer" style="color: #00d2ff; text-decoration: none; font-weight: 600;">
+                                            🔑 ¿No tienes clave? Obtén tu API Key de Gemini gratis en Google AI Studio ↗
+                                        </a>
+                                    </div>
+                                    <div>
+                                        <span>🔒 Se almacena localmente en tu navegador de forma 100% privada.</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </div>
 
