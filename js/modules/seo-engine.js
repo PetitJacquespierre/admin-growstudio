@@ -2424,7 +2424,7 @@ ${title} es un proyecto web oficial accesible en ${currentAuditResult.url}. Ofre
         pdf.setFontSize(8.5);
         pdf.setTextColor(...textMuted);
         pdf.text(`Fecha: ${data.date} | Ref: AUD-${Date.now().toString().slice(-6)}`, 195, 18, { align: 'right' });
-        pdf.text('admin-growstudio.vercel.app', 195, 23, { align: 'right' });
+        pdf.text('Grow Studio • Certificado Oficial', 195, 23, { align: 'right' });
 
         pdf.setDrawColor(40, 45, 55);
         pdf.setLineWidth(0.4);
@@ -2746,7 +2746,7 @@ ${title} es un proyecto web oficial accesible en ${currentAuditResult.url}. Ofre
         pdf.setFontSize(8.5);
         pdf.setTextColor(...textMuted);
         pdf.text(`Fecha: ${data.date} | Ref: AUD-${Date.now().toString().slice(-6)}`, 195, 18, { align: 'right' });
-        pdf.text('admin-growstudio.vercel.app', 195, 23, { align: 'right' });
+        pdf.text('Grow Studio • Certificado Oficial', 195, 23, { align: 'right' });
 
         pdf.setDrawColor(40, 45, 55);
         pdf.setLineWidth(0.4);
