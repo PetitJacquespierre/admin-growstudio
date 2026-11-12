@@ -1275,6 +1275,23 @@
                     </div>
                 </div>
 
+                <!-- SELECTOR DE SUB-HERRAMIENTAS SEO ENGINE (AUDITORÍA, METATÍTULOS ALTO CTR, SCHEMA JSON-LD) -->
+                <div style="display: flex; gap: 8px; margin-bottom: 22px; flex-wrap: wrap; background: rgba(13, 17, 23, 0.7); padding: 6px; border-radius: 14px; border: 1px solid rgba(255,255,255,0.08); width: fit-content;">
+                    <button type="button" id="tab-btn-seo-audit" onclick="window.switchSeoSubTab && window.switchSeoSubTab('audit')" class="seo-subtab-btn active" style="padding: 9px 18px; font-size: 12px; font-weight: 800; border-radius: 10px; border: 1px solid rgba(0, 210, 255, 0.4); background: linear-gradient(135deg, rgba(0, 210, 255, 0.2), rgba(0, 119, 182, 0.25)); color: #00d2ff; cursor: pointer; display: inline-flex; align-items: center; gap: 8px; transition: all 0.2s ease;">
+                        <span>🚀</span> Auditoría Completa (10 Dimensiones & GEO)
+                    </button>
+                    <button type="button" id="tab-btn-seo-titles" onclick="window.switchSeoSubTab && window.switchSeoSubTab('titles')" class="seo-subtab-btn" style="padding: 9px 18px; font-size: 12px; font-weight: 700; border-radius: 10px; border: 1px solid transparent; background: transparent; color: #94a3b8; cursor: pointer; display: inline-flex; align-items: center; gap: 8px; transition: all 0.2s ease;">
+                        <span>🏷️</span> 3 Metatítulos & Descripciones (Alto CTR)
+                    </button>
+                    <button type="button" id="tab-btn-seo-schema" onclick="window.switchSeoSubTab && window.switchSeoSubTab('schema')" class="seo-subtab-btn" style="padding: 9px 18px; font-size: 12px; font-weight: 700; border-radius: 10px; border: 1px solid transparent; background: transparent; color: #94a3b8; cursor: pointer; display: inline-flex; align-items: center; gap: 8px; transition: all 0.2s ease;">
+                        <span>🧩</span> Generador Schema.org JSON-LD
+                    </button>
+                </div>
+
+                <!-- ========================================== -->
+                <!-- SUB-VISTA 1: AUDITORÍA GLOBAL DE 10 DIMENSIONES -->
+                <!-- ========================================== -->
+                <div id="seo-subview-audit" style="display: block;">
                 <!-- Input Box Hero (Auditor) -->
                 <div id="seo-audit-input-container" style="background: rgba(22, 27, 34, 0.85); border: 1px solid rgba(255, 255, 255, 0.1); border-top: 1px solid rgba(0, 210, 255, 0.3); border-radius: 18px; padding: 24px; margin-bottom: 25px; backdrop-filter: blur(12px); box-shadow: 0 10px 30px rgba(0,0,0,0.5);">
                     <div>
@@ -1410,14 +1427,20 @@
 
                         <!-- Botones de Acción y Exportación -->
                         <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+                            <button type="button" onclick="window.loadAuditIntoTitlesGenerator && window.loadAuditIntoTitlesGenerator()" class="btn-secondary" style="font-size: 11px; font-weight: 800; padding: 10px 14px; border-radius: 10px; cursor: pointer; display: flex; align-items: center; gap: 6px; border-color: rgba(0,210,255,0.4); color: #00d2ff; background: rgba(0,210,255,0.06);" title="Optimizar Metatítulo y Descripción de esta web con IA">
+                                <span>🏷️</span> 3 Metatítulos Alto CTR
+                            </button>
+                            <button type="button" onclick="window.loadAuditIntoSchemaGenerator && window.loadAuditIntoSchemaGenerator()" class="btn-secondary" style="font-size: 11px; font-weight: 800; padding: 10px 14px; border-radius: 10px; cursor: pointer; display: flex; align-items: center; gap: 6px; border-color: rgba(16,185,129,0.4); color: #10b981; background: rgba(16,185,129,0.06);" title="Generar Marcado Estructurado Schema.org para esta web">
+                                <span>🧩</span> Schema.org JSON-LD
+                            </button>
                             <button type="button" onclick="window.downloadSeoPdf && window.downloadSeoPdf('detallado')" class="btn-primary" style="background: #e11d48; color: #fff; border: none; font-size: 11px; font-weight: 800; padding: 10px 16px; border-radius: 10px; cursor: pointer; display: flex; align-items: center; gap: 6px; box-shadow: 0 4px 15px rgba(225,29,72,0.35);">
-                                <i class="fa-solid fa-file-pdf"></i> Descargar PDF Detallado (Multi-pág)
+                                <i class="fa-solid fa-file-pdf"></i> PDF Detallado
                             </button>
                             <button type="button" onclick="window.downloadSeoPdf && window.downloadSeoPdf('resumen')" class="btn-primary" style="background: #10b981; color: #000; border: none; font-size: 11px; font-weight: 800; padding: 10px 16px; border-radius: 10px; cursor: pointer; display: flex; align-items: center; gap: 6px; box-shadow: 0 4px 15px rgba(16,185,129,0.3);">
-                                <i class="fa-solid fa-certificate"></i> PDF Resumen Ejecutivo (1 pág)
+                                <i class="fa-solid fa-certificate"></i> PDF Resumen
                             </button>
                             <button type="button" onclick="window.downloadSeoMarkdown && window.downloadSeoMarkdown()" class="btn-secondary" style="font-size: 11px; font-weight: 800; padding: 10px 14px; border-radius: 10px; cursor: pointer; display: flex; align-items: center; gap: 6px;">
-                                <i class="fa-solid fa-file-code"></i> Descargar .md
+                                <i class="fa-solid fa-file-code"></i> .md
                             </button>
                         </div>
                     </div>
@@ -1500,6 +1523,218 @@
                         </div>
                     </div>
 
+                </div>
+                </div> <!-- FIN DE #seo-subview-audit -->
+
+                <!-- ============================================================== -->
+                <!-- SUB-VISTA 2: GENERADOR DE 3 METATÍTULOS Y DESCRIPCIONES (ALTO CTR) -->
+                <!-- ============================================================== -->
+                <div id="seo-subview-titles" style="display: none;">
+                    <!-- Caja Hero de Metatítulos -->
+                    <div style="background: rgba(22, 27, 34, 0.85); border: 1px solid rgba(255, 255, 255, 0.1); border-top: 1px solid rgba(0, 210, 255, 0.4); border-radius: 18px; padding: 24px; margin-bottom: 25px; backdrop-filter: blur(12px); box-shadow: 0 10px 30px rgba(0,0,0,0.5);">
+                        <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 20px; flex-wrap: wrap; gap: 12px;">
+                            <div>
+                                <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
+                                    <span style="font-size: 22px;">🏷️</span>
+                                    <h3 style="font-size: 18px; font-weight: 800; color: #fff; margin: 0;">
+                                        GENERADOR DE 3 METATÍTULOS Y DESCRIPCIONES (ALTO CTR)
+                                    </h3>
+                                    <span style="background: rgba(0, 210, 255, 0.15); border: 1px solid rgba(0, 210, 255, 0.3); color: #00d2ff; font-size: 10px; font-weight: 800; padding: 2px 8px; border-radius: 10px;">Google Title Links & Snippets Standard</span>
+                                </div>
+                                <p style="color: #94a3b8; font-size: 12px; margin: 6px 0 0 0;">
+                                    Genera 3 alternativas redactadas por IA (o motor heurístico local) con enfoques diferenciados: <strong>Keyword-First</strong>, <strong>Alto CTR / Beneficio</strong> e <strong>Intención Long-Tail / GEO</strong>. Con contadores de longitud exactos y vistas previas reales de Google SERP.
+                                </p>
+                            </div>
+                            <button type="button" onclick="window.loadAuditIntoTitlesGenerator && window.loadAuditIntoTitlesGenerator()" class="btn-secondary btn-small" style="display: flex; align-items: center; gap: 6px; font-size: 11px; padding: 8px 12px; border-color: rgba(0, 210, 255, 0.4); color: #00d2ff;">
+                                <span>⚡</span> Cargar datos de última auditoría
+                            </button>
+                        </div>
+
+                        <!-- Formulario de Entrada -->
+                        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 16px; margin-bottom: 16px;">
+                            <div>
+                                <label style="display: block; font-size: 11px; font-weight: 700; color: #94a3b8; text-transform: uppercase; margin-bottom: 6px;">URL de la Página</label>
+                                <input type="text" id="seo-titles-url-input" placeholder="https://retovirtualvzla.com" class="modern-select" style="width: 100%; box-sizing: border-box; padding: 10px 14px; font-size: 13px; background: rgba(0,0,0,0.4); border: 1px solid rgba(255,255,255,0.15); border-radius: 10px; color: #fff;">
+                            </div>
+                            <div>
+                                <label style="display: block; font-size: 11px; font-weight: 700; color: #94a3b8; text-transform: uppercase; margin-bottom: 6px;">Keyword Objetivo Principal</label>
+                                <input type="text" id="seo-titles-keyword-input" placeholder="ej. carrera virtual 10k venezuela" class="modern-select" style="width: 100%; box-sizing: border-box; padding: 10px 14px; font-size: 13px; background: rgba(0,0,0,0.4); border: 1px solid rgba(255,255,255,0.15); border-radius: 10px; color: #fff;">
+                            </div>
+                            <div>
+                                <label style="display: block; font-size: 11px; font-weight: 700; color: #94a3b8; text-transform: uppercase; margin-bottom: 6px;">Nombre de Marca</label>
+                                <input type="text" id="seo-titles-brand-input" placeholder="ej. Reto Virtual Vzla" class="modern-select" style="width: 100%; box-sizing: border-box; padding: 10px 14px; font-size: 13px; background: rgba(0,0,0,0.4); border: 1px solid rgba(255,255,255,0.15); border-radius: 10px; color: #fff;">
+                            </div>
+                            <div>
+                                <label style="display: block; font-size: 11px; font-weight: 700; color: #94a3b8; text-transform: uppercase; margin-bottom: 6px;">Tipo de Página</label>
+                                <select id="seo-titles-pagetype-select" class="modern-select" style="width: 100%; box-sizing: border-box; padding: 10px 14px; font-size: 13px; background: rgba(15, 23, 42, 0.95); border: 1px solid rgba(255,255,255,0.15); border-radius: 10px; color: #fff;">
+                                    <option value="Home / Página Principal">Home / Página Principal</option>
+                                    <option value="Servicio Local / Negocio Físico">Servicio Local / Negocio Físico</option>
+                                    <option value="Landing de Venta / Evento">Landing de Venta / Evento</option>
+                                    <option value="Ficha de Producto / Catálogo">Ficha de Producto / Catálogo</option>
+                                    <option value="Artículo Informativo / Blog">Artículo Informativo / Blog</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 16px; margin-bottom: 20px;">
+                            <div>
+                                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+                                    <label style="font-size: 11px; font-weight: 700; color: #94a3b8; text-transform: uppercase;">Título Actual de la Página</label>
+                                    <span id="seo-titles-current-title-count" style="font-size: 11px; font-family: monospace; color: #71717a;">0 / 60 car.</span>
+                                </div>
+                                <input type="text" id="seo-titles-current-title-input" oninput="window.updateTitlesCharCounts && window.updateTitlesCharCounts()" placeholder="Pega el título actual aquí..." class="modern-select" style="width: 100%; box-sizing: border-box; padding: 10px 14px; font-size: 13px; background: rgba(0,0,0,0.4); border: 1px solid rgba(255,255,255,0.15); border-radius: 10px; color: #fff;">
+                            </div>
+                            <div>
+                                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+                                    <label style="font-size: 11px; font-weight: 700; color: #94a3b8; text-transform: uppercase;">Meta Descripción Actual</label>
+                                    <span id="seo-titles-current-desc-count" style="font-size: 11px; font-family: monospace; color: #71717a;">0 / 160 car.</span>
+                                </div>
+                                <textarea id="seo-titles-current-desc-input" rows="1" oninput="window.updateTitlesCharCounts && window.updateTitlesCharCounts()" placeholder="Pega la meta descripción actual..." class="modern-select" style="width: 100%; box-sizing: border-box; padding: 10px 14px; font-size: 13px; background: rgba(0,0,0,0.4); border: 1px solid rgba(255,255,255,0.15); border-radius: 10px; color: #fff; resize: vertical; min-height: 42px;"></textarea>
+                            </div>
+                        </div>
+
+                        <!-- Botón de Generación -->
+                        <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px;">
+                            <div style="font-size: 11px; color: #71717a;">
+                                💡 Tip: Si tienes tu API Key configurada usa Gemini/Claude; de lo contrario genera con el motor algorítmico local en 0.2s.
+                            </div>
+                            <button type="button" id="btn-generate-seo-titles" onclick="window.generateMetaTitlesAction && window.generateMetaTitlesAction()" class="btn-primary" style="padding: 12px 28px; font-size: 13px; font-weight: 900; background: linear-gradient(135deg, #00d2ff, #0077b6); color: #001e50; border: none; border-radius: 12px; cursor: pointer; display: flex; align-items: center; gap: 8px; box-shadow: 0 0 20px rgba(0,210,255,0.35);">
+                                <span>🚀</span> GENERAR 3 ALTERNATIVAS DE ALTO CTR
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Resultados: Diagnóstico y las 3 Alternativas -->
+                    <div id="seo-titles-results-container" style="display: none;">
+                        <!-- Diagnóstico Rápido -->
+                        <div id="seo-titles-diagnosis-box" style="background: rgba(245, 158, 11, 0.08); border: 1px solid rgba(245, 158, 11, 0.25); border-radius: 14px; padding: 16px 20px; margin-bottom: 24px; display: flex; align-items: flex-start; gap: 12px;">
+                            <span style="font-size: 20px; color: #f59e0b;">⚠️</span>
+                            <div style="flex: 1;">
+                                <h4 style="margin: 0 0 4px 0; font-size: 13px; font-weight: 800; color: #f59e0b; text-transform: uppercase;">Diagnóstico del Título & Descripción Actuales</h4>
+                                <p id="seo-titles-diagnosis-text" style="margin: 0; font-size: 12px; color: #cbd5e1; line-height: 1.5;"></p>
+                            </div>
+                        </div>
+
+                        <!-- Bento Grid de las 3 Alternativas -->
+                        <div id="seo-titles-cards-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 20px; margin-bottom: 30px;">
+                            <!-- Dinámico: 3 Alternativas -->
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ============================================================== -->
+                <!-- SUB-VISTA 3: GENERADOR RÁPIDO DE SCHEMA.ORG JSON-LD (RICH RESULTS) -->
+                <!-- ============================================================== -->
+                <div id="seo-subview-schema" style="display: none;">
+                    <!-- Caja Hero Schema -->
+                    <div style="background: rgba(22, 27, 34, 0.85); border: 1px solid rgba(255, 255, 255, 0.1); border-top: 1px solid rgba(16, 185, 129, 0.4); border-radius: 18px; padding: 24px; margin-bottom: 25px; backdrop-filter: blur(12px); box-shadow: 0 10px 30px rgba(0,0,0,0.5);">
+                        <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 20px; flex-wrap: wrap; gap: 12px;">
+                            <div>
+                                <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
+                                    <span style="font-size: 22px;">🧩</span>
+                                    <h3 style="font-size: 18px; font-weight: 800; color: #fff; margin: 0;">
+                                        GENERADOR RÁPIDO DE SCHEMA.ORG JSON-LD (GOOGLE RICH RESULTS)
+                                    </h3>
+                                    <span style="background: rgba(16, 185, 129, 0.15); border: 1px solid rgba(16, 185, 129, 0.3); color: #10b981; font-size: 10px; font-weight: 800; padding: 2px 8px; border-radius: 10px;">Schema.org v2026 Compatible</span>
+                                </div>
+                                <p style="color: #94a3b8; font-size: 12px; margin: 6px 0 0 0;">
+                                    Genera código de datos estructurados en formato JSON-LD para activar estrellas, preguntas, eventos o identificación de negocio en Google y motores de IA (ChatGPT, Gemini, Perplexity).
+                                </p>
+                            </div>
+                            <button type="button" onclick="window.loadAuditIntoSchemaGenerator && window.loadAuditIntoSchemaGenerator()" class="btn-secondary btn-small" style="display: flex; align-items: center; gap: 6px; font-size: 11px; padding: 8px 12px; border-color: rgba(16, 185, 129, 0.4); color: #10b981;">
+                                <span>⚡</span> Cargar datos de última auditoría
+                            </button>
+                        </div>
+
+                        <!-- Selector de Entidades Grow Studio -->
+                        <label style="display: block; font-size: 11px; font-weight: 700; color: #10b981; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 10px;">
+                            1. Selecciona el Tipo de Entidad Principal:
+                        </label>
+                        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 10px; margin-bottom: 22px;">
+                            <button type="button" onclick="window.selectSchemaType && window.selectSchemaType('LocalBusiness')" id="schema-btn-type-LocalBusiness" class="schema-type-card active" style="padding: 12px; border-radius: 12px; border: 1px solid rgba(16, 185, 129, 0.4); background: rgba(16, 185, 129, 0.15); color: #fff; cursor: pointer; text-align: left; transition: all 0.2s;">
+                                <div style="font-size: 15px; font-weight: 800; margin-bottom: 4px;">🏪 LocalBusiness</div>
+                                <div style="font-size: 10px; color: #94a3b8;">Negocios físicos, tiendas, talleres y locales</div>
+                            </button>
+                            <button type="button" onclick="window.selectSchemaType && window.selectSchemaType('Restaurant')" id="schema-btn-type-Restaurant" class="schema-type-card" style="padding: 12px; border-radius: 12px; border: 1px solid rgba(255,255,255,0.08); background: rgba(255,255,255,0.02); color: #fff; cursor: pointer; text-align: left; transition: all 0.2s;">
+                                <div style="font-size: 15px; font-weight: 800; margin-bottom: 4px;">🍽️ Restaurant</div>
+                                <div style="font-size: 10px; color: #94a3b8;">Restaurantes, comida rápida y menús</div>
+                            </button>
+                            <button type="button" onclick="window.selectSchemaType && window.selectSchemaType('SportsEvent')" id="schema-btn-type-SportsEvent" class="schema-type-card" style="padding: 12px; border-radius: 12px; border: 1px solid rgba(255,255,255,0.08); background: rgba(255,255,255,0.02); color: #fff; cursor: pointer; text-align: left; transition: all 0.2s;">
+                                <div style="font-size: 15px; font-weight: 800; margin-bottom: 4px;">🏃 SportsEvent</div>
+                                <div style="font-size: 10px; color: #94a3b8;">Carreras, maratones virtuales y torneos</div>
+                            </button>
+                            <button type="button" onclick="window.selectSchemaType && window.selectSchemaType('ProfessionalService')" id="schema-btn-type-ProfessionalService" class="schema-type-card" style="padding: 12px; border-radius: 12px; border: 1px solid rgba(255,255,255,0.08); background: rgba(255,255,255,0.02); color: #fff; cursor: pointer; text-align: left; transition: all 0.2s;">
+                                <div style="font-size: 15px; font-weight: 800; margin-bottom: 4px;">💼 ProfessionalService</div>
+                                <div style="font-size: 10px; color: #94a3b8;">Agencias, consultoras, clínicas y firmas</div>
+                            </button>
+                            <button type="button" onclick="window.selectSchemaType && window.selectSchemaType('WebSite')" id="schema-btn-type-WebSite" class="schema-type-card" style="padding: 12px; border-radius: 12px; border: 1px solid rgba(255,255,255,0.08); background: rgba(255,255,255,0.02); color: #fff; cursor: pointer; text-align: left; transition: all 0.2s;">
+                                <div style="font-size: 15px; font-weight: 800; margin-bottom: 4px;">🌐 WebSite / Organization</div>
+                                <div style="font-size: 10px; color: #94a3b8;">Portal web oficial, SaaS o marca digital</div>
+                            </button>
+                        </div>
+
+                        <!-- Campos de Datos de la Entidad -->
+                        <label style="display: block; font-size: 11px; font-weight: 700; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 10px;">
+                            2. Completa los datos de la entidad (se actualiza el código en vivo):
+                        </label>
+                        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 14px; margin-bottom: 16px;">
+                            <div>
+                                <label style="display: block; font-size: 11px; font-weight: 600; color: #cbd5e1; margin-bottom: 4px;">Nombre Oficial de la Entidad / Negocio</label>
+                                <input type="text" id="schema-name-input" oninput="window.renderSchemaJsonLdCode && window.renderSchemaJsonLdCode()" placeholder="ej. Reto Virtual Vzla" class="modern-select" style="width: 100%; box-sizing: border-box; padding: 10px 14px; font-size: 12px; background: rgba(0,0,0,0.4); border: 1px solid rgba(255,255,255,0.15); border-radius: 8px; color: #fff;">
+                            </div>
+                            <div>
+                                <label style="display: block; font-size: 11px; font-weight: 600; color: #cbd5e1; margin-bottom: 4px;">URL Oficial</label>
+                                <input type="text" id="schema-url-input" oninput="window.renderSchemaJsonLdCode && window.renderSchemaJsonLdCode()" placeholder="https://retovirtualvzla.com" class="modern-select" style="width: 100%; box-sizing: border-box; padding: 10px 14px; font-size: 12px; background: rgba(0,0,0,0.4); border: 1px solid rgba(255,255,255,0.15); border-radius: 8px; color: #fff;">
+                            </div>
+                            <div>
+                                <label style="display: block; font-size: 11px; font-weight: 600; color: #cbd5e1; margin-bottom: 4px;">URL del Logotipo o Imagen</label>
+                                <input type="text" id="schema-logo-input" oninput="window.renderSchemaJsonLdCode && window.renderSchemaJsonLdCode()" placeholder="https://retovirtualvzla.com/img/logo.png" class="modern-select" style="width: 100%; box-sizing: border-box; padding: 10px 14px; font-size: 12px; background: rgba(0,0,0,0.4); border: 1px solid rgba(255,255,255,0.15); border-radius: 8px; color: #fff;">
+                            </div>
+                            <div>
+                                <label style="display: block; font-size: 11px; font-weight: 600; color: #cbd5e1; margin-bottom: 4px;">Teléfono de Contacto</label>
+                                <input type="text" id="schema-phone-input" oninput="window.renderSchemaJsonLdCode && window.renderSchemaJsonLdCode()" placeholder="+58 412 1234567" class="modern-select" style="width: 100%; box-sizing: border-box; padding: 10px 14px; font-size: 12px; background: rgba(0,0,0,0.4); border: 1px solid rgba(255,255,255,0.15); border-radius: 8px; color: #fff;">
+                            </div>
+                        </div>
+
+                        <div style="display: grid; grid-template-columns: 2fr 1fr 1fr; gap: 14px; margin-bottom: 16px;">
+                            <div>
+                                <label style="display: block; font-size: 11px; font-weight: 600; color: #cbd5e1; margin-bottom: 4px;">Descripción Corta de la Entidad</label>
+                                <input type="text" id="schema-desc-input" oninput="window.renderSchemaJsonLdCode && window.renderSchemaJsonLdCode()" placeholder="Breve descripción del negocio o evento" class="modern-select" style="width: 100%; box-sizing: border-box; padding: 10px 14px; font-size: 12px; background: rgba(0,0,0,0.4); border: 1px solid rgba(255,255,255,0.15); border-radius: 8px; color: #fff;">
+                            </div>
+                            <div>
+                                <label style="display: block; font-size: 11px; font-weight: 600; color: #cbd5e1; margin-bottom: 4px;">Ciudad / Localidad</label>
+                                <input type="text" id="schema-city-input" oninput="window.renderSchemaJsonLdCode && window.renderSchemaJsonLdCode()" placeholder="Caracas / Punto Fijo" value="Punto Fijo" class="modern-select" style="width: 100%; box-sizing: border-box; padding: 10px 14px; font-size: 12px; background: rgba(0,0,0,0.4); border: 1px solid rgba(255,255,255,0.15); border-radius: 8px; color: #fff;">
+                            </div>
+                            <div>
+                                <label style="display: block; font-size: 11px; font-weight: 600; color: #cbd5e1; margin-bottom: 4px;">Código de País</label>
+                                <input type="text" id="schema-country-input" oninput="window.renderSchemaJsonLdCode && window.renderSchemaJsonLdCode()" placeholder="VE" value="VE" class="modern-select" style="width: 100%; box-sizing: border-box; padding: 10px 14px; font-size: 12px; background: rgba(0,0,0,0.4); border: 1px solid rgba(255,255,255,0.15); border-radius: 8px; color: #fff;">
+                            </div>
+                        </div>
+
+                        <!-- Campos Específicos Condicionales -->
+                        <div id="schema-extra-fields-container" style="margin-bottom: 18px; padding: 14px; background: rgba(0,0,0,0.25); border-radius: 10px; border: 1px dashed rgba(255,255,255,0.1);">
+                            <!-- Dinámico según tipo -->
+                        </div>
+
+                        <!-- Visor de Código JSON-LD con Resaltado y Copiado -->
+                        <div style="margin-top: 20px;">
+                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; flex-wrap: wrap; gap: 10px;">
+                                <label style="font-size: 12px; font-weight: 800; color: #10b981; text-transform: uppercase; letter-spacing: 0.5px;">
+                                    3. Código JSON-LD Generado (Listo para pegar en el &lt;head&gt;):
+                                </label>
+                                <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+                                    <button type="button" id="btn-copy-schema-jsonld" onclick="window.copySchemaJsonLd && window.copySchemaJsonLd()" class="btn-primary" style="background: #10b981; color: #000; font-weight: 800; font-size: 11px; padding: 8px 16px; border-radius: 8px; border: none; cursor: pointer; display: flex; align-items: center; gap: 6px; box-shadow: 0 0 15px rgba(16,185,129,0.35);">
+                                        <i class="fa-solid fa-copy"></i> COPIAR SCRIPT COMPLETO
+                                    </button>
+                                    <button type="button" onclick="window.validateSchemaInGoogle && window.validateSchemaInGoogle()" class="btn-secondary btn-small" style="font-size: 11px; padding: 8px 12px; border-color: rgba(255,255,255,0.2);">
+                                        <i class="fa-solid fa-arrow-up-right-from-square"></i> Validar en Google Rich Results ↗
+                                    </button>
+                                </div>
+                            </div>
+
+                            <pre id="schema-code-output" style="background: #090d13; border: 1px solid rgba(16, 185, 129, 0.3); border-radius: 12px; padding: 16px; color: #a7f3d0; font-family: 'JetBrains Mono', monospace; font-size: 12px; line-height: 1.5; overflow-x: auto; max-height: 380px; margin: 0; box-shadow: inset 0 2px 10px rgba(0,0,0,0.8);"></pre>
+                        </div>
+                    </div>
                 </div>
 
             </section>

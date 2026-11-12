@@ -3220,6 +3220,637 @@ ${title} es un proyecto web oficial accesible en ${currentAuditResult.url}. Ofre
         window.updateSeoAiStatusPill && window.updateSeoAiStatusPill();
     }, 400);
 
+    // ==============================================================
+    // SUB-MÓDULO: NAVEGACIÓN ENTRE SUB-HERRAMIENTAS DEL SEO ENGINE
+    // ==============================================================
+    let currentSeoSubTab = 'audit';
+    let currentSchemaType = 'LocalBusiness';
+
+    window.switchSeoSubTab = function(tab) {
+        currentSeoSubTab = tab;
+        const btnAudit = document.getElementById('tab-btn-seo-audit');
+        const btnTitles = document.getElementById('tab-btn-seo-titles');
+        const btnSchema = document.getElementById('tab-btn-seo-schema');
+
+        const viewAudit = document.getElementById('seo-subview-audit');
+        const viewTitles = document.getElementById('seo-subview-titles');
+        const viewSchema = document.getElementById('seo-subview-schema');
+
+        const activeStyle = 'padding: 9px 18px; font-size: 12px; font-weight: 800; border-radius: 10px; border: 1px solid rgba(0, 210, 255, 0.4); background: linear-gradient(135deg, rgba(0, 210, 255, 0.2), rgba(0, 119, 182, 0.25)); color: #00d2ff; cursor: pointer; display: inline-flex; align-items: center; gap: 8px; transition: all 0.2s ease;';
+        const inactiveStyle = 'padding: 9px 18px; font-size: 12px; font-weight: 700; border-radius: 10px; border: 1px solid transparent; background: transparent; color: #94a3b8; cursor: pointer; display: inline-flex; align-items: center; gap: 8px; transition: all 0.2s ease;';
+
+        if (btnAudit) {
+            btnAudit.style.cssText = tab === 'audit' ? activeStyle : inactiveStyle;
+            btnAudit.classList.toggle('active', tab === 'audit');
+        }
+        if (btnTitles) {
+            btnTitles.style.cssText = tab === 'titles' ? activeStyle : inactiveStyle;
+            btnTitles.classList.toggle('active', tab === 'titles');
+        }
+        if (btnSchema) {
+            btnSchema.style.cssText = tab === 'schema' ? activeStyle : inactiveStyle;
+            btnSchema.classList.toggle('active', tab === 'schema');
+        }
+
+        if (viewAudit) viewAudit.style.display = tab === 'audit' ? 'block' : 'none';
+        if (viewTitles) viewTitles.style.display = tab === 'titles' ? 'block' : 'none';
+        if (viewSchema) viewSchema.style.display = tab === 'schema' ? 'block' : 'none';
+
+        if (tab === 'schema') {
+            if (!document.getElementById('schema-code-output')?.textContent?.trim()) {
+                window.renderSchemaJsonLdCode();
+            }
+        }
+        if (tab === 'titles') {
+            window.updateTitlesCharCounts();
+        }
+    };
+
+    // ==============================================================
+    // SUB-MÓDULO: HERRAMIENTA B — GENERADOR 3 METATÍTULOS ALTO CTR
+    // ==============================================================
+    window.updateTitlesCharCounts = function() {
+        const titleInput = document.getElementById('seo-titles-current-title-input');
+        const descInput = document.getElementById('seo-titles-current-desc-input');
+        const titleCountEl = document.getElementById('seo-titles-current-title-count');
+        const descCountEl = document.getElementById('seo-titles-current-desc-count');
+
+        if (titleInput && titleCountEl) {
+            const len = titleInput.value.length;
+            titleCountEl.textContent = `${len} / 60 car.`;
+            if (len === 0) {
+                titleCountEl.style.color = '#71717a';
+            } else if (len >= 45 && len <= 60) {
+                titleCountEl.style.color = '#10b981';
+            } else if (len < 45) {
+                titleCountEl.style.color = '#f59e0b';
+            } else {
+                titleCountEl.style.color = '#ef4444';
+            }
+        }
+
+        if (descInput && descCountEl) {
+            const len = descInput.value.length;
+            descCountEl.textContent = `${len} / 160 car.`;
+            if (len === 0) {
+                descCountEl.style.color = '#71717a';
+            } else if (len >= 130 && len <= 160) {
+                descCountEl.style.color = '#10b981';
+            } else if (len < 130) {
+                descCountEl.style.color = '#f59e0b';
+            } else {
+                descCountEl.style.color = '#ef4444';
+            }
+        }
+    };
+
+    window.loadAuditIntoTitlesGenerator = function() {
+        window.switchSeoSubTab('titles');
+        if (!currentAuditResult) {
+            const inputUrl = document.getElementById('seo-target-url-input')?.value;
+            if (inputUrl && inputUrl.startsWith('http')) {
+                document.getElementById('seo-titles-url-input').value = inputUrl;
+            }
+            if (window.mostrarToast) {
+                window.mostrarToast('💡 Ingresa los datos o realiza una auditoría previa para auto-rellenar', 'info');
+            }
+            return;
+        }
+
+        const data = currentAuditResult;
+        const urlInput = document.getElementById('seo-titles-url-input');
+        const titleInput = document.getElementById('seo-titles-current-title-input');
+        const descInput = document.getElementById('seo-titles-current-desc-input');
+        const brandInput = document.getElementById('seo-titles-brand-input');
+        const kwInput = document.getElementById('seo-titles-keyword-input');
+
+        if (urlInput) urlInput.value = data.url || '';
+        if (titleInput) titleInput.value = data.docInfo?.title || '';
+        if (descInput) descInput.value = data.docInfo?.metaDesc || '';
+
+        // Deducir marca
+        let hostClean = (data.hostname || '').replace(/^www\./i, '').split('.')[0];
+        let brandDeduced = hostClean.charAt(0).toUpperCase() + hostClean.slice(1);
+        if (data.docInfo?.title && data.docInfo.title.includes('|')) {
+            const parts = data.docInfo.title.split('|');
+            brandDeduced = parts[parts.length - 1].trim();
+        } else if (data.docInfo?.title && data.docInfo.title.includes(' - ')) {
+            const parts = data.docInfo.title.split(' - ');
+            brandDeduced = parts[parts.length - 1].trim();
+        }
+        if (brandInput) brandInput.value = brandDeduced;
+
+        // Deducir keyword del primer H1 o del title
+        let kwDeduced = data.docInfo?.firstH1 || data.docInfo?.title || '';
+        if (kwDeduced.includes('|')) kwDeduced = kwDeduced.split('|')[0].trim();
+        if (kwDeduced.includes(' - ')) kwDeduced = kwDeduced.split(' - ')[0].trim();
+        if (kwInput) kwInput.value = kwDeduced;
+
+        window.updateTitlesCharCounts();
+        window.generateMetaTitlesAction();
+    };
+
+    window.generateMetaTitlesAction = async function() {
+        const url = (document.getElementById('seo-titles-url-input')?.value || '').trim();
+        const currentTitle = (document.getElementById('seo-titles-current-title-input')?.value || '').trim();
+        const currentDesc = (document.getElementById('seo-titles-current-desc-input')?.value || '').trim();
+        const keyword = (document.getElementById('seo-titles-keyword-input')?.value || '').trim() || 'Servicios Oficiales';
+        const brand = (document.getElementById('seo-titles-brand-input')?.value || '').trim() || (url ? new URL(url).hostname.replace('www.', '') : 'Grow Studio');
+        const pageType = document.getElementById('seo-titles-pagetype-select')?.value || 'Página Principal';
+
+        const btn = document.getElementById('btn-generate-seo-titles');
+        if (btn) {
+            btn.disabled = true;
+            btn.innerHTML = '<span>⏳</span> GENERANDO CON IA...';
+        }
+
+        // Diagnóstico previo
+        let issues = [];
+        if (!currentTitle) {
+            issues.push('La página carece de etiqueta &lt;title&gt; o está vacía.');
+        } else if (currentTitle.length < 40) {
+            issues.push(`El título es muy corto (${currentTitle.length}/60 caracteres), desaprovechando espacio visible en Google.`);
+        } else if (currentTitle.length > 60) {
+            issues.push(`El título excede los 60 caracteres (${currentTitle.length} car.), por lo que Google lo truncará en móviles y escritorio.`);
+        }
+        if (!currentDesc) {
+            issues.push('Falta la meta descripción: Google tomará fragmentos aleatorios del texto.');
+        } else if (currentDesc.length < 120) {
+            issues.push(`La meta descripción es breve (${currentDesc.length}/160 car.) y no transmite toda la propuesta de valor.`);
+        } else if (currentDesc.length > 160) {
+            issues.push(`La meta descripción supera los 160 caracteres (${currentDesc.length} car.) y se cortará en SERP.`);
+        }
+        if (issues.length === 0) {
+            issues.push('Título y descripción dentro de rango, pero optimizables para maximizar tasa de clics (CTR) y citabilidad en IA.');
+        }
+
+        const diagBox = document.getElementById('seo-titles-diagnosis-box');
+        const diagText = document.getElementById('seo-titles-diagnosis-text');
+        if (diagText) diagText.innerHTML = issues.map(i => `• ${i}`).join('<br>');
+        if (diagBox) diagBox.style.display = 'flex';
+
+        let alternatives = null;
+
+        // Intentar llamada a IA con API Key si está configurada
+        const apiKey = localStorage.getItem('grow_seo_ai_key') || localStorage.getItem('gemini_api_key');
+        const provider = localStorage.getItem('grow_seo_ai_provider') || 'gemini';
+
+        if (apiKey) {
+            try {
+                const res = await fetch('/api/seo-ai-analyze', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        apiKey,
+                        provider,
+                        action: 'generate_meta_titles',
+                        metaRequest: {
+                            url,
+                            currentTitle,
+                            currentDesc,
+                            h1: currentAuditResult?.docInfo?.firstH1 || currentTitle,
+                            keyword,
+                            brand,
+                            pageType
+                        }
+                    })
+                });
+                if (res.ok) {
+                    const data = await res.json();
+                    if (data.ok && data.analysis && Array.isArray(data.analysis.alternatives)) {
+                        alternatives = data.analysis.alternatives;
+                        if (data.analysis.currentDiagnosis && diagText) {
+                            diagText.innerHTML = `• ${data.analysis.currentDiagnosis}<br>` + issues.map(i => `• ${i}`).join('<br>');
+                        }
+                    }
+                }
+            } catch (err) {
+                console.warn('Fallo en API de IA, activando motor algorítmico local:', err);
+            }
+        }
+
+        // Fallback algorítmico local ultra-optimizado
+        if (!alternatives || alternatives.length === 0) {
+            const cleanKw = keyword.replace(/[<>]/g, '');
+            const cleanBrand = brand.replace(/[<>]/g, '');
+
+            let t1 = `${cleanKw} | ${cleanBrand}`;
+            if (t1.length > 60) t1 = t1.slice(0, 57) + '...';
+            let d1 = `Descubre ${cleanKw} en ${cleanBrand}. Calidad garantizada, atención rápida y la mejor experiencia oficial. ¡Entra y conócenos hoy!`;
+            if (d1.length > 160) d1 = d1.slice(0, 157) + '...';
+
+            let t2 = `${cleanKw} — Experiencia Única en ${cleanBrand}`;
+            if (t2.length > 60) t2 = `${cleanKw} | Reserva en ${cleanBrand}`;
+            if (t2.length > 60) t2 = t2.slice(0, 57) + '...';
+            let d2 = `¿Buscas ${cleanKw}? En ${cleanBrand} obtienes resultados comprobados, soporte prioritario y beneficios exclusivos. ¡Asegura tu lugar aquí!`;
+            if (d2.length > 160) d2 = d2.slice(0, 157) + '...';
+
+            let t3 = `¿Dónde encontrar ${cleanKw}? ${cleanBrand}`;
+            if (t3.length > 60) t3 = `Guía Oficial: ${cleanKw} | ${cleanBrand}`;
+            if (t3.length > 60) t3 = t3.slice(0, 57) + '...';
+            let d3 = `${cleanBrand} es la plataforma oficial de ${cleanKw}. Información verificada, fechas, precios y contacto directo sin intermediarios.`;
+            if (d3.length > 160) d3 = d3.slice(0, 157) + '...';
+
+            alternatives = [
+                {
+                    id: 1,
+                    tag: "🎯 Keyword-First / Informativa",
+                    focus: "Palabra clave principal al inicio; máxima coherencia con la intención directa de búsqueda según Google.",
+                    title: t1,
+                    description: d1
+                },
+                {
+                    id: 2,
+                    tag: "🚀 Beneficio & Alto CTR",
+                    focus: "Orientada a maximizar la tasa de clics destacando la propuesta de valor y gancho de curiosidad.",
+                    title: t2,
+                    description: d2
+                },
+                {
+                    id: 3,
+                    tag: "💡 Intención Long-Tail / GEO",
+                    focus: "Formato pregunta-respuesta optimizado para citabilidad en AI Overviews (Gemini, ChatGPT, Perplexity).",
+                    title: t3,
+                    description: d3
+                }
+            ];
+        }
+
+        renderTitlesCards(alternatives, url, brand);
+
+        if (btn) {
+            btn.disabled = false;
+            btn.innerHTML = '<span>🚀</span> GENERAR 3 ALTERNATIVAS DE ALTO CTR';
+        }
+
+        const resultsContainer = document.getElementById('seo-titles-results-container');
+        if (resultsContainer) resultsContainer.style.display = 'block';
+
+        if (window.mostrarToast) {
+            window.mostrarToast('✨ 3 Alternativas de Alto CTR generadas con éxito', 'success');
+        }
+    };
+
+    function renderTitlesCards(alternatives, targetUrl, brandName) {
+        const grid = document.getElementById('seo-titles-cards-grid');
+        if (!grid) return;
+
+        let displayHost = 'tusitio.com';
+        try {
+            if (targetUrl && targetUrl.startsWith('http')) displayHost = new URL(targetUrl).hostname;
+        } catch(e) {}
+
+        grid.innerHTML = alternatives.map((alt, index) => {
+            const titleLen = alt.title.length;
+            const descLen = alt.description.length;
+
+            const titleBadgeColor = (titleLen >= 45 && titleLen <= 60) ? '#10b981' : (titleLen > 60 ? '#ef4444' : '#f59e0b');
+            const descBadgeColor = (descLen >= 130 && descLen <= 160) ? '#10b981' : (descLen > 160 ? '#ef4444' : '#f59e0b');
+
+            const fullHtmlSnippet = `<title>${alt.title}</title>\n<meta name="description" content="${alt.description}">`;
+
+            return `
+            <div style="background: rgba(18, 22, 30, 0.95); border: 1px solid rgba(255, 255, 255, 0.08); border-top: 2px solid ${index === 0 ? '#00d2ff' : index === 1 ? '#10b981' : '#f59e0b'}; border-radius: 16px; padding: 22px; display: flex; flex-direction: column; justify-content: space-between; box-shadow: 0 10px 25px rgba(0,0,0,0.4);">
+                <div>
+                    <!-- Header Tarjeta -->
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; flex-wrap: wrap; gap: 8px;">
+                        <span style="font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px; color: ${index === 0 ? '#00d2ff' : index === 1 ? '#10b981' : '#f59e0b'}; background: rgba(255,255,255,0.04); padding: 3px 8px; border-radius: 6px;">
+                            ${alt.tag || `Alternativa ${alt.id}`}
+                        </span>
+                        <span style="font-size: 10px; color: #71717a; font-family: monospace;">Opción 0${alt.id || index + 1}</span>
+                    </div>
+
+                    <p style="font-size: 11px; color: #94a3b8; margin: 0 0 14px 0; line-height: 1.4;">
+                        ${alt.focus || ''}
+                    </p>
+
+                    <!-- Preview Título -->
+                    <div style="margin-bottom: 14px;">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px;">
+                            <span style="font-size: 10px; font-weight: 700; color: #a1a1aa; text-transform: uppercase;">&lt;title&gt;</span>
+                            <span style="font-size: 10px; font-family: monospace; font-weight: 800; color: ${titleBadgeColor}; background: rgba(0,0,0,0.4); padding: 2px 6px; border-radius: 4px;">
+                                ${titleLen} / 60 car.
+                            </span>
+                        </div>
+                        <div style="background: rgba(0,0,0,0.4); border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; padding: 10px 12px; font-size: 13px; font-weight: 700; color: #fff; line-height: 1.4;">
+                            ${alt.title}
+                        </div>
+                    </div>
+
+                    <!-- Preview Meta Description -->
+                    <div style="margin-bottom: 16px;">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px;">
+                            <span style="font-size: 10px; font-weight: 700; color: #a1a1aa; text-transform: uppercase;">&lt;meta name="description"&gt;</span>
+                            <span style="font-size: 10px; font-family: monospace; font-weight: 800; color: ${descBadgeColor}; background: rgba(0,0,0,0.4); padding: 2px 6px; border-radius: 4px;">
+                                ${descLen} / 160 car.
+                            </span>
+                        </div>
+                        <div style="background: rgba(0,0,0,0.4); border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; padding: 10px 12px; font-size: 12px; color: #cbd5e1; line-height: 1.5;">
+                            ${alt.description}
+                        </div>
+                    </div>
+
+                    <!-- Vista Previa Google SERP -->
+                    <div style="background: #1a1e24; border: 1px solid rgba(255,255,255,0.06); border-radius: 10px; padding: 12px; margin-bottom: 18px;">
+                        <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 4px;">
+                            <span style="width: 14px; height: 14px; border-radius: 50%; background: #00d2ff; display: inline-block;"></span>
+                            <div style="font-size: 11px; color: #bdc1c6; font-family: sans-serif; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+                                ${displayHost} <span style="color: #71717a;">› ${brandName || 'oficial'}</span>
+                            </div>
+                        </div>
+                        <div style="color: #8ab4f8; font-size: 14px; font-weight: 500; font-family: sans-serif; line-height: 1.3; margin-bottom: 4px; cursor: pointer;">
+                            ${alt.title}
+                        </div>
+                        <div style="color: #bdc1c6; font-size: 11px; font-family: sans-serif; line-height: 1.4;">
+                            ${alt.description}
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Botones de Acción -->
+                <div style="display: flex; gap: 8px; flex-wrap: wrap; border-top: 1px solid rgba(255,255,255,0.06); padding-top: 14px;">
+                    <button type="button" onclick="navigator.clipboard.writeText(\`${fullHtmlSnippet.replace(/`/g, '\\`')}\`); if(window.mostrarToast) window.mostrarToast('📋 Código HTML de Title y Meta copiado');" class="btn-primary btn-small" style="flex: 1; min-width: 140px; background: linear-gradient(135deg, #00d2ff, #0077b6); color: #001e50; font-weight: 800; font-size: 11px; padding: 8px 10px; border-radius: 8px; border: none; cursor: pointer;">
+                        Copiar HTML Completo
+                    </button>
+                    <button type="button" onclick="navigator.clipboard.writeText(\`${alt.title.replace(/`/g, '\\`')}\`); if(window.mostrarToast) window.mostrarToast('📋 Title copiado');" class="btn-secondary btn-small" style="font-size: 10px; padding: 6px 10px;" title="Copiar solo el texto del título">
+                        Solo Title
+                    </button>
+                    <button type="button" onclick="navigator.clipboard.writeText(\`${alt.description.replace(/`/g, '\\`')}\`); if(window.mostrarToast) window.mostrarToast('📋 Description copiada');" class="btn-secondary btn-small" style="font-size: 10px; padding: 6px 10px;" title="Copiar solo la descripción">
+                        Solo Desc
+                    </button>
+                </div>
+            </div>
+            `;
+        }).join('');
+    }
+
+    // ==============================================================
+    // SUB-MÓDULO: HERRAMIENTA C — GENERADOR RÁPIDO SCHEMA.ORG JSON-LD
+    // ==============================================================
+    window.selectSchemaType = function(type) {
+        currentSchemaType = type;
+        const types = ['LocalBusiness', 'Restaurant', 'SportsEvent', 'ProfessionalService', 'WebSite'];
+
+        types.forEach(t => {
+            const btn = document.getElementById(`schema-btn-type-${t}`);
+            if (btn) {
+                if (t === type) {
+                    btn.style.borderColor = 'rgba(16, 185, 129, 0.4)';
+                    btn.style.background = 'rgba(16, 185, 129, 0.15)';
+                    btn.classList.add('active');
+                } else {
+                    btn.style.borderColor = 'rgba(255, 255, 255, 0.08)';
+                    btn.style.background = 'rgba(255, 255, 255, 0.02)';
+                    btn.classList.remove('active');
+                }
+            }
+        });
+
+        renderSchemaExtraFields(type);
+        window.renderSchemaJsonLdCode();
+    };
+
+    function renderSchemaExtraFields(type) {
+        const container = document.getElementById('schema-extra-fields-container');
+        if (!container) return;
+
+        if (type === 'Restaurant') {
+            container.innerHTML = `
+                <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px;">
+                    <div>
+                        <label style="display: block; font-size: 10px; font-weight: 700; color: #cbd5e1; margin-bottom: 4px;">Tipo de Cocina (servesCuisine)</label>
+                        <input type="text" id="schema-extra-cuisine" oninput="window.renderSchemaJsonLdCode()" value="Hamburguesas / Comida Rápida Gourmet" class="modern-select" style="width: 100%; box-sizing: border-box; padding: 8px 10px; font-size: 11px; background: rgba(0,0,0,0.5); border: 1px solid rgba(255,255,255,0.15); border-radius: 6px; color: #fff;">
+                    </div>
+                    <div>
+                        <label style="display: block; font-size: 10px; font-weight: 700; color: #cbd5e1; margin-bottom: 4px;">URL del Menú Digital</label>
+                        <input type="text" id="schema-extra-menu" oninput="window.renderSchemaJsonLdCode()" placeholder="https://ejemplo.com/#menu" class="modern-select" style="width: 100%; box-sizing: border-box; padding: 8px 10px; font-size: 11px; background: rgba(0,0,0,0.5); border: 1px solid rgba(255,255,255,0.15); border-radius: 6px; color: #fff;">
+                    </div>
+                    <div>
+                        <label style="display: block; font-size: 10px; font-weight: 700; color: #cbd5e1; margin-bottom: 4px;">Rango de Precios</label>
+                        <input type="text" id="schema-extra-price" oninput="window.renderSchemaJsonLdCode()" value="$$" class="modern-select" style="width: 100%; box-sizing: border-box; padding: 8px 10px; font-size: 11px; background: rgba(0,0,0,0.5); border: 1px solid rgba(255,255,255,0.15); border-radius: 6px; color: #fff;">
+                    </div>
+                </div>
+            `;
+        } else if (type === 'SportsEvent') {
+            container.innerHTML = `
+                <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px;">
+                    <div>
+                        <label style="display: block; font-size: 10px; font-weight: 700; color: #cbd5e1; margin-bottom: 4px;">Fecha de Inicio (ISO 8601)</label>
+                        <input type="text" id="schema-extra-startdate" oninput="window.renderSchemaJsonLdCode()" value="2026-12-01T08:00:00-04:00" class="modern-select" style="width: 100%; box-sizing: border-box; padding: 8px 10px; font-size: 11px; background: rgba(0,0,0,0.5); border: 1px solid rgba(255,255,255,0.15); border-radius: 6px; color: #fff;">
+                    </div>
+                    <div>
+                        <label style="display: block; font-size: 10px; font-weight: 700; color: #cbd5e1; margin-bottom: 4px;">Fecha de Fin (ISO 8601)</label>
+                        <input type="text" id="schema-extra-enddate" oninput="window.renderSchemaJsonLdCode()" value="2026-12-15T23:59:59-04:00" class="modern-select" style="width: 100%; box-sizing: border-box; padding: 8px 10px; font-size: 11px; background: rgba(0,0,0,0.5); border: 1px solid rgba(255,255,255,0.15); border-radius: 6px; color: #fff;">
+                    </div>
+                    <div>
+                        <label style="display: block; font-size: 10px; font-weight: 700; color: #cbd5e1; margin-bottom: 4px;">Modalidad</label>
+                        <select id="schema-extra-eventmode" onchange="window.renderSchemaJsonLdCode()" class="modern-select" style="width: 100%; box-sizing: border-box; padding: 8px 10px; font-size: 11px; background: rgba(15, 23, 42, 0.95); border: 1px solid rgba(255,255,255,0.15); border-radius: 6px; color: #fff;">
+                            <option value="OnlineEventAttendanceMode">Online / Virtual</option>
+                            <option value="OfflineEventAttendanceMode">Presencial</option>
+                            <option value="MixedEventAttendanceMode">Híbrido</option>
+                        </select>
+                    </div>
+                </div>
+            `;
+        } else if (type === 'LocalBusiness') {
+            container.innerHTML = `
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+                    <div>
+                        <label style="display: block; font-size: 10px; font-weight: 700; color: #cbd5e1; margin-bottom: 4px;">Horario de Apertura (openingHours)</label>
+                        <input type="text" id="schema-extra-hours" oninput="window.renderSchemaJsonLdCode()" value="Mo-Sa 09:00-19:00" class="modern-select" style="width: 100%; box-sizing: border-box; padding: 8px 10px; font-size: 11px; background: rgba(0,0,0,0.5); border: 1px solid rgba(255,255,255,0.15); border-radius: 6px; color: #fff;">
+                    </div>
+                    <div>
+                        <label style="display: block; font-size: 10px; font-weight: 700; color: #cbd5e1; margin-bottom: 4px;">Rango de Precios (priceRange)</label>
+                        <input type="text" id="schema-extra-pricerange" oninput="window.renderSchemaJsonLdCode()" value="$$" class="modern-select" style="width: 100%; box-sizing: border-box; padding: 8px 10px; font-size: 11px; background: rgba(0,0,0,0.5); border: 1px solid rgba(255,255,255,0.15); border-radius: 6px; color: #fff;">
+                    </div>
+                </div>
+            `;
+        } else if (type === 'ProfessionalService') {
+            container.innerHTML = `
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+                    <div>
+                        <label style="display: block; font-size: 10px; font-weight: 700; color: #cbd5e1; margin-bottom: 4px;">Área de Especialidad (knowsAbout)</label>
+                        <input type="text" id="schema-extra-knows" oninput="window.renderSchemaJsonLdCode()" value="Desarrollo Web de Alto Valor, SEO & Inteligencia Artificial" class="modern-select" style="width: 100%; box-sizing: border-box; padding: 8px 10px; font-size: 11px; background: rgba(0,0,0,0.5); border: 1px solid rgba(255,255,255,0.15); border-radius: 6px; color: #fff;">
+                    </div>
+                    <div>
+                        <label style="display: block; font-size: 10px; font-weight: 700; color: #cbd5e1; margin-bottom: 4px;">Rango de Precios (priceRange)</label>
+                        <input type="text" id="schema-extra-priceserv" oninput="window.renderSchemaJsonLdCode()" value="$$$" class="modern-select" style="width: 100%; box-sizing: border-box; padding: 8px 10px; font-size: 11px; background: rgba(0,0,0,0.5); border: 1px solid rgba(255,255,255,0.15); border-radius: 6px; color: #fff;">
+                    </div>
+                </div>
+            `;
+        } else if (type === 'WebSite') {
+            container.innerHTML = `
+                <div>
+                    <label style="display: block; font-size: 10px; font-weight: 700; color: #cbd5e1; margin-bottom: 4px;">Plantilla de Búsqueda Interna (potentialAction.target)</label>
+                    <input type="text" id="schema-extra-search" oninput="window.renderSchemaJsonLdCode()" value="https://retovirtualvzla.com/?s={search_term_string}" class="modern-select" style="width: 100%; box-sizing: border-box; padding: 8px 10px; font-size: 11px; background: rgba(0,0,0,0.5); border: 1px solid rgba(255,255,255,0.15); border-radius: 6px; color: #fff;">
+                </div>
+            `;
+        }
+    }
+
+    window.loadAuditIntoSchemaGenerator = function() {
+        window.switchSeoSubTab('schema');
+        if (!currentAuditResult) {
+            const inputUrl = document.getElementById('seo-target-url-input')?.value;
+            if (inputUrl && inputUrl.startsWith('http')) {
+                document.getElementById('schema-url-input').value = inputUrl;
+            }
+            if (window.mostrarToast) {
+                window.mostrarToast('💡 Ingresa los datos o audita una web para auto-rellenar', 'info');
+            }
+            window.renderSchemaJsonLdCode();
+            return;
+        }
+
+        const data = currentAuditResult;
+        let siteName = data.docInfo?.title || data.hostname || '';
+        if (siteName.includes('|')) siteName = siteName.split('|')[siteName.split('|').length - 1].trim();
+        if (siteName.includes(' - ')) siteName = siteName.split(' - ')[siteName.split(' - ').length - 1].trim();
+
+        const nameInput = document.getElementById('schema-name-input');
+        const urlInput = document.getElementById('schema-url-input');
+        const logoInput = document.getElementById('schema-logo-input');
+        const descInput = document.getElementById('schema-desc-input');
+
+        if (nameInput) nameInput.value = siteName;
+        if (urlInput) urlInput.value = data.url || '';
+        if (logoInput) logoInput.value = (data.url || '').replace(/\/$/, '') + '/img/logo.png';
+        if (descInput) descInput.value = data.docInfo?.metaDesc || '';
+
+        // Deducir tipo
+        const fullUrl = (data.url || '').toLowerCase();
+        if (fullUrl.includes('reto') || fullUrl.includes('carrera') || fullUrl.includes('maraton') || fullUrl.includes('evento')) {
+            window.selectSchemaType('SportsEvent');
+        } else if (fullUrl.includes('restaurant') || fullUrl.includes('pasteles') || fullUrl.includes('burger') || fullUrl.includes('menu')) {
+            window.selectSchemaType('Restaurant');
+        } else if (fullUrl.includes('grow') || fullUrl.includes('hunter') || fullUrl.includes('agency')) {
+            window.selectSchemaType('ProfessionalService');
+        } else {
+            window.selectSchemaType('LocalBusiness');
+        }
+    };
+
+    window.renderSchemaJsonLdCode = function() {
+        const type = currentSchemaType || 'LocalBusiness';
+        const name = (document.getElementById('schema-name-input')?.value || 'Nombre del Negocio').trim();
+        const url = (document.getElementById('schema-url-input')?.value || 'https://tusitio.com').trim();
+        const logo = (document.getElementById('schema-logo-input')?.value || 'https://tusitio.com/logo.png').trim();
+        const phone = (document.getElementById('schema-phone-input')?.value || '+58 412 1234567').trim();
+        const desc = (document.getElementById('schema-desc-input')?.value || '').trim();
+        const city = (document.getElementById('schema-city-input')?.value || 'Punto Fijo').trim();
+        const country = (document.getElementById('schema-country-input')?.value || 'VE').trim();
+
+        let schemaObj = {
+            "@context": "https://schema.org",
+            "@type": type,
+            "name": name,
+            "url": url
+        };
+
+        if (logo) schemaObj["image"] = logo;
+        if (desc) schemaObj["description"] = desc;
+        if (phone) schemaObj["telephone"] = phone;
+
+        if (type === 'LocalBusiness') {
+            const hours = document.getElementById('schema-extra-hours')?.value || 'Mo-Sa 09:00-19:00';
+            const price = document.getElementById('schema-extra-pricerange')?.value || '$$';
+            schemaObj["priceRange"] = price;
+            schemaObj["openingHours"] = hours;
+            schemaObj["address"] = {
+                "@type": "PostalAddress",
+                "addressLocality": city,
+                "addressCountry": country
+            };
+        } else if (type === 'Restaurant') {
+            const cuisine = document.getElementById('schema-extra-cuisine')?.value || 'Comida Rápida / Smash Burgers';
+            const menu = document.getElementById('schema-extra-menu')?.value || `${url}#menu`;
+            const price = document.getElementById('schema-extra-price')?.value || '$$';
+            schemaObj["servesCuisine"] = cuisine;
+            schemaObj["hasMenu"] = menu;
+            schemaObj["priceRange"] = price;
+            schemaObj["address"] = {
+                "@type": "PostalAddress",
+                "addressLocality": city,
+                "addressCountry": country
+            };
+        } else if (type === 'SportsEvent') {
+            const startDate = document.getElementById('schema-extra-startdate')?.value || '2026-12-01T08:00:00-04:00';
+            const endDate = document.getElementById('schema-extra-enddate')?.value || '2026-12-15T23:59:59-04:00';
+            const eventMode = document.getElementById('schema-extra-eventmode')?.value || 'OnlineEventAttendanceMode';
+            schemaObj["startDate"] = startDate;
+            schemaObj["endDate"] = endDate;
+            schemaObj["eventAttendanceMode"] = `https://schema.org/${eventMode}`;
+            schemaObj["eventStatus"] = "https://schema.org/EventScheduled";
+            schemaObj["location"] = eventMode === 'OnlineEventAttendanceMode' ? {
+                "@type": "VirtualLocation",
+                "url": url
+            } : {
+                "@type": "Place",
+                "name": city,
+                "address": {
+                    "@type": "PostalAddress",
+                    "addressLocality": city,
+                    "addressCountry": country
+                }
+            };
+            schemaObj["organizer"] = {
+                "@type": "Organization",
+                "name": name,
+                "url": url
+            };
+        } else if (type === 'ProfessionalService') {
+            const knows = document.getElementById('schema-extra-knows')?.value || 'Desarrollo Web & Marketing Digital';
+            const price = document.getElementById('schema-extra-priceserv')?.value || '$$$';
+            schemaObj["priceRange"] = price;
+            schemaObj["knowsAbout"] = knows;
+            schemaObj["address"] = {
+                "@type": "PostalAddress",
+                "addressLocality": city,
+                "addressCountry": country
+            };
+        } else if (type === 'WebSite') {
+            const searchTpl = document.getElementById('schema-extra-search')?.value || `${url}/?s={search_term_string}`;
+            schemaObj["potentialAction"] = {
+                "@type": "SearchAction",
+                "target": searchTpl,
+                "query-input": "required name=search_term_string"
+            };
+        }
+
+        const jsonFormatted = JSON.stringify(schemaObj, null, 2);
+        const scriptTag = `<script type="application/ld+json">\n${jsonFormatted}\n<\/script>`;
+
+        const codeEl = document.getElementById('schema-code-output');
+        if (codeEl) {
+            codeEl.textContent = scriptTag;
+        }
+    };
+
+    window.copySchemaJsonLd = function() {
+        const codeEl = document.getElementById('schema-code-output');
+        if (!codeEl) return;
+        navigator.clipboard.writeText(codeEl.textContent);
+        if (window.mostrarToast) {
+            window.mostrarToast('📋 Marcado JSON-LD copiado listo para insertar en <head>', 'success');
+        }
+    };
+
+    window.validateSchemaInGoogle = function() {
+        const urlInput = document.getElementById('schema-url-input');
+        const targetUrl = urlInput ? urlInput.value.trim() : '';
+        const testUrl = targetUrl && targetUrl.startsWith('http') 
+            ? `https://search.google.com/test/rich-results?url=${encodeURIComponent(targetUrl)}`
+            : `https://search.google.com/test/rich-results`;
+        window.open(testUrl, '_blank', 'noopener,noreferrer');
+    };
+
+    // Auto-inicializar extra fields para Schema
+    setTimeout(() => {
+        if (typeof renderSchemaExtraFields === 'function') {
+            renderSchemaExtraFields('LocalBusiness');
+        }
+    }, 500);
+
     window.copyAntigravityPrompt = copyAntigravityPrompt;
     window.downloadLlmsTxt = downloadLlmsTxt;
     window.downloadSeoMarkdown = downloadMarkdown;

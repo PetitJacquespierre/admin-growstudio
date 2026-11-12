@@ -13,7 +13,7 @@ export default async function handler(req, res) {
     }
 
     try {
-        const { apiKey, provider = 'gemini', siteData } = req.body || {};
+        const { apiKey, provider = 'gemini', action = 'analyze', siteData, metaRequest } = req.body || {};
 
         const effectiveKey = apiKey || process.env.GEMINI_API_KEY || process.env.ANTHROPIC_API_KEY || process.env.OPENAI_API_KEY;
 
@@ -24,9 +24,68 @@ export default async function handler(req, res) {
             });
         }
 
-        const { url = '', title = '', description = '', headings = [], sampleText = '' } = siteData || {};
+        let systemPrompt = '';
+        let userPrompt = '';
 
-        const systemPrompt = `Eres un auditor experto en SEO Técnico, E-E-A-T de Google y Citabilidad de IA (GEO / AI Overviews).
+        if (action === 'generate_meta_titles') {
+            const { url = '', currentTitle = '', currentDesc = '', h1 = '', keyword = '', brand = '', pageType = 'Página web' } = metaRequest || {};
+
+            systemPrompt = `Eres un redactor SEO de élite y especialista en optimización de CTR según las directrices oficiales de Google Search Central y Google Title Links.
+Tu tarea es generar un diagnóstico ultrabreve y 3 alternativas distintas de <title> y <meta name="description"> listas para copiar.
+
+REGLAS ESTRICTAS DE GOOGLE:
+1. Title: 50 a 60 caracteres (máximo 60). Descriptivo, sin keyword stuffing, coherente con el H1. Incluye la marca concisa al final con separador " | " o " - ".
+2. Description: 140 a 160 caracteres (máximo 160). Frase fluida con propuesta de valor y CTA suave, sin listas vacías de keywords.
+3. Las 3 alternativas deben tener enfoques DIFERENTES:
+   - Alternativa 1 (Keyword-First / Informativa): Palabra clave al inicio, máxima claridad de servicio o producto.
+   - Alternativa 2 (Beneficio & Alto CTR): Gancho irresistible, diferencial o beneficio concreto para maximizar clics.
+   - Alternativa 3 (Intención Long-Tail / GEO): Resuelve una consulta concreta o pregunta, ideal para AI Overviews y citabilidad.
+
+Debes responder ÚNICAMENTE con un objeto JSON válido (sin markdown, sin bloques de código, solo JSON puro) con esta estructura:
+{
+  "currentDiagnosis": "Diagnóstico de 1 o 2 líneas de los problemas detectados en el título/descripción actuales (longitud, vaguedad, falta de marca o CTR bajo)",
+  "keywordAssumed": "Palabra clave principal utilizada",
+  "brandAssumed": "Marca identificada",
+  "alternatives": [
+    {
+      "id": 1,
+      "tag": "Keyword-First / Informativa",
+      "focus": "Máxima claridad con la palabra clave principal al inicio",
+      "title": "Texto del title (máx 60 caracteres)",
+      "description": "Texto de la meta description (máx 160 caracteres)"
+    },
+    {
+      "id": 2,
+      "tag": "Beneficio & Alto CTR",
+      "focus": "Orientada a clics con propuesta de valor irresistible",
+      "title": "Texto del title (máx 60 caracteres)",
+      "description": "Texto de la meta description (máx 160 caracteres)"
+    },
+    {
+      "id": 3,
+      "tag": "Intención Long-Tail / GEO",
+      "focus": "Pregunta o solución directa optimizada para citabilidad en IA",
+      "title": "Texto del title (máx 60 caracteres)",
+      "description": "Texto de la meta description (máx 160 caracteres)"
+    }
+  ]
+}`;
+
+            userPrompt = `URL: ${url}
+Tipo de página: ${pageType}
+Título actual: ${currentTitle || '(Vacío)'}
+Meta descripción actual: ${currentDesc || '(Vacía)'}
+H1 visible: ${h1 || '(No detectado)'}
+Keyword objetivo solicitada: ${keyword || '(Inferir de la página)'}
+Marca solicitada: ${brand || '(Inferir de la página o dominio)'}
+
+Genera el diagnóstico y las 3 alternativas en formato JSON puro.`;
+
+        } else {
+            // Auditoría Semántica Completa (Default)
+            const { url = '', title = '', description = '', headings = [], sampleText = '' } = siteData || {};
+
+            systemPrompt = `Eres un auditor experto en SEO Técnico, E-E-A-T de Google y Citabilidad de IA (GEO / AI Overviews).
 Tu labor es analizar el texto extraído de la página web indicada y evaluar 6 aspectos críticos de calidad semántica.
 
 Debes responder ÚNICAMENTE con un objeto JSON válido (sin bloques markdown de código, sin texto introductorio, solo JSON puro) con esta estructura exacta:
@@ -61,7 +120,7 @@ Debes responder ÚNICAMENTE con un objeto JSON válido (sin bloques markdown de 
   }
 }`;
 
-        const userPrompt = `URL Analizada: ${url}
+            userPrompt = `URL Analizada: ${url}
 Título: ${title}
 Descripción meta: ${description}
 Encabezados principales: ${headings.slice(0, 15).join(' | ')}
@@ -72,6 +131,7 @@ ${sampleText.slice(0, 3500)}
 """
 
 Analiza el contenido y devuelve el JSON requerido.`;
+        }
 
         let rawResponseText = '';
 
