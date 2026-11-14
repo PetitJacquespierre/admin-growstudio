@@ -1012,7 +1012,7 @@ function initSandiaConfig() {
             }
             if (selectStatus && data.estadoWeb) selectStatus.value = data.estadoWeb;
             if (selectHorrorInsc) {
-                const abiertas = data.inscripcionesHorrorAbiertas !== false;
+                const abiertas = data.inscripcionesHorrorAbiertas === true;
                 selectHorrorInsc.value = abiertas ? 'ABIERTAS' : 'CERRADAS';
             }
             if (badgeStatus) {
