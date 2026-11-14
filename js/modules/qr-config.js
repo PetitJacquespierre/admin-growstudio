@@ -124,24 +124,59 @@ window.generarReciboPDF = (clienteId, monto, fecha, referencia) => {
 
 
 
-// Helper para obtener tasa BCV oficial con fallback a caché o API
+// Helper para obtener tasa BCV oficial con fallback a caché o API (Protocolo Mi Lechuga Multi-Proveedor)
 window.obtenerTasaBCV = async function() {
-    const URL_API = "https://script.google.com/macros/s/AKfycbxdQlLO7lDOAvbhFqwVBs722T_i1KQ08z1gdf4NdqA6HvVcwGzRX4BZtHSd58piGL11/exec";
+    let tasaObtenida = 0;
+
+    // 1. Proveedor Primario: DolarApi Oficial (ve.dolarapi.com)
     try {
-        const res = await fetch(URL_API);
-        const data = await res.json();
-        if (data && data.usd) {
-            const tasa = parseFloat(data.usd);
-            if (tasa > 0) {
-                localStorage.setItem("bcv_rate_cache", tasa.toString());
-                return tasa;
+        const resDol = await fetch("https://ve.dolarapi.com/v1/dolares/oficial", { cache: "no-store" });
+        if (resDol.ok) {
+            const dData = await resDol.json();
+            if (dData && dData.promedio && dData.promedio > 0) {
+                tasaObtenida = Number(parseFloat(dData.promedio).toFixed(2));
             }
         }
     } catch (e) {
-        console.warn("Fallo consultando API BCV, usando caché local:", e);
+        console.warn("Fallo DolarApi USD oficial:", e);
     }
+
+    // 2. Proveedor Secundario: PyDolarVe BCV
+    if (!tasaObtenida) {
+        try {
+            const resPy = await fetch("https://pydolarve.org/api/v1/dollar?page=bcv", { cache: "no-store" });
+            if (resPy.ok) {
+                const pData = await resPy.json();
+                if (pData && pData.monitors && pData.monitors.usd && pData.monitors.usd.price) {
+                    tasaObtenida = Number(parseFloat(pData.monitors.usd.price).toFixed(2));
+                }
+            }
+        } catch (err) {
+            console.warn("Fallo PyDolarVe BCV:", err);
+        }
+    }
+
+    // 3. Proveedor Terciario: Google Apps Script Respaldo
+    if (!tasaObtenida) {
+        const URL_API = "https://script.google.com/macros/s/AKfycbxdQlLO7lDOAvbhFqwVBs722T_i1KQ08z1gdf4NdqA6HvVcwGzRX4BZtHSd58piGL11/exec";
+        try {
+            const res = await fetch(URL_API, { cache: "no-store" });
+            const data = await res.json();
+            if (data && data.usd && parseFloat(data.usd) > 0) {
+                tasaObtenida = Number(parseFloat(data.usd).toFixed(2));
+            }
+        } catch (e) {
+            console.warn("Fallo consultando Apps Script BCV:", e);
+        }
+    }
+
+    if (tasaObtenida > 0) {
+        localStorage.setItem("bcv_rate_cache", tasaObtenida.toString());
+        return tasaObtenida;
+    }
+
     const cached = localStorage.getItem("bcv_rate_cache");
-    return cached ? parseFloat(cached) : 870.00;
+    return cached ? parseFloat(cached) : 911.62;
 };
 
 // Generador de Cobro por WhatsApp en 1 Clic (Fase 3.2)

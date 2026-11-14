@@ -207,7 +207,7 @@ export function renderModalAlertas() {
         return;
     }
 
-    const tasaBCV = parseFloat(localStorage.getItem('bcv_rate_cache')) || 876.80;
+    const tasaBCV = parseFloat(localStorage.getItem('bcv_rate_cache')) || 911.62;
 
     let html = '';
     todosLosAlertados.forEach(c => {

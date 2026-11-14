@@ -27,26 +27,62 @@ window.generarReporteWhatsapp = function() {
 // FASE 4: DASHBOARD EJECUTIVO & MONITOR BCV EN VIVO
 // ==========================================
 
-// Helper para obtener tasa BCV oficial
+// Helper para obtener tasa BCV oficial (Protocolo Mi Lechuga Multi-Proveedor)
 async function fetchCurrentBCVRate() {
-    const URL_API = "https://script.google.com/macros/s/AKfycbxdQlLO7lDOAvbhFqwVBs722T_i1KQ08z1gdf4NdqA6HvVcwGzRX4BZtHSd58piGL11/exec";
+    let tasaObtenida = 0;
+
+    // 1. Proveedor Primario: DolarApi Oficial (ve.dolarapi.com) - Alta disponibilidad y sin CORS
     try {
-        const res = await fetch(URL_API);
-        const data = await res.json();
-        if (data && data.usd) {
-            const tasa = parseFloat(data.usd);
-            if (tasa > 0) {
-                localStorage.setItem("bcv_rate_cache", tasa.toString());
-                localStorage.setItem("bcv_rate_timestamp", new Date().toLocaleTimeString('es-VE', { hour: '2-digit', minute: '2-digit' }));
-                return { tasa, time: localStorage.getItem("bcv_rate_timestamp"), ok: true };
+        const resDol = await fetch("https://ve.dolarapi.com/v1/dolares/oficial", { cache: "no-store" });
+        if (resDol.ok) {
+            const dData = await resDol.json();
+            if (dData && dData.promedio && dData.promedio > 0) {
+                tasaObtenida = Number(parseFloat(dData.promedio).toFixed(2));
             }
         }
     } catch (e) {
-        console.warn("Fallo consultando API BCV en vivo:", e);
+        console.warn("Fallo DolarApi USD oficial:", e);
     }
+
+    // 2. Proveedor Secundario: PyDolarVe BCV (si el primario falla)
+    if (!tasaObtenida) {
+        try {
+            const resPy = await fetch("https://pydolarve.org/api/v1/dollar?page=bcv", { cache: "no-store" });
+            if (resPy.ok) {
+                const pData = await resPy.json();
+                if (pData && pData.monitors && pData.monitors.usd && pData.monitors.usd.price) {
+                    tasaObtenida = Number(parseFloat(pData.monitors.usd.price).toFixed(2));
+                }
+            }
+        } catch (err) {
+            console.warn("Fallo PyDolarVe BCV:", err);
+        }
+    }
+
+    // 3. Proveedor Terciario: Google Apps Script Respaldo
+    if (!tasaObtenida) {
+        const URL_API = "https://script.google.com/macros/s/AKfycbxdQlLO7lDOAvbhFqwVBs722T_i1KQ08z1gdf4NdqA6HvVcwGzRX4BZtHSd58piGL11/exec";
+        try {
+            const res = await fetch(URL_API, { cache: "no-store" });
+            const data = await res.json();
+            if (data && data.usd && parseFloat(data.usd) > 0) {
+                tasaObtenida = Number(parseFloat(data.usd).toFixed(2));
+            }
+        } catch (e) {
+            console.warn("Fallo consultando Apps Script BCV:", e);
+        }
+    }
+
+    if (tasaObtenida > 0) {
+        const timeStr = new Date().toLocaleTimeString('es-VE', { hour: '2-digit', minute: '2-digit' });
+        localStorage.setItem("bcv_rate_cache", tasaObtenida.toString());
+        localStorage.setItem("bcv_rate_timestamp", timeStr);
+        return { tasa: tasaObtenida, time: timeStr, ok: true };
+    }
+
     const cached = localStorage.getItem("bcv_rate_cache");
     const cachedTime = localStorage.getItem("bcv_rate_timestamp") || 'Caché';
-    return { tasa: cached ? parseFloat(cached) : 871.37, time: cachedTime, ok: false };
+    return { tasa: cached ? parseFloat(cached) : 911.62, time: cachedTime, ok: false };
 }
 
 // Cargar y mostrar la tasa oficial BCV en el Header Superior Global (Fase 4.2)
@@ -103,7 +139,7 @@ window.renderDashboardKPIs = function(tasaParam) {
 
     if (!activeClientsEl) return; // Si no estamos en esa pantalla, salir
 
-    const cachedTasa = parseFloat(localStorage.getItem("bcv_rate_cache")) || 871.37;
+    const cachedTasa = parseFloat(localStorage.getItem("bcv_rate_cache")) || 911.62;
     const tasa = tasaParam || cachedTasa;
 
     let activeCount = 0;
@@ -532,7 +568,7 @@ window.abrirAjusteMasivoDashboard = function() {
 // ACCIÓN RÁPIDA: EXPORTAR RESUMEN EJECUTIVO GLOBAL A PDF (Opción 4)
 window.generarReporteEjecutivoGlobalPDF = function() {
     const clients = state.allClientsCache || [];
-    const cachedTasa = parseFloat(localStorage.getItem("bcv_rate_cache")) || 871.37;
+    const cachedTasa = parseFloat(localStorage.getItem("bcv_rate_cache")) || 911.62;
     const fechaGenerado = new Date().toLocaleDateString('es-VE', { day:'2-digit', month:'long', year:'numeric' });
 
     let activeCount = 0;
@@ -914,7 +950,7 @@ window.actualizarSimuladorFinanciero = function() {
     const arrTotal = mrrTotal * 12;
     const arpu = totalClients > 0 ? (mrrTotal / totalClients) : 0;
 
-    const cachedTasa = parseFloat(localStorage.getItem("bcv_rate_cache")) || 871.37;
+    const cachedTasa = parseFloat(localStorage.getItem("bcv_rate_cache")) || 911.62;
 
     if (resMrrUsd) resMrrUsd.innerText = `$${Math.round(mrrTotal).toLocaleString('es-VE')}`;
     if (resMrrBs) resMrrBs.innerText = `≈ ${(mrrTotal * cachedTasa).toLocaleString('es-VE', { minimumFractionDigits: 0, maximumFractionDigits: 0 })} Bs/mes`;
