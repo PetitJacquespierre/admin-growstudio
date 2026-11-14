@@ -27,24 +27,40 @@ window.generarReporteWhatsapp = function() {
 // FASE 4: DASHBOARD EJECUTIVO & MONITOR BCV EN VIVO
 // ==========================================
 
-// Helper para obtener tasa BCV oficial (Protocolo Mi Lechuga Multi-Proveedor)
-async function fetchCurrentBCVRate() {
+// Helper para obtener tasa BCV oficial directo desde bcv.org.ve vía Serverless /api/bcv
+async function fetchCurrentBCVRate(forceRefresh = false) {
     let tasaObtenida = 0;
 
-    // 1. Proveedor Primario: DolarApi Oficial (ve.dolarapi.com) - Alta disponibilidad y sin CORS
+    // 1. Proveedor Primario Oficial: Motor Directo bcv.org.ve (/api/bcv)
     try {
-        const resDol = await fetch("https://ve.dolarapi.com/v1/dolares/oficial", { cache: "no-store" });
-        if (resDol.ok) {
-            const dData = await resDol.json();
-            if (dData && dData.promedio && dData.promedio > 0) {
-                tasaObtenida = Number(parseFloat(dData.promedio).toFixed(2));
+        const endpoint = forceRefresh ? "/api/bcv?refresh=1" : "/api/bcv";
+        const resBcv = await fetch(endpoint, { cache: "no-store" });
+        if (resBcv.ok) {
+            const bData = await resBcv.json();
+            if (bData && bData.usd && parseFloat(bData.usd) > 0) {
+                tasaObtenida = Number(parseFloat(bData.usd).toFixed(2));
             }
         }
     } catch (e) {
-        console.warn("Fallo DolarApi USD oficial:", e);
+        console.warn("Fallo endpoint directo /api/bcv:", e);
     }
 
-    // 2. Proveedor Secundario: PyDolarVe BCV (si el primario falla)
+    // 2. Proveedor Secundario: DolarApi Oficial (ve.dolarapi.com)
+    if (!tasaObtenida) {
+        try {
+            const resDol = await fetch("https://ve.dolarapi.com/v1/dolares/oficial", { cache: "no-store" });
+            if (resDol.ok) {
+                const dData = await resDol.json();
+                if (dData && dData.promedio && dData.promedio > 0) {
+                    tasaObtenida = Number(parseFloat(dData.promedio).toFixed(2));
+                }
+            }
+        } catch (e) {
+            console.warn("Fallo DolarApi USD oficial:", e);
+        }
+    }
+
+    // 3. Proveedor Terciario: PyDolarVe BCV
     if (!tasaObtenida) {
         try {
             const resPy = await fetch("https://pydolarve.org/api/v1/dollar?page=bcv", { cache: "no-store" });
@@ -59,20 +75,6 @@ async function fetchCurrentBCVRate() {
         }
     }
 
-    // 3. Proveedor Terciario: Google Apps Script Respaldo
-    if (!tasaObtenida) {
-        const URL_API = "https://script.google.com/macros/s/AKfycbxdQlLO7lDOAvbhFqwVBs722T_i1KQ08z1gdf4NdqA6HvVcwGzRX4BZtHSd58piGL11/exec";
-        try {
-            const res = await fetch(URL_API, { cache: "no-store" });
-            const data = await res.json();
-            if (data && data.usd && parseFloat(data.usd) > 0) {
-                tasaObtenida = Number(parseFloat(data.usd).toFixed(2));
-            }
-        } catch (e) {
-            console.warn("Fallo consultando Apps Script BCV:", e);
-        }
-    }
-
     if (tasaObtenida > 0) {
         const timeStr = new Date().toLocaleTimeString('es-VE', { hour: '2-digit', minute: '2-digit' });
         localStorage.setItem("bcv_rate_cache", tasaObtenida.toString());
@@ -82,7 +84,7 @@ async function fetchCurrentBCVRate() {
 
     const cached = localStorage.getItem("bcv_rate_cache");
     const cachedTime = localStorage.getItem("bcv_rate_timestamp") || 'Caché';
-    return { tasa: cached ? parseFloat(cached) : 911.62, time: cachedTime, ok: false };
+    return { tasa: cached ? parseFloat(cached) : 914.02, time: cachedTime, ok: false };
 }
 
 // Cargar y mostrar la tasa oficial BCV en el Header Superior Global (Fase 4.2)
@@ -101,7 +103,7 @@ window.cargarTasaBCVHeader = async function(isManualRefresh = false) {
         }
     }
 
-    const { tasa, time, ok } = await fetchCurrentBCVRate();
+    const { tasa, time, ok } = await fetchCurrentBCVRate(isManualRefresh);
 
     rateEl.innerText = tasa.toLocaleString('es-VE', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
     if (updatedEl) updatedEl.innerText = `(${time})`;

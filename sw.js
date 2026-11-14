@@ -1,4 +1,4 @@
-const CACHE_NAME = 'plantilla-v6';
+const CACHE_NAME = 'plantilla-v7';
 const urlsToCache = [
   './',
   './index.html',

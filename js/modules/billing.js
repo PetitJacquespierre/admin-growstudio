@@ -641,7 +641,7 @@ function initManualPaymentRegistration() {
             }
 
             try {
-                const cachedTasa = parseFloat(localStorage.getItem("bcv_rate_cache")) || 911.62;
+                const cachedTasa = parseFloat(localStorage.getItem("bcv_rate_cache")) || 914.02;
                 const nuevoPago = {
                     clienteId: clienteId,
                     cedula: cedula,
