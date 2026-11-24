@@ -108,6 +108,7 @@
             <div class="sidebar-menu">
                 <p class="menu-label" style="color: #ff4d61; font-weight: bold;">PROYECTOS & PRODUCCIONES</p>
                 <button id="btn-nav-sandia" class="menu-btn" onclick="window.openSandiaScreen && window.openSandiaScreen()" style="border: 1px solid rgba(230, 32, 53, 0.4); background: rgba(230, 32, 53, 0.12); color: #ff4d61; font-weight: bold;">🍉 Sandía Production</button>
+                <button id="btn-nav-reto" class="menu-btn" onclick="window.openRetoScreen && window.openRetoScreen()" style="border: 1px solid rgba(0, 210, 255, 0.4); background: rgba(0, 210, 255, 0.10); color: #00d2ff; font-weight: bold; margin-top: 6px;">🏃‍♂️ Reto Virtual VZLA</button>
             </div>
 
             <div class="sidebar-menu" style="flex: 1; overflow-y: auto; margin-top: 15px;">
@@ -986,6 +987,134 @@
                             <div style="display: flex; gap: 10px; margin-top: 10px;">
                                 <button type="button" onclick="document.getElementById('modal-editar-cupon').style.display='none'" class="btn-secondary" style="flex: 1; padding: 8px;">Cancelar</button>
                                 <button type="submit" class="btn-primary" style="flex: 1; padding: 8px; background: var(--brand-cyan); color: #000; font-weight: 700; border-color: var(--brand-cyan);">Guardar Cambios</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </section>
+
+            <!-- PANTALLA RETO VIRTUAL VZLA (CONTROL DE CUPONES Y LINKS VIP 10K) -->
+            <section id="reto-screen" style="display: none; padding: 25px; height: 100%; flex-direction: column; overflow-y: auto; box-sizing: border-box;">
+                <header class="top-bar" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px; border-bottom: 1px solid rgba(0, 210, 255, 0.2); padding-bottom: 15px; flex-wrap: wrap; gap: 15px;">
+                    <div>
+                        <h2 style="color: #00d2ff; display: flex; align-items: center; gap: 10px; margin: 0; font-size: 1.4rem;">
+                            <span>🏃‍♂️</span> Reto Virtual VZLA | Cupones &amp; Links VIP 10K
+                        </h2>
+                        <p style="font-size: 12px; color: #a1a1aa; margin: 4px 0 0 0;">
+                            Genera cupones personalizados (descuento o cortesía 100% gratis) y copia el enlace VIP listo para enviar por WhatsApp.
+                        </p>
+                    </div>
+                    <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+                        <button id="btn-nuevo-cupon-reto" class="btn-primary" style="background: #00d2ff; color: #001438; border-color: #00d2ff; font-weight: 800;">🎟️ + Crear Cupón VIP</button>
+                    </div>
+                </header>
+
+                <!-- CAJA CREAR CUPÓN RETO VIRTUAL VZLA -->
+                <div id="box-crear-cupon-reto" style="display: none; background: rgba(0, 210, 255, 0.06); border: 1px dashed rgba(0, 210, 255, 0.4); border-radius: 12px; padding: 16px 18px; margin-bottom: 20px;">
+                    <div style="display: flex; gap: 14px; align-items: flex-end; flex-wrap: wrap;">
+                        <div>
+                            <label style="font-size: 11px; color: #ccc; display: block; margin-bottom: 4px;">Código de Cupón:</label>
+                            <input type="text" id="input-reto-cupon-codigo" placeholder="Ej. GROW10K o VIPFREE" class="input-modern" style="text-transform: uppercase; font-weight: bold; width: 190px; padding: 8px 10px; font-size: 12px;">
+                        </div>
+                        <div>
+                            <label style="font-size: 11px; color: #ccc; display: block; margin-bottom: 4px;">Precio Final ($ USD):</label>
+                            <input type="number" id="input-reto-cupon-precio" placeholder="20" min="0" step="0.5" value="20" class="input-modern" style="font-weight: bold; width: 120px; padding: 8px 10px; font-size: 12px; color: #00ff66;">
+                        </div>
+                        <div>
+                            <label style="font-size: 11px; color: #ccc; display: block; margin-bottom: 4px;">Modalidad de Uso:</label>
+                            <select id="select-reto-cupon-tipo" class="modern-select" style="padding: 7px 10px; font-size: 12px; width: 220px;">
+                                <option value="REUTILIZABLE" selected>♾️ Multiuso (Control Manual On/Off)</option>
+                                <option value="UN_SOLO_USO">🔒 1 Solo Uso (Se Quema al Canjear)</option>
+                                <option value="DOS_USOS">🔒 2 Usos (Se Quema al 2do Canje)</option>
+                                <option value="TRES_USOS">🔒 3 Usos (Se Quema al 3er Canje)</option>
+                                <option value="CINCO_USOS">🔒 5 Usos (Se Quema al 5to Canje)</option>
+                                <option value="DIEZ_USOS">🔒 10 Usos (Se Quema al 10mo Canje)</option>
+                            </select>
+                        </div>
+                        <div style="display: flex; gap: 8px;">
+                            <button id="btn-guardar-reto-cupon" class="btn-primary btn-small" style="background: #00d2ff; color: #001438; font-weight: 800; font-size: 12px; padding: 9px 16px;">
+                                Guardar y Activar
+                            </button>
+                            <button id="btn-cancelar-reto-cupon" class="btn-secondary btn-small" style="font-size: 12px; padding: 9px 14px;">
+                                Cancelar
+                            </button>
+                        </div>
+                    </div>
+                    <p style="font-size: 11px; color: #94a3b8; margin: 10px 0 0 0;">
+                        💡 <strong>Tip:</strong> Coloca <strong>20</strong> para la promo Lista de Espera (-$5 sobre los $25 de Solo Medalla) o <strong>0</strong> si deseas regalar un pase de cortesía 100% gratis.
+                    </p>
+                </div>
+
+                <!-- BUSCADOR Y FILTROS DE CUPONES RETO -->
+                <div style="display: flex; gap: 10px; margin-bottom: 15px; flex-wrap: wrap; align-items: center;">
+                    <div style="flex: 1; min-width: 220px;">
+                        <input type="text" id="input-search-reto-cupones" placeholder="🔍 Buscar cupón por código o corredor..." class="input-modern" style="width: 100%; box-sizing: border-box; padding: 8px 12px; font-size: 12px; border-radius: 8px;">
+                    </div>
+                    <div>
+                        <select id="select-filtro-reto-cupones-estado" class="modern-select" style="padding: 7px 12px; font-size: 12px; border-radius: 8px; min-width: 175px;">
+                            <option value="TODOS">📋 Todos los estados</option>
+                            <option value="ACTIVO">🟢 Activos</option>
+                            <option value="PAUSADO">⏸️ Pausados</option>
+                            <option value="USADO">🔒 Canjeados</option>
+                        </select>
+                    </div>
+                    <div>
+                        <span id="reto-cupones-count-badge" style="font-size: 11px; background: rgba(0, 210, 255, 0.15); color: #00d2ff; padding: 7px 12px; border-radius: 8px; font-weight: 700; white-space: nowrap;">
+                            0 cupones
+                        </span>
+                    </div>
+                </div>
+
+                <!-- TABLA DE CUPONES RETO VIRTUAL VZLA -->
+                <div class="table-container" style="background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.08); border-radius: 12px; overflow-x: auto;">
+                    <table id="reto-cupones-table" style="width: 100%; min-width: 720px; border-collapse: collapse;">
+                        <thead>
+                            <tr style="border-bottom: 1px solid rgba(255,255,255,0.1); text-align: left; font-size: 11px; color: #94a3b8; text-transform: uppercase;">
+                                <th style="padding: 12px 14px;">Código VIP</th>
+                                <th style="padding: 12px 14px;">Precio Final</th>
+                                <th style="padding: 12px 14px;">Modalidad</th>
+                                <th style="padding: 12px 14px;">Estado</th>
+                                <th style="padding: 12px 14px;">Canjes / Corredor</th>
+                                <th style="padding: 12px 14px; text-align: right;">Link &amp; Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody id="reto-cupones-tbody">
+                            <tr><td colspan="6" style="text-align: center; padding: 25px; color: #888;">Cargando cupones de Reto Virtual VZLA...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- MODAL EDITAR CUPÓN RETO -->
+                <div id="modal-editar-reto-cupon" style="display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.85); z-index: 2600; align-items: center; justify-content: center; backdrop-filter: blur(8px);">
+                    <div style="background: #111827; border: 1px solid rgba(0, 210, 255, 0.4); border-radius: 14px; padding: 22px; width: 92%; max-width: 400px; box-shadow: 0 20px 50px rgba(0,0,0,0.9);">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                            <h3 style="margin: 0; color: #00d2ff; font-size: 1rem;">✏️ Editar Cupón Reto 10K</h3>
+                            <button type="button" onclick="document.getElementById('modal-editar-reto-cupon').style.display='none'" style="background: none; border: none; color: #aaa; font-size: 20px; cursor: pointer;">✕</button>
+                        </div>
+                        <form id="form-editar-reto-cupon" style="display: flex; flex-direction: column; gap: 12px;">
+                            <input type="hidden" id="edit-reto-cupon-id">
+                            <div>
+                                <label style="font-size: 11px; color: #a1a1aa; display: block; margin-bottom: 4px;">Código:</label>
+                                <input type="text" id="edit-reto-cupon-codigo" disabled class="input-modern" style="width: 100%; padding: 8px; opacity: 0.7; font-weight: bold;">
+                            </div>
+                            <div>
+                                <label style="font-size: 11px; color: #a1a1aa; display: block; margin-bottom: 4px;">Precio Final ($ USD):</label>
+                                <input type="number" id="edit-reto-cupon-precio" min="0" step="0.5" required class="input-modern" style="width: 100%; padding: 8px; font-weight: bold; color: #00ff66;">
+                            </div>
+                            <div>
+                                <label style="font-size: 11px; color: #a1a1aa; display: block; margin-bottom: 4px;">Modalidad de Uso:</label>
+                                <select id="edit-reto-cupon-tipo" class="modern-select" style="width: 100%; padding: 8px; font-size: 12px;">
+                                    <option value="REUTILIZABLE">♾️ Multiuso (Control Manual On/Off)</option>
+                                    <option value="UN_SOLO_USO">🔒 1 Solo Uso (Se Quema al Canjear)</option>
+                                    <option value="DOS_USOS">🔒 2 Usos (Se Quema al 2do Canje)</option>
+                                    <option value="TRES_USOS">🔒 3 Usos (Se Quema al 3er Canje)</option>
+                                    <option value="CINCO_USOS">🔒 5 Usos (Se Quema al 5to Canje)</option>
+                                    <option value="DIEZ_USOS">🔒 10 Usos (Se Quema al 10mo Canje)</option>
+                                </select>
+                            </div>
+                            <div style="display: flex; gap: 10px; margin-top: 10px;">
+                                <button type="button" onclick="document.getElementById('modal-editar-reto-cupon').style.display='none'" class="btn-secondary" style="flex: 1; padding: 8px;">Cancelar</button>
+                                <button type="submit" class="btn-primary" style="flex: 1; padding: 8px; background: #00d2ff; color: #001438; font-weight: 800; border-color: #00d2ff;">Guardar Cambios</button>
                             </div>
                         </form>
                     </div>
@@ -2294,7 +2423,9 @@
     <script type="module" src="js/modules/vencimientos-alerts.js"></script>
     <script type="module">
         import { initSandiaAdmin } from "./js/modules/sandia-admin.js";
+        import { initRetoAdmin } from "./js/modules/reto-admin.js";
         initSandiaAdmin();
+        initRetoAdmin();
 
         // Inicializar Hunter & Radar
         if (window.initGrowHunter) {
