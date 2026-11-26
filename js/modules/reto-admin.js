@@ -199,7 +199,7 @@ export async function initRetoAdmin() {
                     allRetoCuponesCache = [];
                     let avisoDocData = null;
                     snapshot.forEach(d => {
-                        if (d.id === '__AVISO_WEB__') {
+                        if (d.id === 'CONFIG_AVISO_WEB') {
                             avisoDocData = d.data();
                         } else {
                             allRetoCuponesCache.push({ id: d.id, ...d.data() });
@@ -360,7 +360,7 @@ export async function initRetoAdmin() {
             btnPublicarAviso.disabled = true;
             btnPublicarAviso.innerText = 'Publicando...';
             try {
-                await setDoc(doc(db, 'reto_cupones_10k', '__AVISO_WEB__'), {
+                await setDoc(doc(db, 'reto_cupones_10k', 'CONFIG_AVISO_WEB'), {
                     activo: true,
                     avisoId: 'AV_' + Date.now(),
                     titulo,
@@ -387,7 +387,7 @@ export async function initRetoAdmin() {
         btnApagarAviso.addEventListener('click', async () => {
             btnApagarAviso.disabled = true;
             try {
-                await setDoc(doc(db, 'reto_cupones_10k', '__AVISO_WEB__'), {
+                await setDoc(doc(db, 'reto_cupones_10k', 'CONFIG_AVISO_WEB'), {
                     activo: false,
                     fechaActualizacion: new Date().toISOString()
                 }, { merge: true });
