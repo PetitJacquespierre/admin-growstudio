@@ -197,9 +197,17 @@ export async function initRetoAdmin() {
             if (!unsubscribeRetoCupones) {
                 unsubscribeRetoCupones = onSnapshot(collection(db, "reto_cupones_10k"), (snapshot) => {
                     allRetoCuponesCache = [];
-                    snapshot.forEach(d => allRetoCuponesCache.push({ id: d.id, ...d.data() }));
+                    let avisoDocData = null;
+                    snapshot.forEach(d => {
+                        if (d.id === '__AVISO_WEB__') {
+                            avisoDocData = d.data();
+                        } else {
+                            allRetoCuponesCache.push({ id: d.id, ...d.data() });
+                        }
+                    });
                     allRetoCuponesCache.sort((a, b) => new Date(b.fechaActualizacion || b.fechaCreacion || 0) - new Date(a.fechaActualizacion || a.fechaCreacion || 0));
                     renderRetoCuponesFiltrados();
+                    renderEstadoAvisoReto(avisoDocData);
                 });
             }
         }
@@ -279,5 +287,162 @@ export async function initRetoAdmin() {
             document.getElementById('modal-editar-reto-cupon').style.display = 'none';
             if (window.showToast) window.showToast(`✔ Cupón ${id} actualizado.`);
         });
+    }
+
+    // =========================================================================
+    // CENTRAL DE AVISOS Y NOTIFICACIONES PROGRAMADAS (RETO VIRTUAL VZLA)
+    // =========================================================================
+    const PRESETS_AVISO_RETO = {
+        prueba: {
+            titulo: '🏅 Medallas 10K ya en nuestras manos',
+            mensaje: 'Las medallas físicas de metal macizo 3D llegaron de producción. Aparta tu cupo hoy con $10 USD antes del cierre de lote (envíos COD por MRW/ZOOM).',
+            estilo: 'cian',
+            textoBoton: 'Asegurar mi Cupo →',
+            urlBoton: 'inscripcion.html?modo=10K'
+        },
+        ultimos: {
+            titulo: '⏳ Últimos cupos 10K antes del Sold Out',
+            mensaje: 'Estamos a punto de agotar las 100 medallas físicas de la Edición Especial 10K. Asegura tu dorsal hoy mismo antes del cierre total.',
+            estilo: 'urgente',
+            textoBoton: 'Inscribirme Ahora →',
+            urlBoton: 'inscripcion.html?modo=10K'
+        },
+        despacho: {
+            titulo: '📦 Lote 10K en proceso de despacho MRW / ZOOM',
+            mensaje: 'Los envíos nacionales Cobro a Destino (COD) ya están en ruta. Verifica tu estado de cuenta y prepárate para el 11 de diciembre.',
+            estilo: 'exito',
+            textoBoton: 'Consultar Estatus →',
+            urlBoton: 'inscripcion.html?modo=ABONO'
+        },
+        carrera: {
+            titulo: '🏁 ¡Arrancó la Carrera 10K! Plataforma Abierta',
+            mensaje: 'Tienes 2 semanas completas para correr tus 10K a tu ritmo y subir tu captura de GPS para entrar al Ranking Nacional y descargar tu diploma.',
+            estilo: 'exito',
+            textoBoton: 'Subir mi Evidencia →',
+            urlBoton: 'evidencias2.html'
+        }
+    };
+
+    document.querySelectorAll('.btn-preset-aviso-reto').forEach(btn => {
+        btn.addEventListener('click', () => {
+            const p = PRESETS_AVISO_RETO[btn.dataset.preset];
+            if (!p) return;
+            document.getElementById('reto-aviso-titulo').value = p.titulo;
+            document.getElementById('reto-aviso-mensaje').value = p.mensaje;
+            document.getElementById('reto-aviso-estilo').value = p.estilo;
+            document.getElementById('reto-aviso-btn-texto').value = p.textoBoton;
+            document.getElementById('reto-aviso-btn-url').value = p.urlBoton;
+            if (window.showToast) window.showToast('✨ Plantilla cargada. Edítala o pulsa "Publicar / Programar Aviso".');
+        });
+    });
+
+    const btnPublicarAviso = document.getElementById('btn-publicar-aviso-reto');
+    const btnApagarAviso = document.getElementById('btn-apagar-aviso-reto');
+
+    if (btnPublicarAviso) {
+        btnPublicarAviso.addEventListener('click', async () => {
+            const titulo = (document.getElementById('reto-aviso-titulo').value || '').trim();
+            const mensaje = (document.getElementById('reto-aviso-mensaje').value || '').trim();
+            const estilo = document.getElementById('reto-aviso-estilo').value || 'cian';
+            const textoBoton = (document.getElementById('reto-aviso-btn-texto').value || '').trim();
+            const urlBoton = (document.getElementById('reto-aviso-btn-url').value || 'inscripcion.html?modo=10K').trim();
+            const inicioVal = document.getElementById('reto-aviso-inicio').value || '';
+            const finVal = document.getElementById('reto-aviso-fin').value || '';
+            const enviarPush = document.getElementById('reto-aviso-push').checked;
+
+            if (!titulo || !mensaje) {
+                return alert('Escribe al menos un título y un mensaje (o toca una de las plantillas rápidas).');
+            }
+
+            const programarInicio = inicioVal ? new Date(inicioVal).toISOString() : '';
+            const programarFin = finVal ? new Date(finVal).toISOString() : '';
+
+            btnPublicarAviso.disabled = true;
+            btnPublicarAviso.innerText = 'Publicando...';
+            try {
+                await setDoc(doc(db, 'reto_cupones_10k', '__AVISO_WEB__'), {
+                    activo: true,
+                    avisoId: 'AV_' + Date.now(),
+                    titulo,
+                    mensaje,
+                    estilo,
+                    textoBoton,
+                    urlBoton,
+                    programarInicio,
+                    programarFin,
+                    enviarPush,
+                    fechaActualizacion: new Date().toISOString()
+                });
+                if (window.showToast) window.showToast(programarInicio ? '⏰ Aviso programado con éxito en Reto Virtual.' : '🚀 ¡Aviso publicado EN VIVO en retovirtualvzla.com!');
+            } catch (err) {
+                alert('Error al guardar el aviso: ' + err.message);
+            } finally {
+                btnPublicarAviso.disabled = false;
+                btnPublicarAviso.innerText = '🚀 Publicar / Programar Aviso';
+            }
+        });
+    }
+
+    if (btnApagarAviso) {
+        btnApagarAviso.addEventListener('click', async () => {
+            btnApagarAviso.disabled = true;
+            try {
+                await setDoc(doc(db, 'reto_cupones_10k', '__AVISO_WEB__'), {
+                    activo: false,
+                    fechaActualizacion: new Date().toISOString()
+                }, { merge: true });
+                if (window.showToast) window.showToast('⛔ Aviso apagado en retovirtualvzla.com.');
+            } finally {
+                btnApagarAviso.disabled = false;
+            }
+        });
+    }
+}
+
+function renderEstadoAvisoReto(data) {
+    const badge = document.getElementById('reto-aviso-estado-badge');
+    if (!badge) return;
+
+    if (!data || !data.activo) {
+        badge.innerText = '⚪ APAGADO';
+        badge.style.background = 'rgba(148,163,184,0.15)';
+        badge.style.color = '#cbd5e1';
+        badge.style.borderColor = 'rgba(148,163,184,0.3)';
+        return;
+    }
+
+    // Rellenar campos con el aviso actual si están vacíos
+    const tEl = document.getElementById('reto-aviso-titulo');
+    if (tEl && !tEl.value && data.titulo) {
+        tEl.value = data.titulo || '';
+        const mEl = document.getElementById('reto-aviso-mensaje');
+        if (mEl) mEl.value = data.mensaje || '';
+        const eEl = document.getElementById('reto-aviso-estilo');
+        if (eEl && data.estilo) eEl.value = data.estilo;
+        const btEl = document.getElementById('reto-aviso-btn-texto');
+        if (btEl) btEl.value = data.textoBoton || '';
+        const buEl = document.getElementById('reto-aviso-btn-url');
+        if (buEl && data.urlBoton) buEl.value = data.urlBoton;
+    }
+
+    const ahora = Date.now();
+    const inicioTs = data.programarInicio ? new Date(data.programarInicio).getTime() : 0;
+    const finTs = data.programarFin ? new Date(data.programarFin).getTime() : 0;
+
+    if (finTs && ahora > finTs) {
+        badge.innerText = '⌛ VENCIDO (Apagado automático)';
+        badge.style.background = 'rgba(148,163,184,0.15)';
+        badge.style.color = '#94a3b8';
+        badge.style.borderColor = 'rgba(148,163,184,0.3)';
+    } else if (inicioTs && ahora < inicioTs) {
+        badge.innerText = `⏰ PROGRAMADO (${new Date(inicioTs).toLocaleString('es-VE', { dateStyle: 'short', timeStyle: 'short' })})`;
+        badge.style.background = 'rgba(245,158,11,0.18)';
+        badge.style.color = '#fbbf24';
+        badge.style.borderColor = 'rgba(245,158,11,0.4)';
+    } else {
+        badge.innerText = '🟢 ACTIVO EN VIVO';
+        badge.style.background = 'rgba(16,185,129,0.2)';
+        badge.style.color = '#34d399';
+        badge.style.borderColor = 'rgba(16,185,129,0.45)';
     }
 }
