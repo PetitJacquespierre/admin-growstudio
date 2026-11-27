@@ -218,10 +218,25 @@ export async function initRetoAdmin() {
     const boxCrear = document.getElementById('box-crear-cupon-reto');
     const btnCancelar = document.getElementById('btn-cancelar-reto-cupon');
     const btnGuardar = document.getElementById('btn-guardar-reto-cupon');
+    const btnToggleAvisos = document.getElementById('btn-toggle-avisos-reto');
+    const cuerpoAvisos = document.getElementById('reto-aviso-cuerpo');
+
+    if (btnToggleAvisos && cuerpoAvisos) {
+        btnToggleAvisos.addEventListener('click', () => {
+            const estaOculto = cuerpoAvisos.style.display === 'none';
+            cuerpoAvisos.style.display = estaOculto ? 'block' : 'none';
+            btnToggleAvisos.innerText = estaOculto ? '▲ Plegar Panel' : '▼ Desplegar Panel';
+        });
+    }
 
     if (btnNuevo && boxCrear) {
         btnNuevo.addEventListener('click', () => {
-            boxCrear.style.display = boxCrear.style.display === 'none' ? 'block' : 'none';
+            const estaOculto = boxCrear.style.display === 'none';
+            boxCrear.style.display = estaOculto ? 'block' : 'none';
+            if (estaOculto) {
+                const inputCodigo = document.getElementById('input-reto-cupon-codigo');
+                if (inputCodigo) setTimeout(() => inputCodigo.focus(), 50);
+            }
         });
     }
     if (btnCancelar && boxCrear) {
